@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Technician {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  fullName  String?
+  phone     String?
+  password  String
+  isAdmin   Boolean  @default(false)
+  theme     String   @default("system") // system, light, dark
+  lastUf    String   @default("Todos")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  executions    ServiceExecution[]
+  notifications Notification[]
+}
+
+model ServiceExecution {
+  id           String      @id @default(uuid())
+  osId         String      // Links to 'idOS' or 'POP' in Excel
+  technicianId String
+  technician   Technician  @relation(fields: [technicianId], references: [id])
+  status       String      @default("PENDING") // PENDING, DONE
+  power        String?
+  obs          String?
+  
+  photos       Photo[]
+  checklist    Checklist[]
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+
+model Photo {
+  id          String           @id @default(uuid())
+  executionId String?
+  execution   ServiceExecution? @relation(fields: [executionId], references: [id])
+  checklistId String?
+  checklist   Checklist?       @relation(fields: [checklistId], references: [id])
+  path        String
+  createdAt   DateTime         @default(now())
+}
+
+model Checklist {
+  id          String           @id @default(uuid())
+  executionId String
+  execution   ServiceExecution @relation(fields: [executionId], references: [id])
+  itemId      String           // Links to item ID in Excel (CaixaAlares)
+  done        Boolean          @default(false)
+  power       String?          // db/dBm value
+  photos      Photo[]
+}
+
+model Notification {
+  id           String      @id @default(uuid())
+  type         String      // CHECKLIST, OS_CLOSE
+  title        String
+  message      String
+  read         Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  
+  technicianId String?
+  technician   Technician? @relation(fields: [technicianId], references: [id])
+  
+  osId         String?     // Optional link to OS
+}
