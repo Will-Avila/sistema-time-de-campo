@@ -10,6 +10,8 @@ export interface OS {
     dataEntrante: string;
     dataPrevExec: string;
     rawPrevExec?: number;
+    dataConclusao?: string;
+    rawConclusao?: number;
     cenario: string;
     protocolo: string;
     totalCaixas: number;
@@ -106,14 +108,18 @@ export async function getAllOS(): Promise<OS[]> {
                 dataEntrante: formatExcelDate(row['Entrante']),
                 dataPrevExec: formatExcelDate(row['Prev. Exec.']),
                 rawPrevExec: typeof row['Prev. Exec.'] === 'number' ? row['Prev. Exec.'] : 0,
+                dataConclusao: formatExcelDate(row['Conclusao']),
+                rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
                 cenario: String(row.Cenario || ''),
                 protocolo: String(row.Protocolo || ''),
                 totalCaixas
             };
         })
         .filter((os) => {
-            const statusLower = os.status.toLowerCase();
-            return (statusLower === 'iniciar' || statusLower === 'em execução' || statusLower === 'em execucao');
+            const s = os.status.toLowerCase();
+            return s === 'iniciar' || s === 'em execução' || s === 'em execucao'
+                || s === 'pend. cliente' || s === 'concluído' || s === 'concluido'
+                || s === 'cancelado';
         })
         .sort((a, b) => a.rawPrevExec - b.rawPrevExec);
 }

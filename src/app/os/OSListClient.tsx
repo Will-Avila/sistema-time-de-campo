@@ -17,8 +17,15 @@ interface OSListClientProps {
 export default function OSListClient({ initialOSList, initialUf }: OSListClientProps) {
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('Abertas');
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const router = useRouter();
+
+    const STATUS_GROUPS: Record<string, string[]> = {
+        'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente'],
+        'Concluídas': ['concluído', 'concluido'],
+        'Canceladas': ['cancelado'],
+    };
 
     // Get unique UFs
     const ufs = ['Todos', ...Array.from(new Set(initialOSList.map(os => os.uf).filter(Boolean))).sort()];
@@ -29,7 +36,19 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
             os.protocolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             os.pop?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             os.technicianName?.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesUF && matchesSearch;
+        const allowedStatuses = STATUS_GROUPS[statusFilter];
+        const matchesStatus = !allowedStatuses || allowedStatuses.includes(os.status.toLowerCase());
+        return matchesUF && matchesSearch && matchesStatus;
+    }).sort((a, b) => {
+        // Special sort for 'Concluídas': most recent first
+        if (statusFilter === 'Concluídas') {
+            // Priority: 1. App closedAt, 2. Excel Conclusao, 3. Fallback
+            const dateA = a.closedAt ? new Date(a.closedAt).getTime() : (a.rawConclusao ? (a.rawConclusao - 25569) * 86400000 : 0);
+            const dateB = b.closedAt ? new Date(b.closedAt).getTime() : (b.rawConclusao ? (b.rawConclusao - 25569) * 86400000 : 0);
+            return dateB - dateA; // Descending
+        }
+        // Default sort: already sorted by prevExec in Excel parser, but we preserve it
+        return 0;
     });
 
     function handleUFChange(newUF: string) {
@@ -48,7 +67,24 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
         if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
+        if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
+        if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
         return 'text-slate-700 dark:text-slate-300';
+    }
+
+    function getDisplayStatus(os: EnrichedOS) {
+        if (os.executionStatus && os.executionStatus !== 'Pendente') return os.executionStatus;
+        const s = os.status.toLowerCase();
+        if (s === 'concluído' || s === 'concluido') return 'Concluída';
+        if (s === 'cancelado') return 'Cancelada';
+        return 'Pendente';
+    }
+
+    function getStatusVariant(status: string) {
+        if (status === 'Concluída') return 'success';
+        if (status === 'Sem Execução' || status === 'Cancelada') return 'destructive';
+        if (status === 'Em Execução') return 'warning';
+        return 'secondary';
     }
 
     return (
@@ -84,6 +120,23 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                 >
                                     {ufs.map(uf => (
                                         <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                    <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <div className="relative">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="h-10 w-full md:w-[160px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                >
+                                    {Object.keys(STATUS_GROUPS).map(s => (
+                                        <option key={s} value={s}>{s}</option>
                                     ))}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
@@ -129,13 +182,8 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                 {os.pop || 'SEM POP'}
                                             </CardTitle>
                                         </div>
-                                        <Badge variant={
-                                            os.executionStatus === 'Concluída' ? 'success' :
-                                                os.executionStatus === 'Sem Execução' ? 'destructive' :
-                                                    os.executionStatus === 'Em Execução' ? 'warning' :
-                                                        'secondary'
-                                        } className="shrink-0">
-                                            {os.executionStatus || 'Pendente'}
+                                        <Badge variant={getStatusVariant(getDisplayStatus(os))} className="shrink-0">
+                                            {getDisplayStatus(os)}
                                         </Badge>
                                     </div>
                                 </CardHeader>
@@ -158,7 +206,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                         )}
                                     </div>
 
-                                    <div className={`grid ${os.closedAt ? 'grid-cols-3' : 'grid-cols-2'} gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs mt-auto`}>
+                                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs mt-auto">
                                         <div>
                                             <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Entrada</span>
                                             <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
@@ -166,22 +214,24 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                 {os.dataEntrante}
                                             </div>
                                         </div>
-                                        <div>
-                                            <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
-                                            <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.rawPrevExec)}`}>
-                                                <Calendar className="h-3 w-3 text-slate-400" />
-                                                {os.dataPrevExec}
-                                            </div>
-                                        </div>
-                                        {os.closedAt && (
+                                        {getDisplayStatus(os) === 'Concluída' ? (
                                             <div>
-                                                <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Encerrada</span>
-                                                <div className="flex items-center gap-1.5 font-medium text-green-700 dark:text-green-400">
-                                                    <Calendar className="h-3 w-3 text-green-500" />
-                                                    {os.closedAt}
+                                                <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Conclusão</span>
+                                                <div className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                                                    <Calendar className="h-3 w-3 text-emerald-500/70" />
+                                                    {os.closedAt ? new Date(os.closedAt).toLocaleDateString('pt-BR') : (os.dataConclusao || '-')}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
+                                                <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.rawPrevExec)}`}>
+                                                    <Calendar className="h-3 w-3 text-slate-400" />
+                                                    {os.dataPrevExec}
                                                 </div>
                                             </div>
                                         )}
+
                                     </div>
                                 </CardContent>
                             </Card>
