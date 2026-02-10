@@ -1,13 +1,9 @@
 import { getAllOS } from '@/lib/excel';
 import OSListClient from './OSListClient';
 import { HeaderServer } from '@/components/layout/HeaderServer';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
+import { getSession } from '@/lib/auth';
+import { EnrichedOS } from '@/lib/types';
 
 export default async function OSListPage() {
     const osList = await getAllOS();
@@ -28,7 +24,7 @@ export default async function OSListPage() {
     }
 
     // Enrich OS list with execution status
-    const enrichedList = osList.map(os => {
+    const enrichedList: EnrichedOS[] = osList.map(os => {
         const exec = executionMap.get(os.id);
         let executionStatus = 'Pendente';
         let technicianName: string | undefined;
@@ -48,24 +44,17 @@ export default async function OSListPage() {
         return { ...os, executionStatus, technicianName, closedAt };
     });
 
-    // Get Session & Preferences
-    const session = cookies().get('session')?.value;
+    // Get Session & Preferences (centralized)
+    const session = await getSession();
     let lastUf = 'Todos';
 
     if (session) {
-        try {
-            const { payload } = await jwtVerify(session, JWT_SECRET);
-            if (payload.sub) {
-                const tech = await prisma.technician.findUnique({
-                    where: { id: payload.sub as string },
-                    select: { lastUf: true }
-                });
-                if (tech) {
-                    lastUf = tech.lastUf || 'Todos';
-                }
-            }
-        } catch (e) {
-            // Invalid session
+        const tech = await prisma.technician.findUnique({
+            where: { id: session.id },
+            select: { lastUf: true }
+        });
+        if (tech) {
+            lastUf = tech.lastUf || 'Todos';
         }
     }
 

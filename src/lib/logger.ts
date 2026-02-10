@@ -1,5 +1,3 @@
-import { headers } from 'next/headers';
-
 type LogLevel = 'info' | 'warn' | 'error';
 
 interface LogEntry {

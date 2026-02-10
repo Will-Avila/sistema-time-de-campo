@@ -1,42 +1,46 @@
 'use server';
 
+import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { requireAuth } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import path from 'path';
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
+import type { ActionResult } from '@/lib/types';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-export async function updateChecklistItem(prevState: any, formData: FormData) {
-    // 1. Authenticate
-    const session = cookies().get('session')?.value;
-    if (!session) return { message: 'Não autenticado.' };
+const checklistSchema = z.object({
+    osId: z.string().min(1, 'osId obrigatório'),
+    itemId: z.string().min(1, 'itemId obrigatório'),
+    done: z.preprocess((v) => v ?? 'false', z.enum(['true', 'false'])),
+    power: z.preprocess((v) => v || undefined, z.string().optional()),
+});
 
-    let technicianId = '';
-    try {
-        const { payload } = await jwtVerify(session, JWT_SECRET);
-        technicianId = payload.sub as string;
-    } catch {
-        return { message: 'Sessão inválida.' };
+export async function updateChecklistItem(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+    // 1. Authenticate (centralized)
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { success: false, message: 'Não autenticado.' };
+
+    const technicianId = session.id;
+
+    // 2. Validate input
+    const parsed = checklistSchema.safeParse({
+        osId: formData.get('osId'),
+        itemId: formData.get('itemId'),
+        done: formData.get('done'),
+        power: formData.get('power'),
+    });
+
+    if (!parsed.success) {
+        return { success: false, message: 'Dados inválidos: ' + parsed.error.issues.map(i => i.message).join(', ') };
     }
 
-    // 2. Extract Data
-    const osId = formData.get('osId') as string;
-    const itemId = formData.get('itemId') as string;
-    const done = formData.get('done') === 'true'; // Status toggle
-    const power = formData.get('power') as string;
+    const { osId, itemId, power } = parsed.data;
+    const done = parsed.data.done === 'true';
     const files = formData.getAll('photos') as File[];
-
-    if (!osId || !itemId) {
-        return { message: 'Dados incompletos.' };
-    }
 
     try {
         // 3. Find or Create Execution (Lazy creation)
@@ -56,11 +60,6 @@ export async function updateChecklistItem(prevState: any, formData: FormData) {
         }
 
         // 4. Update or Create Checklist Item
-        // We handle this manually because we don't have a unique constraint on [executionId, itemId]
-
-        // CORRECTION: The above upsert logic is flawed because 'id' is uuid and we don't know it.
-        // Let's do findFirst -> Update OR Create properly.
-
         const existingItem = await prisma.checklist.findFirst({
             where: { executionId: execution.id, itemId }
         });
@@ -86,12 +85,11 @@ export async function updateChecklistItem(prevState: any, formData: FormData) {
 
         // 5. Handle File Uploads (Only if Done)
         if (done && files.length > 0 && files[0].size > 0 && savedItemId) {
-            // Fetch OS to get Protocolo
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
 
-            const baseUploadDir = 'C:\\Programas\\PROJETOS\\fotos';
+            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
             const uploadDir = path.join(baseUploadDir, protocol);
 
             await mkdir(uploadDir, { recursive: true });
@@ -102,7 +100,6 @@ export async function updateChecklistItem(prevState: any, formData: FormData) {
 
                 const buffer = Buffer.from(await file.arrayBuffer());
 
-                // Sanitize and Unique Filename
                 const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
                 const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
                 const fileName = `${uniqueSuffix}-${safeName}`;
@@ -111,7 +108,6 @@ export async function updateChecklistItem(prevState: any, formData: FormData) {
 
                 await writeFile(filePath, buffer);
 
-                // Save photo record linked to checklist
                 await prisma.photo.create({
                     data: {
                         executionId: execution.id,
@@ -130,10 +126,8 @@ export async function updateChecklistItem(prevState: any, formData: FormData) {
             const { getOSById: getOS } = await import('@/lib/excel');
             const osInfo = await getOS(osId);
             const proto = osInfo?.protocolo || osId;
-            // Resolve CTO name from Excel items
-            const ctoItem = osInfo?.items?.find((item: any) => String(item.id) === itemId);
+            const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
             const ctoName = ctoItem?.cto || itemId;
-            // Get technician name
             const tech = await prisma.technician.findUnique({ where: { id: execution.technicianId }, select: { name: true, fullName: true } });
             const techName = tech?.fullName || tech?.name || 'Técnico';
             await createNotification({
@@ -148,40 +142,32 @@ export async function updateChecklistItem(prevState: any, formData: FormData) {
         return { success: true, message: 'Item atualizado!' };
 
     } catch (error) {
-        console.error('Error updating checklist:', error);
-        return { message: 'Erro ao atualizar item.' };
+        logger.error('Error updating checklist', { error: String(error) });
+        return { success: false, message: 'Erro ao atualizar item.' };
     }
 }
 
 export async function deleteChecklistPhoto(photoId: string, osId: string) {
-    const session = cookies().get('session')?.value;
-    if (!session) return { message: 'Não autenticado.' };
-
-    try {
-        await jwtVerify(session, JWT_SECRET);
-    } catch {
-        return { message: 'Sessão inválida.' };
-    }
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { success: false, message: 'Não autenticado.' };
 
     try {
         const photo = await prisma.photo.findUnique({ where: { id: photoId } });
-        if (!photo) return { message: 'Foto não encontrada.' };
+        if (!photo) return { success: false, message: 'Foto não encontrada.' };
 
         // 1. Remove file
         let absolutePath = '';
         if (photo.path.startsWith('/api/images/')) {
-            // New path format: /api/images/PROTOCOL/FILENAME
             const relativePath = photo.path.replace('/api/images/', '');
-            absolutePath = path.join('C:\\Programas\\PROJETOS\\fotos', relativePath);
+            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
         } else {
-            // Old path format (fallback)
             absolutePath = path.join(process.cwd(), 'public', photo.path);
         }
 
         try {
             await unlink(absolutePath);
         } catch (e) {
-            console.error('Error deleting file (might be missing):', e);
+            logger.warn('Error deleting file (might be missing)', { error: String(e) });
         }
 
         // 2. Remove record
@@ -190,34 +176,28 @@ export async function deleteChecklistPhoto(photoId: string, osId: string) {
         revalidatePath(`/os/${osId}`);
         return { success: true, message: 'Foto removida.' };
     } catch (error) {
-        console.error('Error deleting photo:', error);
-        return { message: 'Erro ao remover foto.' };
+        logger.error('Error deleting photo', { error: String(error) });
+        return { success: false, message: 'Erro ao remover foto.' };
     }
 }
 
 export async function resetChecklistItem(osId: string, itemId: string) {
-    const session = cookies().get('session')?.value;
-    if (!session) return { message: 'Não autenticado.' };
-
-    try {
-        await jwtVerify(session, JWT_SECRET);
-    } catch {
-        return { message: 'Sessão inválida.' };
-    }
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { success: false, message: 'Não autenticado.' };
 
     try {
         const execution = await prisma.serviceExecution.findFirst({
             where: { osId }
         });
 
-        if (!execution) return { message: 'Execução não encontrada.' };
+        if (!execution) return { success: false, message: 'Execução não encontrada.' };
 
         const checklistItem = await prisma.checklist.findFirst({
             where: { executionId: execution.id, itemId },
             include: { photos: true }
         });
 
-        if (!checklistItem) return { message: 'Item não encontrado.' };
+        if (!checklistItem) return { success: false, message: 'Item não encontrado.' };
 
         // Delete associated photos (files + records)
         for (const photo of checklistItem.photos) {
@@ -225,13 +205,13 @@ export async function resetChecklistItem(osId: string, itemId: string) {
                 let absolutePath = '';
                 if (photo.path.startsWith('/api/images/')) {
                     const relativePath = photo.path.replace('/api/images/', '');
-                    absolutePath = path.join('C:\\Programas\\PROJETOS\\fotos', relativePath);
+                    absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
                 } else {
                     absolutePath = path.join(process.cwd(), 'public', photo.path);
                 }
                 await unlink(absolutePath);
             } catch (e) {
-                console.error('Error deleting photo file:', e);
+                logger.warn('Error deleting photo file', { error: String(e) });
             }
             await prisma.photo.delete({ where: { id: photo.id } });
         }
@@ -242,7 +222,7 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         revalidatePath(`/os/${osId}`);
         return { success: true, message: 'Item desmarcado.' };
     } catch (error) {
-        console.error('Error resetting checklist item:', error);
-        return { message: 'Erro ao desmarcar item.' };
+        logger.error('Error resetting checklist', { error: String(error) });
+        return { success: false, message: 'Erro ao desmarcar item.' };
     }
 }

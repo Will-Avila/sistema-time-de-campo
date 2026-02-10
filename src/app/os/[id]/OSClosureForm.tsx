@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CheckCircle2, XCircle, Camera, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
+import type { ActionResult } from '@/lib/types';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -32,7 +33,7 @@ export default function OSClosureForm({ osId }: { osId: string }) {
     const router = useRouter();
     const ref = useRef<HTMLFormElement>(null);
 
-    const [state, formAction] = useFormState(async (prev: any, formData: FormData) => {
+    const [state, formAction] = useFormState(async (prev: ActionResult | null, formData: FormData) => {
         const result = await closeOS(prev, formData);
         if (result.success) {
             toast('OS encerrada com sucesso!', 'success');

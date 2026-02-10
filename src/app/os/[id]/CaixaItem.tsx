@@ -9,16 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { CaixaItemData, ChecklistData } from '@/lib/types';
 
 interface CaixaItemProps {
-    item: any; // Excel Item
+    item: CaixaItemData;
     osId: string;
     technicianName?: string;
-    initialChecklist?: {
-        done: boolean;
-        power?: string | null;
-        photos: { id: string; path: string }[];
-    } | null;
+    initialChecklist?: ChecklistData | null;
 }
 
 type Status = 'DONE' | 'PENDING' | 'UNTOUCHED';

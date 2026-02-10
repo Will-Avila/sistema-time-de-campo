@@ -1,22 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { OS } from '@/lib/excel';
+import { useRouter } from 'next/navigation';
+import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Calendar, MapPin, Box } from 'lucide-react';
+import { Search, Filter, Calendar, MapPin, Box, Loader2 } from 'lucide-react';
 import { updatePreferences } from '@/actions/technician';
 
 interface OSListClientProps {
-    initialOSList: OS[];
+    initialOSList: EnrichedOS[];
     initialUf: string;
 }
 
 export default function OSListClient({ initialOSList, initialUf }: OSListClientProps) {
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
     const [searchTerm, setSearchTerm] = useState('');
+    const [loadingId, setLoadingId] = useState<string | null>(null);
+    const router = useRouter();
 
     // Get unique UFs
     const ufs = ['Todos', ...Array.from(new Set(initialOSList.map(os => os.uf).filter(Boolean))).sort()];
@@ -26,13 +28,27 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         const matchesSearch = searchTerm === '' ||
             os.protocolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             os.pop?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (os as any).technicianName?.toLowerCase().includes(searchTerm.toLowerCase());
+            os.technicianName?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesUF && matchesSearch;
     });
 
     function handleUFChange(newUF: string) {
         setSelectedUF(newUF);
         updatePreferences('lastUf', newUF);
+    }
+
+    /** Returns color classes for a date based on comparison with today */
+    function getDateColor(excelSerial?: number): string {
+        if (!excelSerial) return 'text-slate-700 dark:text-slate-300';
+        const dateMs = (excelSerial - 25569) * 86400000;
+        const date = new Date(dateMs);
+        const today = new Date();
+        // Compare only year/month/day
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
+        if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
+        return 'text-slate-700 dark:text-slate-300';
     }
 
     return (
@@ -85,8 +101,17 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                 {/* Grid */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {filteredList.map((os) => (
-                        <Link key={os.id} href={`/os/${os.id}`} className="block group h-full">
-                            <Card className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-900/50 dark:bg-slate-950 dark:border-slate-800 flex flex-col">
+                        <div
+                            key={os.id}
+                            onClick={() => { setLoadingId(os.id); router.push(`/os/${os.id}`); }}
+                            className="block group h-full cursor-pointer"
+                        >
+                            <Card className={`h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-900/50 dark:bg-slate-950 dark:border-slate-800 flex flex-col ${loadingId === os.id ? 'opacity-60 pointer-events-none' : ''}`}>
+                                {loadingId === os.id && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-slate-950/50 rounded-xl backdrop-blur-[1px]">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    </div>
+                                )}
                                 <CardHeader className="p-5 pb-3 space-y-0">
                                     <div className="flex justify-between items-start gap-4">
                                         <div className="space-y-1.5 flex-1">
@@ -100,17 +125,17 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <CardTitle className="text-base font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 dark:text-slate-100" title={os.pop}>
-                                                {os.pop}
+                                            <CardTitle className="text-base font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 dark:text-slate-100" title={os.pop || 'SEM POP'}>
+                                                {os.pop || 'SEM POP'}
                                             </CardTitle>
                                         </div>
                                         <Badge variant={
-                                            (os as any).executionStatus === 'Concluída' ? 'success' :
-                                                (os as any).executionStatus === 'Sem Execução' ? 'destructive' :
-                                                    (os as any).executionStatus === 'Em Execução' ? 'warning' :
+                                            os.executionStatus === 'Concluída' ? 'success' :
+                                                os.executionStatus === 'Sem Execução' ? 'destructive' :
+                                                    os.executionStatus === 'Em Execução' ? 'warning' :
                                                         'secondary'
                                         } className="shrink-0">
-                                            {(os as any).executionStatus || 'Pendente'}
+                                            {os.executionStatus || 'Pendente'}
                                         </Badge>
                                     </div>
                                 </CardHeader>
@@ -126,14 +151,14 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                 <span className="truncate text-xs">{os.cenario}</span>
                                             </div>
                                         )}
-                                        {(os as any).technicianName && (
+                                        {os.technicianName && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
-                                                <span className="text-xs">👤 {(os as any).technicianName}</span>
+                                                <span className="text-xs">👤 {os.technicianName}</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className={`grid ${(os as any).closedAt ? 'grid-cols-3' : 'grid-cols-2'} gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs mt-auto`}>
+                                    <div className={`grid ${os.closedAt ? 'grid-cols-3' : 'grid-cols-2'} gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs mt-auto`}>
                                         <div>
                                             <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Entrada</span>
                                             <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
@@ -143,24 +168,24 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                         </div>
                                         <div>
                                             <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
-                                            <div className={`flex items-center gap-1.5 font-medium ${os.rawPrevExec && os.rawPrevExec < 45000 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                            <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.rawPrevExec)}`}>
                                                 <Calendar className="h-3 w-3 text-slate-400" />
                                                 {os.dataPrevExec}
                                             </div>
                                         </div>
-                                        {(os as any).closedAt && (
+                                        {os.closedAt && (
                                             <div>
                                                 <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Encerrada</span>
                                                 <div className="flex items-center gap-1.5 font-medium text-green-700 dark:text-green-400">
                                                     <Calendar className="h-3 w-3 text-green-500" />
-                                                    {(os as any).closedAt}
+                                                    {os.closedAt}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
                                 </CardContent>
                             </Card>
-                        </Link>
+                        </div>
                     ))}
                 </div>
 

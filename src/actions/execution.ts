@@ -3,40 +3,41 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { requireAuth } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
+import type { ActionResult } from '@/lib/types';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-export async function closeOS(prevState: any, formData: FormData) {
-    // 1. Authenticate
-    const session = cookies().get('session')?.value;
-    if (!session) return { message: 'Não autenticado.' };
+const closeOSSchema = z.object({
+    osId: z.preprocess((v) => v ?? '', z.string().min(1, 'osId obrigatório')),
+    status: z.preprocess((v) => v ?? '', z.enum(['Concluída', 'Sem Execução'], { errorMap: () => ({ message: 'Status inválido' }) })),
+    obs: z.preprocess((v) => v ?? '', z.string().default('')),
+});
 
-    let technicianId = '';
-    try {
-        const { payload } = await jwtVerify(session, JWT_SECRET);
-        technicianId = payload.sub as string;
-    } catch {
-        return { message: 'Sessão inválida.' };
+export async function closeOS(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+    // 1. Authenticate (centralized)
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { success: false, message: 'Não autenticado.' };
+
+    const technicianId = session.id;
+
+    // 2. Validate input
+    const parsed = closeOSSchema.safeParse({
+        osId: formData.get('osId'),
+        status: formData.get('status'),
+        obs: formData.get('obs'),
+    });
+
+    if (!parsed.success) {
+        return { success: false, message: 'Dados inválidos: ' + parsed.error.issues.map(i => i.message).join(', ') };
     }
 
-    // 2. Extract Data
-    const osId = formData.get('osId') as string;
-    const status = formData.get('status') as string;
-    const obs = formData.get('obs') as string;
+    const { osId, status, obs } = parsed.data;
     const files = formData.getAll('photos') as File[];
-
-    if (!osId || !status) {
-        return { message: 'Dados incompletos.' };
-    }
 
     try {
         // 3. Save to DB
@@ -44,21 +45,19 @@ export async function closeOS(prevState: any, formData: FormData) {
             data: {
                 osId,
                 technicianId,
-                status: 'DONE', // Always DONE in DB context, but message/obs differentiates
-                power: '', // Not used yet
+                status: 'DONE',
+                power: '',
                 obs: `Status: ${status}\n${obs}`,
             }
         });
 
         // 4. Handle File Uploads
         if (files.length > 0 && files[0].size > 0) {
-            // Fetch OS to get Protocolo
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
 
-            // External base path
-            const baseUploadDir = 'C:\\Programas\\PROJETOS\\fotos';
+            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
             const uploadDir = path.join(baseUploadDir, protocol);
 
             await mkdir(uploadDir, { recursive: true });
@@ -68,15 +67,12 @@ export async function closeOS(prevState: any, formData: FormData) {
                 if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
 
                 const buffer = Buffer.from(await file.arrayBuffer());
-                // Sanitize filename
                 const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
                 const fileName = `${Date.now()}-${safeName}`;
                 const filePath = path.join(uploadDir, fileName);
 
                 await writeFile(filePath, buffer);
 
-                // Save photo record with API URL
-                // URL: /api/images/[PROTOCOL]/[FILENAME]
                 await prisma.photo.create({
                     data: {
                         executionId: execution.id,
@@ -95,7 +91,6 @@ export async function closeOS(prevState: any, formData: FormData) {
         const { getOSById: getOS } = await import('@/lib/excel');
         const osInfo = await getOS(osId);
         const proto = osInfo?.protocolo || osId;
-        // Get technician name
         const tech = await prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true, fullName: true } });
         const techName = tech?.fullName || tech?.name || 'Técnico';
         await createNotification({
@@ -109,7 +104,7 @@ export async function closeOS(prevState: any, formData: FormData) {
         return { success: true, message: 'OS encerrada com sucesso!' };
 
     } catch (error) {
-        console.error('Error closing OS:', error);
-        return { message: 'Erro ao salvar OS. Tente novamente.' };
+        logger.error('Error closing OS', { error: String(error) });
+        return { success: false, message: 'Erro ao salvar OS. Tente novamente.' };
     }
 }

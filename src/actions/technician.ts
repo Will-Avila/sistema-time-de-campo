@@ -1,42 +1,42 @@
 'use server';
 
 import { prisma } from '@/lib/db';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { revalidatePath } from 'next/cache';
+import { requireAuth, requireAdmin } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
-
-export async function updatePreferences(key: 'theme' | 'lastUf', value: string) {
-    const session = cookies().get('session')?.value;
-    if (!session) return { message: 'Não autenticado.' };
-
-    try {
-        const { payload } = await jwtVerify(session, JWT_SECRET);
-        const technicianId = payload.sub as string;
-
-        await prisma.technician.update({
-            where: { id: technicianId },
-            data: { [key]: value }
-        });
-
-        revalidatePath('/os');
-        return { success: true };
-    } catch (error) {
-        console.error('Error updating preferences:', error);
-        return { message: 'Erro ao salvar preferência.' };
-    }
-}
+import { logger } from '@/lib/logger';
 
 // Helper for username validation
 function isValidUsername(username: string) {
     return /^[a-zA-Z0-9]+$/.test(username);
 }
 
+export async function updatePreferences(key: 'theme' | 'lastUf', value: string) {
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { message: 'Não autenticado.' };
+
+    try {
+        await prisma.technician.update({
+            where: { id: session.id },
+            data: { [key]: value }
+        });
+
+        revalidatePath('/os');
+        return { success: true };
+    } catch (error) {
+        logger.error('Error updating preferences', { error: String(error) });
+        return { message: 'Erro ao salvar preferência.' };
+    }
+}
+
 export async function createTechnician(prevState: any, formData: FormData) {
+    // Auth guard: only admins can create technicians
+    try {
+        await requireAdmin();
+    } catch {
+        return { message: 'Não autorizado.' };
+    }
+
     const name = formData.get('name') as string;
     const fullName = formData.get('fullName') as string;
     const phone = formData.get('phone') as string;
@@ -72,7 +72,7 @@ export async function createTechnician(prevState: any, formData: FormData) {
         revalidatePath('/admin/technicians');
         return { success: true, message: `${isAdmin ? 'Admin' : 'Técnico'} "${name}" criado com sucesso!` };
     } catch (error: any) {
-        console.error('Error creating technician:', error);
+        logger.error('Error creating technician', { error: String(error) });
         if (error.code === 'P2002') {
             return { message: 'Já existe um usuário com este nome.' };
         }
@@ -84,19 +84,33 @@ export async function createTechnician(prevState: any, formData: FormData) {
 }
 
 export async function deleteTechnician(id: string) {
+    // Auth guard: only admins can delete technicians
+    try {
+        await requireAdmin();
+    } catch {
+        return { message: 'Não autorizado.' };
+    }
+
     try {
         await prisma.technician.delete({ where: { id } });
         revalidatePath('/admin/technicians');
         return { success: true };
     } catch (error) {
-        console.error('Error deleting technician:', error);
+        logger.error('Error deleting technician', { error: String(error) });
         return { message: 'Erro ao remover usuário.' };
     }
 }
 
 export async function updateTechnician(id: string, data: { name?: string; fullName?: string; phone?: string; password?: string; isAdmin?: boolean }) {
+    // Auth guard: only admins can update technicians
     try {
-        const updateData: any = {};
+        await requireAdmin();
+    } catch {
+        return { message: 'Não autorizado.' };
+    }
+
+    try {
+        const updateData: Record<string, string | boolean> = {};
 
         if (data.name) {
             if (!isValidUsername(data.name)) {
@@ -117,24 +131,33 @@ export async function updateTechnician(id: string, data: { name?: string; fullNa
         revalidatePath('/admin/technicians');
         return { success: true, message: 'Usuário atualizado!' };
     } catch (error) {
-        console.error('Error updating technician:', error);
+        logger.error('Error updating technician', { error: String(error) });
         return { message: 'Erro ao atualizar usuário.' };
     }
 }
 
 export async function getTechnicians() {
     return prisma.technician.findMany({
+        select: {
+            id: true,
+            name: true,
+            fullName: true,
+            phone: true,
+            isAdmin: true,
+            createdAt: true,
+            updatedAt: true,
+            // password is explicitly excluded
+        },
         orderBy: { createdAt: 'desc' },
     });
 }
+
 export async function updateProfile(data: { name?: string; fullName?: string; phone?: string; password?: string }) {
-    const session = cookies().get('session')?.value;
+    const session = await requireAuth().catch(() => null);
     if (!session) return { message: 'Não autenticado.' };
 
     try {
-        const { payload } = await jwtVerify(session, JWT_SECRET);
-        const id = payload.sub as string;
-        const updateData: any = {};
+        const updateData: Record<string, string> = {};
 
         if (data.name) {
             if (!isValidUsername(data.name)) {
@@ -144,7 +167,7 @@ export async function updateProfile(data: { name?: string; fullName?: string; ph
             const existing = await prisma.technician.findFirst({
                 where: {
                     name: data.name,
-                    NOT: { id }
+                    NOT: { id: session.id }
                 }
             });
             if (existing) {
@@ -160,12 +183,12 @@ export async function updateProfile(data: { name?: string; fullName?: string; ph
             updateData.password = await bcrypt.hash(data.password, 10);
         }
 
-        await prisma.technician.update({ where: { id }, data: updateData });
+        await prisma.technician.update({ where: { id: session.id }, data: updateData });
         revalidatePath('/profile');
-        revalidatePath('/os'); // Header might change
+        revalidatePath('/os');
         return { success: true, message: 'Perfil atualizado com sucesso!' };
     } catch (error) {
-        console.error('Error updating profile:', error);
+        logger.error('Error updating profile', { error: String(error) });
         return { message: 'Erro ao atualizar perfil.' };
     }
 }

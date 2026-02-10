@@ -1,4 +1,4 @@
-import { getOSById } from '@/lib/excel';
+import { getOSById, CaixaItem as CaixaItemType } from '@/lib/excel';
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -63,7 +63,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                         Nenhuma caixa encontrada para esta OS.
                     </div>
                 ) : (
-                    os.items.map((item: any, idx: number) => {
+                    os.items.map((item: CaixaItemType, idx: number) => {
                         // Use ID from item or fallback to CTO/Index combination to be unique
                         const itemId = item.id || item.cto;
                         const checklistItem = checklistMap.get(itemId);

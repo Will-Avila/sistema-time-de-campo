@@ -2,71 +2,60 @@
 
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getSession, requireAdmin } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
+type NotificationType = 'CHECKLIST' | 'OS_CLOSE';
 
 export async function createNotification(data: {
-    type: string;
+    type: NotificationType;
     title: string;
     message: string;
     technicianId?: string;
     osId?: string;
 }) {
     try {
-        console.log('[NOTIF] Creating notification:', JSON.stringify(data));
-        const created = await prisma.notification.create({
+        logger.info('Creating notification', { type: data.type, title: data.title });
+        await prisma.notification.create({
             data: {
                 ...data,
                 read: false,
             }
         });
-        console.log('[NOTIF] Created successfully:', created.id);
         return { success: true };
     } catch (error) {
-        console.error('[NOTIF] Error creating notification:', error);
+        logger.error('Error creating notification', { error: String(error) });
         return { success: false };
     }
 }
 
 export async function getUnreadNotifications() {
-    const session = cookies().get('session')?.value;
-    if (!session) {
-        console.log('[NOTIF] No session found');
-        return [];
-    }
-
-    try {
-        const { payload } = await jwtVerify(session, JWT_SECRET);
-        console.log('[NOTIF] JWT payload:', JSON.stringify(payload));
-        if (!payload.isAdmin) {
-            console.log('[NOTIF] User is not admin, skipping notifications');
-            return [];
-        }
-    } catch (e) {
-        console.error('[NOTIF] JWT verification failed:', e);
-        return [];
-    }
+    const session = await getSession();
+    if (!session) return [];
+    if (!session.isAdmin) return [];
 
     try {
         const notifications = await prisma.notification.findMany({
             where: { read: false },
             orderBy: { createdAt: 'desc' },
             take: 20,
-            include: { technician: true }
+            include: { technician: { select: { name: true, fullName: true } } }
         });
-        console.log('[NOTIF] Found', notifications.length, 'unread notifications');
         return notifications;
     } catch (error) {
-        console.error('[NOTIF] Error fetching notifications:', error);
+        logger.error('Error fetching notifications', { error: String(error) });
         return [];
     }
 }
 
 export async function markAsRead(id: string) {
+    // Auth guard: only admins can manage notifications
+    try {
+        await requireAdmin();
+    } catch {
+        return { success: false, message: 'Não autorizado.' };
+    }
+
     try {
         await prisma.notification.update({
             where: { id },
@@ -75,11 +64,18 @@ export async function markAsRead(id: string) {
         revalidatePath('/admin');
         return { success: true };
     } catch (error) {
-        return { success: false };
+        return { success: false, message: 'Erro ao marcar notificação.' };
     }
 }
 
 export async function markAllAsRead() {
+    // Auth guard: only admins can manage notifications
+    try {
+        await requireAdmin();
+    } catch {
+        return { success: false, message: 'Não autorizado.' };
+    }
+
     try {
         await prisma.notification.updateMany({
             where: { read: false },
@@ -88,6 +84,6 @@ export async function markAllAsRead() {
         revalidatePath('/admin');
         return { success: true };
     } catch (error) {
-        return { success: false };
+        return { success: false, message: 'Erro ao marcar notificações.' };
     }
 }

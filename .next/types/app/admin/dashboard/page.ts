@@ -1,4 +1,4 @@
-// File: C:\Programas\PROJETOS\teste\src\app\admin\dashboard\page.tsx
+// File: C:\Programas\PROJETOS\sistema-time-de-campo\src\app\admin\dashboard\page.tsx
 import * as entry from '../../../../../src/app/admin/dashboard/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

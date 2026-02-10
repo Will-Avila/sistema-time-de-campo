@@ -2,20 +2,15 @@
 
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { cookies } from 'next/headers';
-import { SignJWT } from 'jose';
-import bcrypt from 'bcryptjs';
 import { logger } from '@/lib/logger';
 import { redirect } from 'next/navigation';
+import { createToken, setSessionCookie, clearSessionCookie } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 const loginSchema = z.object({
     username: z.string().min(1, 'Usuário é obrigatório'),
     password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
 });
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
 
 export async function login(prevState: any, formData: FormData) {
     const rawData = {
@@ -51,39 +46,29 @@ export async function login(prevState: any, formData: FormData) {
             return { message: 'Credenciais inválidas.' };
         }
 
-        // Generate JWT
-        const token = await new SignJWT({
-            sub: technician.id,
+        // Generate JWT and set cookie using centralized auth
+        const token = await createToken({
+            id: technician.id,
             username: technician.name,
             isAdmin: technician.isAdmin,
-        })
-            .setProtectedHeader({ alg: 'HS256' })
-            .setIssuedAt()
-            .setExpirationTime('24h') // Token expires in 24 hours
-            .sign(JWT_SECRET);
-
-        // Set Cookie
-        cookies().set('session', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 60 * 60 * 24, // 24 hours
         });
+
+        setSessionCookie(token);
 
         logger.info(`Login successful`, { username, technicianId: technician.id });
 
+        // Redirect based on role — reuse already-fetched data (no extra query)
+        redirect(technician.isAdmin ? '/admin/dashboard' : '/os');
+
     } catch (error) {
+        // redirect() throws a special error in Next.js — rethrow it
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') throw error;
         logger.error(`Login error`, { error: String(error) });
         return { message: 'Erro interno no servidor.' };
     }
-
-    // Role-based redirect
-    const tech = await prisma.technician.findUnique({ where: { name: rawData.username as string }, select: { isAdmin: true } });
-    redirect(tech?.isAdmin ? '/admin/dashboard' : '/os');
 }
 
 export async function logout() {
-    cookies().delete('session');
+    clearSessionCookie();
     redirect('/login');
 }

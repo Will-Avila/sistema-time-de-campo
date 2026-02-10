@@ -1,43 +1,27 @@
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
 import { Header } from './Header';
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'default-secret-change-me-in-prod'
-);
+import { getSession } from '@/lib/auth';
 
 export async function HeaderServer() {
-    const session = cookies().get('session')?.value;
+    const session = await getSession();
     let username = 'Técnico';
     let theme = 'light';
     let isAdmin = false;
 
     if (session) {
-        try {
-            const { payload } = await jwtVerify(session, JWT_SECRET);
-            if (payload.username) {
-                username = payload.username as string;
+        username = session.username;
+        isAdmin = session.isAdmin;
+
+        // Fetch full profile data (theme, fullName)
+        const tech = await prisma.technician.findUnique({
+            where: { id: session.id },
+            select: { theme: true, fullName: true, name: true }
+        });
+        if (tech) {
+            theme = tech.theme || 'light';
+            if (tech.fullName) {
+                username = tech.fullName;
             }
-            if (payload.isAdmin) {
-                isAdmin = true;
-            }
-            if (payload.sub) {
-                const tech = await prisma.technician.findUnique({
-                    where: { id: payload.sub as string },
-                    select: { theme: true, fullName: true, name: true }
-                });
-                if (tech) {
-                    theme = tech.theme || 'light';
-                    if (tech.fullName) {
-                        username = tech.fullName;
-                    } else if (tech.name) {
-                        username = tech.name;
-                    }
-                }
-            }
-        } catch (e) {
-            // Invalid session
         }
     }
 

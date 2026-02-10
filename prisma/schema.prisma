@@ -36,6 +36,8 @@ model ServiceExecution {
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+
+  @@index([osId])
 }
 
 
@@ -57,6 +59,8 @@ model Checklist {
   done        Boolean          @default(false)
   power       String?          // db/dBm value
   photos      Photo[]
+
+  @@unique([executionId, itemId])
 }
 
 model Notification {
@@ -71,4 +75,6 @@ model Notification {
   technician   Technician? @relation(fields: [technicianId], references: [id])
   
   osId         String?     // Optional link to OS
+
+  @@index([read, createdAt])
 }

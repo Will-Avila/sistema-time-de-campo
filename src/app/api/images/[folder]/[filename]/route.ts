@@ -15,7 +15,7 @@ export async function GET(
         return new NextResponse('Invalid path', { status: 400 });
     }
 
-    const basePath = 'C:\\Programas\\PROJETOS\\fotos';
+    const basePath = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
     const filePath = path.join(basePath, folder, filename);
 
     if (!existsSync(filePath)) {
