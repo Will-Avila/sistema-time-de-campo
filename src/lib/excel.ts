@@ -15,6 +15,10 @@ export interface OS {
     cenario: string;
     protocolo: string;
     totalCaixas: number;
+    // Extra Info from DB
+    condominio?: string;
+    descricao?: string;
+    anexos?: { id: string; name: string; path: string; size: number; type: string }[];
 }
 
 export interface CaixaItem {
@@ -28,7 +32,7 @@ export interface CaixaItem {
     done: boolean;
 }
 
-export const ALLOWED_STATUSES = ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluído', 'concluido', 'encerrada', 'cancelado'];
+export const ALLOWED_STATUSES = ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída', 'concluido', 'encerrada', 'cancelado'];
 
 const EXCEL_PATH = process.env.EXCEL_PATH || 'C:\\Programas\\PROJETOS\\planilha\\Os.xlsx';
 
@@ -94,13 +98,22 @@ export async function getExcelData() {
     return readExcelData();
 }
 
+import { prisma } from './db';
+
 export async function getAllOS(): Promise<OS[]> {
     const { osData, caixaData } = await readExcelData();
+
+    // Fetch DB Extras for all
+    const allExtras = await prisma.oSExtraInfo.findMany({
+        include: { attachments: true }
+    });
+    const extraMap = new Map(allExtras.map(e => [e.osId, e]));
 
     return osData
         .map((row) => {
             const osId = String(row.IdOs || row.ID || '');
             const totalCaixas = caixaData.filter((c) => String(c.OS) === osId).length;
+            const extra = extraMap.get(osId);
 
             return {
                 id: osId,
@@ -114,7 +127,10 @@ export async function getAllOS(): Promise<OS[]> {
                 rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
                 cenario: String(row.Cenario || ''),
                 protocolo: String(row.Protocolo || ''),
-                totalCaixas
+                totalCaixas,
+                condominio: extra?.condominio || undefined,
+                descricao: extra?.descricao || undefined,
+                anexos: extra?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
             };
         })
         .filter((os) => {
@@ -135,6 +151,12 @@ export async function getOSById(id: string) {
 
     const osId = String(osRow.IdOs || osRow.ID);
     const pop = String(osRow.POP || osRow.Pop);
+
+    // Fetch Extra Info
+    const extra = await prisma.oSExtraInfo.findUnique({
+        where: { osId },
+        include: { attachments: true }
+    });
 
     const items: CaixaItem[] = caixaData
         .filter((row) => String(row.OS) === osId)
@@ -171,6 +193,10 @@ export async function getOSById(id: string) {
         dataConclusao: formatExcelDate(osRow['Conclusao']),
         rawConclusao: typeof osRow['Conclusao'] === 'number' ? osRow['Conclusao'] : 0,
         cenario: String(osRow.Cenario || ''),
-        items
+        totalCaixas: items.length, // Added to fix missing property since we are constructing result manually
+        items,
+        condominio: extra?.condominio || undefined,
+        descricao: extra?.descricao || undefined,
+        anexos: extra?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
     };
 }

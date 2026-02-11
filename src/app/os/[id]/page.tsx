@@ -2,7 +2,7 @@ import { getOSById } from '@/lib/excel';
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download } from 'lucide-react';
 import Image from 'next/image';
 import OSClosureForm from './OSClosureForm';
 import { OSPhotosGallery } from './OSPhotosGallery';
@@ -10,6 +10,7 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { getSession } from '@/lib/auth';
 
 interface PageProps {
     params: { id: string };
@@ -17,6 +18,8 @@ interface PageProps {
 
 export default async function OSDetailPage({ params }: PageProps) {
     const os = await getOSById(params.id);
+    const session = await getSession();
+    const isAdmin = session?.isAdmin;
 
     if (!os) return notFound();
 
@@ -25,12 +28,12 @@ export default async function OSDetailPage({ params }: PageProps) {
         include: { technician: true, photos: true }
     });
 
+    const excelStatusLower = os.status.toLowerCase();
+    const isExcelDone = excelStatusLower === 'concluído' || excelStatusLower === 'concluido' || excelStatusLower === 'encerrada';
+    const isExcelEncerrada = excelStatusLower === 'encerrada';
+
     // Helper to get status color/label - Matching OSListClient precisely
     const getStatusInfo = () => {
-        const excelStatusLower = os.status.toLowerCase();
-        const isExcelEncerrada = excelStatusLower === 'encerrada';
-        const isExcelDone = excelStatusLower === 'concluído' || excelStatusLower === 'concluido' || excelStatusLower === 'encerrada';
-
         let label = os.status || 'Pendente';
         let variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "orange" | "light-green" = "secondary";
         let icon = AlertTriangle;
@@ -118,6 +121,17 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     </Badge>
                                 )}
                             </div>
+
+                            {/* Condo Name above POP */}
+                            {os.condominio && (
+                                <div className="flex items-center gap-2 mb-0.5 mt-1">
+                                    <Building className="h-4 w-4 text-slate-500" />
+                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+                                        {os.condominio}
+                                    </span>
+                                </div>
+                            )}
+
                             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">{os.pop}</h1>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                                 <Badge variant={statusInfo.variant} className="gap-1.5">
@@ -132,13 +146,22 @@ export default async function OSDetailPage({ params }: PageProps) {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        {isAdmin && (
+                            <Link href={`/os/${os.id}/admin`}>
+                                <Button variant="outline" size="lg" className="w-full gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                    <FileText className="h-4 w-4" />
+                                    Editar Info.
+                                </Button>
+                            </Link>
+                        )}
+
                         <Link href={`/os/${os.id}/execution`} className="w-full sm:w-auto">
                             <Button size="lg" className="w-full gap-2 shadow-lg bg-blue-600 hover:bg-blue-700">
                                 <Wrench className="h-4 w-4" />
-                                {execution?.status === 'DONE' ? 'Ver Execução' : 'Iniciar Execução'}
+                                {(execution?.status === 'DONE' || isExcelDone || excelStatusLower.includes('cancelad')) ? 'CAIXAS' : 'Iniciar Execução'}
                             </Button>
                         </Link>
-                        {(!execution || execution.status !== 'DONE') && (
+                        {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && !isExcelDone && (
                             <OSClosureForm
                                 osId={os.id}
                                 triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
@@ -174,23 +197,34 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <div>
                                 <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Cenário</span>
                                 <div className="flex items-start gap-2 mt-1">
-                                    <MapPin className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                                    <p className="text-sm text-slate-700 dark:text-slate-300">{os.id === os.pop ? 'Endereço não especificado no arquivo' : os.id}</p>
+                                    <Map className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+                                    <p className="text-sm text-slate-700 dark:text-slate-300">{os.cenario || 'Não especificado'}</p>
                                 </div>
                             </div>
+
+                            {os.condominio && (
+                                <div>
+                                    <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Condomínio</span>
+                                    <div className="flex items-start gap-2 mt-1">
+                                        <Building className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{os.condominio}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             {execution?.technician && (
                                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
                                     <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Técnico Responsável</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         <User className="h-4 w-4 text-slate-400" />
-                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{execution.technician.name}</p>
+                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{execution.technician.fullName || execution.technician.name}</p>
                                     </div>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
 
+                    {/* Dates Card + Extra Info */}
                     {/* Dates Card */}
                     <Card className="shadow-sm">
                         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -200,13 +234,6 @@ export default async function OSDetailPage({ params }: PageProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4 space-y-5">
-                            <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
-                                <span className="text-xs font-bold text-muted-foreground/70 uppercase">Status na Base</span>
-                                <Badge variant="outline" className="bg-white dark:bg-slate-950 font-medium">
-                                    {os.status || 'Não informado'}
-                                </Badge>
-                            </div>
-
                             <div className="grid grid-cols-2 gap-y-5 gap-x-4">
                                 <div>
                                     <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Entrada</span>
@@ -253,6 +280,51 @@ export default async function OSDetailPage({ params }: PageProps) {
                         </CardContent>
                     </Card>
 
+                    {/* Extra Info: Description & Attachments */}
+                    {(os.descricao || (os.anexos && os.anexos.length > 0)) && (
+                        <Card className="shadow-sm border-l-4 border-l-violet-500 md:col-span-2">
+                            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                                    <FileText className="h-4 w-4 text-violet-500" />
+                                    Informações Adicionais
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4 space-y-4">
+                                {os.descricao && (
+                                    <div>
+                                        <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Descrição</span>
+                                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{os.descricao}</p>
+                                    </div>
+                                )}
+
+                                {os.anexos && os.anexos.length > 0 && (
+                                    <div className={os.descricao ? "pt-4 border-t border-slate-100 dark:border-slate-800" : ""}>
+                                        <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Anexos</span>
+                                        <div className="mt-2 grid grid-cols-1 gap-2">
+                                            {os.anexos.map((file) => (
+                                                <a
+                                                    key={file.id}
+                                                    href={file.path}
+                                                    download
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                                                >
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        <Paperclip className="h-4 w-4 text-slate-400 group-hover:text-violet-500 transition-colors" />
+                                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{file.name}</span>
+                                                        <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>
+                                                    </div>
+                                                    <Download className="h-4 w-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Closure Details (Moved from Execution Page) */}
                     {execution && execution.status === 'DONE' && (
                         <Card className="shadow-sm md:col-span-2 border-l-4 border-l-emerald-500">
@@ -260,6 +332,11 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
                                     <CheckCircle className="h-4 w-4 text-emerald-500" />
                                     Detalhes do Encerramento (Técnico)
+                                    {execution.updatedAt && (
+                                        <span className="ml-auto text-xs font-normal text-muted-foreground">
+                                            {execution.updatedAt.toLocaleString('pt-BR')}
+                                        </span>
+                                    )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-4 space-y-4">
@@ -270,8 +347,12 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     </div>
                                 </div>
 
-                                {execution.photos.length > 0 && (
-                                    <OSPhotosGallery photos={execution.photos} />
+                                {execution.photos.filter(p => !p.checklistId).length > 0 && (
+                                    <OSPhotosGallery
+                                        photos={execution.photos.filter(p => !p.checklistId)}
+                                        osId={os.id}
+                                        allowDelete={true}
+                                    />
                                 )}
                             </CardContent>
                         </Card>

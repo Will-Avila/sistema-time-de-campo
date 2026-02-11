@@ -108,3 +108,37 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
         return { success: false, message: 'Erro ao salvar OS. Tente novamente.' };
     }
 }
+
+export async function deleteExecutionPhoto(photoId: string, osId: string) {
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { success: false, message: 'Não autenticado.' };
+
+    try {
+        const photo = await prisma.photo.findUnique({ where: { id: photoId } });
+        if (!photo) return { success: false, message: 'Foto não encontrada.' };
+
+        // 1. Remove file
+        let absolutePath = '';
+        if (photo.path.startsWith('/api/images/')) {
+            const relativePath = photo.path.replace('/api/images/', '');
+            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
+        } else {
+            absolutePath = path.join(process.cwd(), 'public', photo.path);
+        }
+
+        try {
+            await import('fs/promises').then(fs => fs.unlink(absolutePath));
+        } catch (e) {
+            logger.warn('Error deleting file (might be missing)', { error: String(e) });
+        }
+
+        // 2. Remove record
+        await prisma.photo.delete({ where: { id: photoId } });
+
+        revalidatePath(`/os/${osId}`);
+        return { success: true, message: 'Foto removida.' };
+    } catch (error) {
+        logger.error('Error deleting photo', { error: String(error) });
+        return { success: false, message: 'Erro ao remover foto.' };
+    }
+}

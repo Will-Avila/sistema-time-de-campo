@@ -4,18 +4,55 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { ImageViewer } from '@/components/ui/image-viewer';
 
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Trash2 } from 'lucide-react';
+import { deleteExecutionPhoto } from '@/actions/execution';
+import { toast } from '@/components/ui/toast';
+
 interface Photo {
     id: string;
     path: string;
+    checklistId?: string | null;
 }
 
 interface OSPhotosGalleryProps {
     photos: Photo[];
+    osId: string;
+    allowDelete?: boolean;
 }
 
-export function OSPhotosGallery({ photos }: OSPhotosGalleryProps) {
+export function OSPhotosGallery({ photos, osId, allowDelete = false }: OSPhotosGalleryProps) {
     const [viewerOpen, setViewerOpen] = useState(false);
     const [initialIndex, setInitialIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const [confirmAction, setConfirmAction] = useState<{
+        title: string;
+        message: string;
+        action: () => void;
+    } | null>(null);
+
+    function requestDeletePhoto(photoId: string) {
+        setConfirmAction({
+            title: 'Excluir Foto',
+            message: 'Tem certeza que deseja apagar esta foto permanently? Esta ação não pode ser desfeita.',
+            action: () => executeDeletePhoto(photoId),
+        });
+    }
+
+    async function executeDeletePhoto(photoId: string) {
+        setConfirmAction(null);
+        setIsLoading(true);
+
+        const result = await deleteExecutionPhoto(photoId, osId);
+
+        if (result.success) {
+            toast('Foto removida.', 'success');
+        } else {
+            toast(result.message || 'Erro ao remover foto.', 'error');
+        }
+        setIsLoading(false);
+    }
 
     if (photos.length === 0) return null;
 
@@ -41,6 +78,20 @@ export function OSPhotosGallery({ photos }: OSPhotosGalleryProps) {
                                 fill
                                 className="object-cover transition-transform hover:scale-105"
                             />
+                            {allowDelete && (
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        requestDeletePhoto(photo.id);
+                                    }}
+                                    className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                                    title="Excluir foto"
+                                    disabled={isLoading}
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -51,6 +102,16 @@ export function OSPhotosGallery({ photos }: OSPhotosGalleryProps) {
                 onClose={() => setViewerOpen(false)}
                 images={photos.map(p => p.path)}
                 initialIndex={initialIndex}
+            />
+
+            <ConfirmModal
+                open={!!confirmAction}
+                title={confirmAction?.title || ''}
+                message={confirmAction?.message || ''}
+                variant="danger"
+                confirmLabel="Sim, excluir"
+                onConfirm={() => confirmAction?.action()}
+                onCancel={() => setConfirmAction(null)}
             />
         </>
     );

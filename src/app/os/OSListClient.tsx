@@ -6,7 +6,7 @@ import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Calendar, MapPin, Box, Loader2 } from 'lucide-react';
+import { Search, Filter, Calendar, MapPin, Box, Loader2, Building } from 'lucide-react';
 import { updatePreferences } from '@/actions/technician';
 
 interface OSListClientProps {
@@ -35,9 +35,13 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         const matchesSearch = searchTerm === '' ||
             os.protocolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             os.pop?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            os.technicianName?.toLowerCase().includes(searchTerm.toLowerCase());
+            os.technicianName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            os.condominio?.toLowerCase().includes(searchTerm.toLowerCase()); // Include condo in search
+
         const allowedStatuses = STATUS_GROUPS[statusFilter];
+        // If allowedStatuses is undefined (Todas), match everything. Otherwise check inclusion.
         const matchesStatus = !allowedStatuses || allowedStatuses.includes(os.status.toLowerCase());
+
         return matchesUF && matchesSearch && matchesStatus;
     }).sort((a, b) => {
         // Special sort for 'Concluídas': most recent first
@@ -182,6 +186,17 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                     </Badge>
                                                 )}
                                             </div>
+
+                                            {/* Condo Name */}
+                                            {os.condominio && (
+                                                <div className="flex items-center gap-1.5 mb-0.5 mt-1">
+                                                    <Building className="h-3.5 w-3.5 text-slate-500" />
+                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide truncate">
+                                                        {os.condominio}
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             <CardTitle className="text-base font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 dark:text-slate-100" title={os.pop || 'SEM POP'}>
                                                 {os.pop || 'SEM POP'}
                                             </CardTitle>

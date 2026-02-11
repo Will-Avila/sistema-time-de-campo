@@ -78,3 +78,26 @@ model Notification {
 
   @@index([read, createdAt])
 }
+
+model OSExtraInfo {
+  id          String         @id @default(uuid())
+  osId        String         @unique
+  condominio  String?
+  descricao   String?
+  
+  attachments OSAttachment[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model OSAttachment {
+  id            String       @id @default(uuid())
+  extraInfoId   String
+  extraInfo     OSExtraInfo  @relation(fields: [extraInfoId], references: [id], onDelete: Cascade)
+  name          String
+  path          String
+  type          String       // MIME type or extension
+  size          Int          // Bytes
+  createdAt     DateTime     @default(now())
+}

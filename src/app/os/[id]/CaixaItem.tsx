@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { updateChecklistItem, deleteChecklistPhoto, resetChecklistItem } from '@/actions/checklist';
+import { useState, useRef } from 'react';
+import { updateChecklistItem, deleteChecklistPhoto, resetChecklistItem, uploadChecklistPhotos } from '@/actions/checklist';
 import Image from 'next/image';
 import { Card, CardHeader } from '@/components/ui/card';
-import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2 } from 'lucide-react';
+import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2, Camera, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageViewer } from '@/components/ui/image-viewer';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,10 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
     const [status, setStatus] = useState<Status>(initialStatus);
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [showPhotos, setShowPhotos] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     // Viewer state
     const [viewerOpen, setViewerOpen] = useState(false);
@@ -134,6 +137,33 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
         setIsLoading(false);
     }
 
+    async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('osId', osId);
+        formData.append('itemId', String(item.id || item.cto));
+
+        Array.from(e.target.files).forEach(file => {
+            formData.append('photos', file);
+        });
+
+        const result = await uploadChecklistPhotos(formData);
+
+        if (result.success) {
+            toast('Fotos adicionadas!', 'success');
+            // Removed auto-pending status update as requested
+        } else {
+            toast(result.message || 'Erro ao enviar fotos.', 'error');
+        }
+        setIsUploading(false);
+        // Reset input
+        e.target.value = '';
+    }
+
+    // Styles based on status
+
     // Styles based on status
     const getStatusColor = () => {
         if (status === 'DONE') return 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800';
@@ -148,13 +178,34 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">{item.cto}</h3>
 
-                    {/* Interactive Switch Replacement */}
-                    <button
-                        onClick={() => setIsOpen(true)}
-                        className={`group relative flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${status === 'DONE' ? 'bg-primary border-primary' : (status === 'PENDING' ? 'bg-destructive border-destructive' : 'bg-slate-200 border-transparent')}`}
-                    >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${status === 'DONE' ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            onClick={() => document.getElementById(`file-upload-${item.cto}`)?.click()}
+                            disabled={isLoading || isUploading}
+                            title="Adicionar Fotos"
+                        >
+                            <Camera className="h-5 w-5" />
+                        </Button>
+                        <input
+                            type="file"
+                            id={`file-upload-${item.cto}`}
+                            className="hidden"
+                            onChange={handlePhotoUpload}
+                            multiple
+                            accept="image/*"
+                        />
+
+                        {/* Interactive Switch Replacement */}
+                        <button
+                            onClick={() => setIsOpen(true)}
+                            className={`group relative flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${status === 'DONE' ? 'bg-primary border-primary' : (status === 'PENDING' ? 'bg-destructive border-destructive' : 'bg-slate-200 border-transparent')}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${status === 'DONE' ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Sub-info */}
@@ -167,6 +218,12 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                         <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
                         <span className="line-clamp-2">{item.endereco}</span>
                     </div>
+                    {(item.lat && item.long) && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Globe className="h-4 w-4 shrink-0" />
+                            <span>{item.lat}, {item.long}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Result Data (Compact) */}
@@ -190,7 +247,8 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                     </div>
                 )}
 
-                {showPhotos && initialChecklist?.photos && (
+                {/* Always show photos if they exist, regardless of status */}
+                {(showPhotos || (status !== 'DONE' && initialChecklist && initialChecklist.photos.length > 0)) && initialChecklist?.photos && (
                     <div className="mt-3 grid grid-cols-5 sm:grid-cols-6 gap-2 animate-in fade-in duration-300">
                         {initialChecklist.photos.map((p, idx) => (
                             <div key={p.id} className="relative aspect-square overflow-hidden rounded-md border border-slate-100 dark:border-slate-700 shadow-sm group/photo">
@@ -268,17 +326,6 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                                             className="font-mono text-lg"
                                         />
                                         <p className="text-xs text-muted-foreground">Faixa aceita: -10 a -50 dBm</p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Fotos da Caixa</label>
-                                        <Input
-                                            type="file"
-                                            name="photos"
-                                            multiple
-                                            accept="image/*"
-                                            className="cursor-pointer file:cursor-pointer file:text-primary file:bg-primary/10 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold"
-                                        />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3 pt-2">

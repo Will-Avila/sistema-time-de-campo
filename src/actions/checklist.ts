@@ -226,3 +226,86 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         return { success: false, message: 'Erro ao desmarcar item.' };
     }
 }
+
+export async function uploadChecklistPhotos(formData: FormData): Promise<ActionResult> {
+    const session = await requireAuth().catch(() => null);
+    if (!session) return { success: false, message: 'Não autenticado.' };
+
+    const osId = formData.get('osId') as string;
+    const itemId = formData.get('itemId') as string;
+    const files = formData.getAll('photos') as File[];
+
+    if (!osId || !itemId || files.length === 0) {
+        return { success: false, message: 'Dados incompletos.' };
+    }
+
+    try {
+        // 1. Find or Create Execution
+        let execution = await prisma.serviceExecution.findFirst({
+            where: { osId }
+        });
+
+        if (!execution) {
+            execution = await prisma.serviceExecution.create({
+                data: {
+                    osId,
+                    technicianId: session.id,
+                    status: 'PENDING',
+                    obs: 'Iniciado via upload de fotos',
+                }
+            });
+        }
+
+        // 2. Find or Create Checklist Item
+        let checklistItem = await prisma.checklist.findFirst({
+            where: { executionId: execution.id, itemId }
+        });
+
+        if (!checklistItem) {
+            checklistItem = await prisma.checklist.create({
+                data: {
+                    executionId: execution.id,
+                    itemId,
+                    done: false, // Default to false if just adding photos? Or keep it as is.
+                }
+            });
+        }
+
+        // 3. Process Files
+        const { getOSById } = await import('@/lib/excel');
+        const osData = await getOSById(osId);
+        const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
+
+        const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
+        const uploadDir = path.join(baseUploadDir, protocol);
+
+        await mkdir(uploadDir, { recursive: true });
+
+        for (const file of files) {
+            if (file.size > MAX_FILE_SIZE) continue;
+            if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
+
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
+            const fileName = `${uniqueSuffix}-${safeName}`;
+            const filePath = path.join(uploadDir, fileName);
+
+            await writeFile(filePath, buffer);
+
+            await prisma.photo.create({
+                data: {
+                    executionId: execution.id,
+                    checklistId: checklistItem.id,
+                    path: `/api/images/${protocol}/${fileName}`
+                }
+            });
+        }
+
+        revalidatePath(`/os/${osId}`);
+        return { success: true, message: 'Fotos adicionadas.' };
+    } catch (error) {
+        logger.error('Error uploading photos', { error: String(error) });
+        return { success: false, message: 'Erro ao salvar fotos.' };
+    }
+}
