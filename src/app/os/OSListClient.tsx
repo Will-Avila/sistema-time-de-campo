@@ -22,8 +22,8 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
     const router = useRouter();
 
     const STATUS_GROUPS: Record<string, string[]> = {
-        'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente', '(concluido ou sem execução) - em análise'],
-        'Concluídas': ['concluído', 'concluido', 'encerrada'],
+        'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída - em análise', 'sem execução - em análise'],
+        'Concluídas': ['concluído', 'concluido', 'encerrada', 'concluída'],
         'Canceladas': ['cancelado'],
     };
 
@@ -75,16 +75,19 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
     function getDisplayStatus(os: EnrichedOS) {
         if (os.executionStatus && os.executionStatus !== 'Pendente') return os.executionStatus;
         const s = os.status.toLowerCase();
-        if (s === 'concluído' || s === 'concluido') return 'Concluída';
+        if (s === 'concluído' || s === 'concluido' || s === 'encerrada') return 'Concluída';
         if (s === 'cancelado') return 'Cancelada';
-        return 'Pendente';
+        // If not concluded or cancelled, display the actual status from Excel (properly formatted is better, but raw is fine)
+        // Capitalize first letter?
+        return os.status || 'Pendente';
     }
 
     function getStatusVariant(status: string) {
         if (status === 'Concluída') return 'success';
         if (status === 'Sem Execução' || status === 'Cancelada') return 'destructive';
         if (status === 'Em Execução') return 'warning';
-        if (status === '(Concluido ou Sem execução) - Em análise') return 'orange' as any;
+        if (status.includes('Sem Execução - Em análise')) return 'orange';
+        if (status.includes('Em análise')) return 'light-green';
         return 'secondary';
     }
 

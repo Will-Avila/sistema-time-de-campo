@@ -42,19 +42,32 @@ export default async function OSListPage() {
             // Logica solicitada: "se for encerrada sobreescreva por um tecnico, mude o status para..."
             // If Excel is 'Encerrada' AND we have a local execution record (tech touched it),
             // we override the display status to 'Em análise'.
+
+            // Try to extract specific closure status from obs (Saved as "Status: [Concluída|Sem Execução]\n...")
+            let closureStatus = 'Concluída'; // Default fallback
+            if (exec.obs) {
+                const match = exec.obs.match(/Status: (.*?)\n/);
+                if (match && match[1]) {
+                    closureStatus = match[1];
+                } else if (exec.obs.includes('Sem Execução')) {
+                    closureStatus = 'Sem Execução';
+                }
+            }
+
+            const dynamicStatus = `${closureStatus} - Em análise`;
+
             if (isExcelEncerrada) {
-                executionStatus = '(Concluido ou Sem execução) - Em análise';
+                executionStatus = dynamicStatus;
                 closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
             }
             // If Excel is 'Concluído' (but not Encerrada? or treated same?), usually we respect Excel.
-            // But strict reading of request only mentions 'Encerrada'.
             else if (isExcelDone) {
                 // Respect Excel status (concluido) -> executionStatus stays 'Pendente' so client uses os.status
             }
             else {
                 // Excel is OPEN (Iniciar, Em execução, etc.)
                 if (exec.status === 'DONE') {
-                    executionStatus = '(Concluido ou Sem execução) - Em análise';
+                    executionStatus = dynamicStatus;
                     closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
                 } else if (exec.status === 'PENDING') {
                     executionStatus = 'Em Execução';

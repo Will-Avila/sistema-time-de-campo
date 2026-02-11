@@ -164,6 +164,13 @@ export async function getOSById(id: string) {
         pop,
         status: String(osRow.StatusOperacao || ''),
         protocolo: String(osRow.Protocolo || ''),
+        uf: String(osRow.UF || ''),
+        dataEntrante: formatExcelDate(osRow['Entrante']),
+        dataPrevExec: formatExcelDate(osRow['Prev. Exec.']),
+        rawPrevExec: typeof osRow['Prev. Exec.'] === 'number' ? osRow['Prev. Exec.'] : 0,
+        dataConclusao: formatExcelDate(osRow['Conclusao']),
+        rawConclusao: typeof osRow['Conclusao'] === 'number' ? osRow['Conclusao'] : 0,
+        cenario: String(osRow.Cenario || ''),
         items
     };
 }

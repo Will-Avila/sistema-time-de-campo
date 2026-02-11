@@ -28,7 +28,13 @@ function SubmitButton() {
     );
 }
 
-export default function OSClosureForm({ osId }: { osId: string }) {
+interface OSClosureFormProps {
+    osId: string;
+    triggerClassName?: string;
+    triggerSize?: "default" | "sm" | "lg" | "icon" | null | undefined;
+}
+
+export default function OSClosureForm({ osId, triggerClassName, triggerSize = "sm" }: OSClosureFormProps) {
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     const ref = useRef<HTMLFormElement>(null);
@@ -47,8 +53,8 @@ export default function OSClosureForm({ osId }: { osId: string }) {
             {/* Compact trigger button */}
             <Button
                 onClick={() => setIsOpen(true)}
-                size="sm"
-                className="shrink-0 text-sm font-semibold shadow-sm"
+                size={triggerSize}
+                className={triggerClassName || "shrink-0 text-sm font-semibold shadow-sm"}
             >
                 Encerrar OS
             </Button>

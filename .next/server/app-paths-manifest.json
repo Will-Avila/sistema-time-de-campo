@@ -1,4 +1,5 @@
 {
   "/os/page": "app/os/page.js",
+  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
   "/os/[id]/page": "app/os/[id]/page.js"
 }

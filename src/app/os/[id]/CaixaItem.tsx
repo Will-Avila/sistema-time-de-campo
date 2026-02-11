@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Card, CardHeader } from '@/components/ui/card';
 import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ImageViewer } from '@/components/ui/image-viewer';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -31,6 +32,10 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
 
     const [isLoading, setIsLoading] = useState(false);
     const [showPhotos, setShowPhotos] = useState(false);
+
+    // Viewer state
+    const [viewerOpen, setViewerOpen] = useState(false);
+    const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
 
     // Form data
     const [power, setPower] = useState(initialChecklist?.power || '');
@@ -186,12 +191,21 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                 )}
 
                 {showPhotos && initialChecklist?.photos && (
-                    <div className="mt-3 grid grid-cols-3 gap-2 animate-in fade-in duration-300">
-                        {initialChecklist.photos.map(p => (
+                    <div className="mt-3 grid grid-cols-5 sm:grid-cols-6 gap-2 animate-in fade-in duration-300">
+                        {initialChecklist.photos.map((p, idx) => (
                             <div key={p.id} className="relative aspect-square overflow-hidden rounded-md border border-slate-100 dark:border-slate-700 shadow-sm group/photo">
-                                <Image src={p.path} alt="Foto" fill className="object-cover transition-transform hover:scale-110" />
+                                <Image
+                                    src={p.path}
+                                    alt="Foto"
+                                    fill
+                                    className="object-cover transition-transform hover:scale-110 cursor-pointer"
+                                    onClick={() => {
+                                        setViewerInitialIndex(idx);
+                                        setViewerOpen(true);
+                                    }}
+                                />
                                 <button
-                                    onClick={(e) => { e.preventDefault(); requestDeletePhoto(p.id); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); requestDeletePhoto(p.id); }}
                                     className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover/photo:opacity-100 transition-opacity hover:bg-red-600"
                                     title="Excluir foto"
                                 >
@@ -214,86 +228,96 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                 )}
             </div>
 
+            {/* Photo Viewer */}
+            <ImageViewer
+                isOpen={viewerOpen}
+                onClose={() => setViewerOpen(false)}
+                images={initialChecklist?.photos.map(p => p.path) || []}
+                initialIndex={viewerInitialIndex}
+            />
+
             {/* MODAL */}
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <Card className="w-full max-w-md overflow-hidden relative shadow-2xl dark:bg-slate-900 dark:border-slate-700">
-                        <CardHeader className="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 pb-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">Atualizar Caixa {item.cto}</h3>
-                                <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+            {
+                isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                        <Card className="w-full max-w-md overflow-hidden relative shadow-2xl dark:bg-slate-900 dark:border-slate-700">
+                            <CardHeader className="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 pb-4">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">Atualizar Caixa {item.cto}</h3>
+                                    <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+                                </div>
+                            </CardHeader>
+
+                            <div className="p-6">
+                                <form onSubmit={handleSubmit} className="space-y-5">
+                                    <input type="hidden" name="osId" value={osId} />
+                                    <input type="hidden" name="itemId" value={String(item.id || item.cto)} />
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Potência (dBm)</label>
+                                        <Input
+                                            type="number"
+                                            name="power"
+                                            step="0.01"
+                                            min="-50"
+                                            max="-10"
+                                            required={status !== 'PENDING'}
+                                            value={power}
+                                            onChange={e => setPower(e.target.value)}
+                                            placeholder="-25"
+                                            className="font-mono text-lg"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Faixa aceita: -10 a -50 dBm</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Fotos da Caixa</label>
+                                        <Input
+                                            type="file"
+                                            name="photos"
+                                            multiple
+                                            accept="image/*"
+                                            className="cursor-pointer file:cursor-pointer file:text-primary file:bg-primary/10 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            onClick={handleMarkPending}
+                                            disabled={isLoading}
+                                            className="w-full"
+                                        >
+                                            Marcar Pendente
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="w-full"
+                                        >
+                                            {isLoading ? 'Salvando...' : 'Concluir'}
+                                        </Button>
+                                    </div>
+
+                                    {(status === 'DONE' || status === 'PENDING') && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={requestReset}
+                                            disabled={isLoading}
+                                            className="w-full mt-2 gap-2 text-slate-500 dark:text-slate-400"
+                                        >
+                                            <Undo2 className="h-4 w-4" />
+                                            Desmarcar
+                                        </Button>
+                                    )}
+                                </form>
                             </div>
-                        </CardHeader>
-
-                        <div className="p-6">
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <input type="hidden" name="osId" value={osId} />
-                                <input type="hidden" name="itemId" value={String(item.id || item.cto)} />
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Potência (dBm)</label>
-                                    <Input
-                                        type="number"
-                                        name="power"
-                                        step="0.01"
-                                        min="-50"
-                                        max="-10"
-                                        required={status !== 'PENDING'}
-                                        value={power}
-                                        onChange={e => setPower(e.target.value)}
-                                        placeholder="-25"
-                                        className="font-mono text-lg"
-                                    />
-                                    <p className="text-xs text-muted-foreground">Faixa aceita: -10 a -50 dBm</p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Fotos da Caixa</label>
-                                    <Input
-                                        type="file"
-                                        name="photos"
-                                        multiple
-                                        accept="image/*"
-                                        className="cursor-pointer file:cursor-pointer file:text-primary file:bg-primary/10 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3 pt-2">
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        onClick={handleMarkPending}
-                                        disabled={isLoading}
-                                        className="w-full"
-                                    >
-                                        Marcar Pendente
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full"
-                                    >
-                                        {isLoading ? 'Salvando...' : 'Concluir'}
-                                    </Button>
-                                </div>
-
-                                {(status === 'DONE' || status === 'PENDING') && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={requestReset}
-                                        disabled={isLoading}
-                                        className="w-full mt-2 gap-2 text-slate-500 dark:text-slate-400"
-                                    >
-                                        <Undo2 className="h-4 w-4" />
-                                        Desmarcar
-                                    </Button>
-                                )}
-                            </form>
-                        </div>
-                    </Card>
-                </div>
-            )}
+                        </Card>
+                    </div>
+                )
+            }
 
             {/* Confirm Modal */}
             <ConfirmModal
@@ -305,6 +329,6 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                 onConfirm={() => confirmAction?.action()}
                 onCancel={() => setConfirmAction(null)}
             />
-        </Card>
+        </Card >
     );
 }
