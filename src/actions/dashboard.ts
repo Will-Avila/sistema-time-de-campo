@@ -19,7 +19,7 @@ export async function getDashboardData() {
     // 3. Get Technicians
     const technicians = await prisma.technician.findMany({
         where: { isAdmin: false },
-        select: { id: true, name: true, fullName: true },
+        select: { id: true, name: true, fullName: true, phone: true }, // Added phone
     });
 
     // 4. Get Recent Notifications
@@ -104,9 +104,9 @@ export async function getDashboardData() {
         .sort((a, b) => b.total - a.total);
 
     // 8. Technician Performance
-    const techMap = new Map<string, { name: string; completed: number; pending: number; checklistItems: number }>();
+    const techMap = new Map<string, { name: string; phone: string | null; completed: number; pending: number; checklistItems: number }>();
     technicians.forEach(t => {
-        techMap.set(t.id, { name: t.fullName || t.name, completed: 0, pending: 0, checklistItems: 0 });
+        techMap.set(t.id, { name: t.fullName || t.name, phone: t.phone, completed: 0, pending: 0, checklistItems: 0 });
     });
     executions.forEach(exec => {
         const entry = techMap.get(exec.technicianId);

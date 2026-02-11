@@ -22,8 +22,8 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
     const router = useRouter();
 
     const STATUS_GROUPS: Record<string, string[]> = {
-        'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente'],
-        'Concluídas': ['concluído', 'concluido'],
+        'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente', '(concluido ou sem execução) - em análise'],
+        'Concluídas': ['concluído', 'concluido', 'encerrada'],
         'Canceladas': ['cancelado'],
     };
 
@@ -84,6 +84,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         if (status === 'Concluída') return 'success';
         if (status === 'Sem Execução' || status === 'Cancelada') return 'destructive';
         if (status === 'Em Execução') return 'warning';
+        if (status === '(Concluido ou Sem execução) - Em análise') return 'orange' as any;
         return 'secondary';
     }
 

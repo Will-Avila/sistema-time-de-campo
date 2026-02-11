@@ -30,14 +30,35 @@ export default async function OSListPage() {
         let technicianName: string | undefined;
         let closedAt: string | undefined;
 
+        // Normalize Excel status for check
+        const excelStatusLower = os.status.toLowerCase();
+        // Check if Excel says it is closed/done
+        const isExcelDone = excelStatusLower === 'concluído' || excelStatusLower === 'concluido' || excelStatusLower === 'encerrada';
+        const isExcelEncerrada = excelStatusLower === 'encerrada';
+
         if (exec) {
             technicianName = exec.technicianName;
-            if (exec.status === 'DONE') {
-                const match = exec.obs?.match(/^Status: (.+)/m);
-                executionStatus = match ? match[1] : 'Concluída';
+
+            // Logica solicitada: "se for encerrada sobreescreva por um tecnico, mude o status para..."
+            // If Excel is 'Encerrada' AND we have a local execution record (tech touched it),
+            // we override the display status to 'Em análise'.
+            if (isExcelEncerrada) {
+                executionStatus = '(Concluido ou Sem execução) - Em análise';
                 closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
-            } else if (exec.status === 'PENDING') {
-                executionStatus = 'Em Execução';
+            }
+            // If Excel is 'Concluído' (but not Encerrada? or treated same?), usually we respect Excel.
+            // But strict reading of request only mentions 'Encerrada'.
+            else if (isExcelDone) {
+                // Respect Excel status (concluido) -> executionStatus stays 'Pendente' so client uses os.status
+            }
+            else {
+                // Excel is OPEN (Iniciar, Em execução, etc.)
+                if (exec.status === 'DONE') {
+                    executionStatus = '(Concluido ou Sem execução) - Em análise';
+                    closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
+                } else if (exec.status === 'PENDING') {
+                    executionStatus = 'Em Execução';
+                }
             }
         }
 

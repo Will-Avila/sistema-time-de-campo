@@ -28,6 +28,8 @@ export interface CaixaItem {
     done: boolean;
 }
 
+export const ALLOWED_STATUSES = ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluído', 'concluido', 'encerrada', 'cancelado'];
+
 const EXCEL_PATH = process.env.EXCEL_PATH || 'C:\\Programas\\PROJETOS\\planilha\\Os.xlsx';
 
 // ─── In-Memory Cache with TTL ───────────────────────────────────────
@@ -119,7 +121,7 @@ export async function getAllOS(): Promise<OS[]> {
             const s = os.status.toLowerCase();
             return s === 'iniciar' || s === 'em execução' || s === 'em execucao'
                 || s === 'pend. cliente' || s === 'concluído' || s === 'concluido'
-                || s === 'cancelado';
+                || s === 'encerrada' || s === 'cancelado';
         })
         .sort((a, b) => a.rawPrevExec - b.rawPrevExec);
 }
