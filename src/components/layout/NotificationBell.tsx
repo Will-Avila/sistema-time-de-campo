@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, Check } from 'lucide-react';
 import { getUnreadNotifications, markAsRead, markAllAsRead } from '@/actions/notification';
 import { Button } from '@/components/ui/button';
@@ -25,12 +26,14 @@ interface Notification {
     createdAt: Date;
     technician?: { name: string };
     read: boolean;
+    osId?: string | null;
 }
 
 export function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
     const fetchNotifications = async () => {
         const data = await getUnreadNotifications();
@@ -109,10 +112,17 @@ export function NotificationBell() {
                                     {notifications.map((notification) => (
                                         <div
                                             key={notification.id}
-                                            className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative group"
+                                            onClick={() => {
+                                                if (notification.osId) {
+                                                    handleMarkAsRead(notification.id);
+                                                    router.push(`/os/${notification.osId}`);
+                                                    setIsOpen(false);
+                                                }
+                                            }}
+                                            className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative group ${notification.osId ? 'cursor-pointer' : ''}`}
                                         >
                                             <div className="flex gap-3">
-                                                <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${notification.type === 'OS_CLOSE' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                                                <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${notification.type === 'OS_CLOSE' ? 'bg-blue-500' : notification.type === 'NEW_OS' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                                 <div className="flex-1 space-y-1">
                                                     <p className="text-sm font-medium leading-none text-slate-900 dark:text-slate-100">
                                                         {notification.title}

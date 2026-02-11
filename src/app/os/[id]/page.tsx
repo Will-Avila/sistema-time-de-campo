@@ -158,7 +158,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                         <Link href={`/os/${os.id}/execution`} className="w-full sm:w-auto">
                             <Button size="lg" className="w-full gap-2 shadow-lg bg-blue-600 hover:bg-blue-700">
                                 <Wrench className="h-4 w-4" />
-                                {(execution?.status === 'DONE' || isExcelDone || excelStatusLower.includes('cancelad')) ? 'CAIXAS' : 'Iniciar Execução'}
+                                CAIXAS
                             </Button>
                         </Link>
                         {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && !isExcelDone && (

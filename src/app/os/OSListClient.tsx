@@ -35,7 +35,6 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         const matchesSearch = searchTerm === '' ||
             os.protocolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             os.pop?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            os.technicianName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             os.condominio?.toLowerCase().includes(searchTerm.toLowerCase()); // Include condo in search
 
         const allowedStatuses = STATUS_GROUPS[statusFilter];
@@ -111,7 +110,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                         <div className="relative flex-1 w-full">
                             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500 dark:text-slate-400" />
                             <Input
-                                placeholder="Buscar por protocolo, POP ou técnico..."
+                                placeholder="Buscar por protocolo, POP ou condomínio..."
                                 className="pl-9 bg-white border-slate-300 focus:bg-white transition-colors dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:bg-slate-950 dark:placeholder:text-slate-400 shadow-sm"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}

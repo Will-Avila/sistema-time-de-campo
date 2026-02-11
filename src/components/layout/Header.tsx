@@ -56,7 +56,7 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
 
             {/* Right: Menu */}
             <div className="flex-1 flex justify-end items-center gap-2 relative">
-                {isAdmin && <NotificationBell />}
+                <NotificationBell />
 
                 <Button
                     variant="ghost"
