@@ -3,10 +3,18 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
 
+import { getSession } from '@/lib/auth';
+
 export async function GET(
     request: NextRequest,
     { params }: { params: { folder: string; filename: string } }
 ) {
+    // Auth security: Only logged in users can view OS photos
+    const session = await getSession();
+    if (!session) {
+        return new NextResponse('Unauthorized', { status: 401 });
+    }
+
     const { folder, filename } = params;
 
     // Security: Prevent directory traversal (basic check)

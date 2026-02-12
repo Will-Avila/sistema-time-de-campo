@@ -9,6 +9,7 @@ import {
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
 import { SyncDataButton } from '@/components/SyncDataButton';
+import { StatusBadge } from '@/components/os/StatusBadge';
 
 function timeAgo(dateStr: string): string {
     const now = new Date();
@@ -330,13 +331,10 @@ export default async function DashboardPage() {
                                                 </td>
                                                 <td className="py-3 px-3 text-xs dark:text-slate-300 hidden lg:table-cell">{os.technicianName}</td>
                                                 <td className="py-3 px-3">
-                                                    {os.status === 'DONE' ? (
-                                                        <Badge variant="success">Concluída</Badge>
-                                                    ) : os.status === 'IN_PROGRESS' || os.checklistDone > 0 ? (
-                                                        <Badge variant="warning">Em Prog.</Badge>
-                                                    ) : (
-                                                        <Badge variant="secondary">Pendente</Badge>
-                                                    )}
+                                                    <StatusBadge
+                                                        label={os.status === 'DONE' ? 'Concluída' : (os.checklistDone > 0 ? 'Em execução' : 'Pendente')}
+                                                        showIcon={false}
+                                                    />
                                                 </td>
                                             </tr>
                                         );

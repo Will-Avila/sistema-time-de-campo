@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download } from 'lucide-react';
+import { getOSStatusInfo } from '@/lib/utils';
 import Image from 'next/image';
 import OSClosureForm from './OSClosureForm';
 import { OSPhotosGallery } from './OSPhotosGallery';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getSession } from '@/lib/auth';
+import { StatusBadge } from '@/components/os/StatusBadge';
 
 interface PageProps {
     params: { id: string };
@@ -28,60 +30,10 @@ export default async function OSDetailPage({ params }: PageProps) {
         include: { technician: true, photos: true }
     });
 
-    const excelStatusLower = os.status.toLowerCase();
-    const isExcelDone = excelStatusLower === 'concluído' || excelStatusLower === 'concluido' || excelStatusLower === 'encerrada';
-    const isExcelEncerrada = excelStatusLower === 'encerrada';
-
-    // Helper to get status color/label - Matching OSListClient precisely
-    const getStatusInfo = () => {
-        let label = os.status || 'Pendente';
-        let variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "orange" | "light-green" = "secondary";
-        let icon = AlertTriangle;
-
-        if (execution) {
-            // Compute dynamic status matching os/page.tsx logic
-            let closureStatus = 'Concluída';
-            if (execution.obs) {
-                const match = execution.obs.match(/Status: (.*?)\n/);
-                if (match && match[1]) {
-                    closureStatus = match[1];
-                } else if (execution.obs.includes('Sem Execução')) {
-                    closureStatus = 'Sem Execução';
-                }
-            }
-            const dynamicStatus = `${closureStatus} - Em análise`;
-
-            if (isExcelEncerrada || execution.status === 'DONE') {
-                label = dynamicStatus;
-                variant = label.includes('Sem Execução') ? 'orange' : 'light-green';
-                icon = Clock;
-            } else if (execution.status === 'PENDING') {
-                label = 'Em Execução';
-                variant = 'warning';
-                icon = Wrench;
-            } else if (isExcelDone) {
-                label = 'Concluída';
-                variant = 'success';
-                icon = CheckCircle;
-            }
-        } else {
-            // No local execution record
-            if (isExcelDone) {
-                label = 'Concluída';
-                variant = 'success';
-                icon = CheckCircle;
-            } else if (excelStatusLower === 'cancelado') {
-                label = 'Cancelada';
-                variant = 'destructive';
-                icon = AlertTriangle;
-            }
-        }
-
-        return { label, variant, icon };
-    };
-
-    const statusInfo = getStatusInfo();
-    const StatusIcon = statusInfo.icon;
+    const statusInfo = getOSStatusInfo({
+        osStatus: os.status,
+        execution
+    });
 
     // Date color logic from OSListClient
     const getDateColor = (excelSerial?: number) => {
@@ -95,8 +47,6 @@ export default async function OSDetailPage({ params }: PageProps) {
         if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
         return 'text-slate-700 dark:text-slate-300';
     };
-
-    const displayStatus = statusInfo.label;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 transition-colors">
@@ -134,10 +84,7 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">{os.pop}</h1>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
-                                <Badge variant={statusInfo.variant} className="gap-1.5">
-                                    <StatusIcon className="h-3.5 w-3.5" />
-                                    {displayStatus}
-                                </Badge>
+                                <StatusBadge osStatus={os.status} execution={execution} />
                                 <Badge variant="outline" className="text-slate-500 bg-white/50 dark:bg-slate-900/50">
                                     {os.items.length} caixas
                                 </Badge>
@@ -161,7 +108,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 CAIXAS
                             </Button>
                         </Link>
-                        {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && !isExcelDone && (
+                        {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && (
                             <OSClosureForm
                                 osId={os.id}
                                 triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
@@ -243,7 +190,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     </div>
                                 </div>
 
-                                {displayStatus === 'Concluída' ? (
+                                {statusInfo.label === 'Concluída' ? (
                                     <div>
                                         <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Conclusão</span>
                                         <div className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">

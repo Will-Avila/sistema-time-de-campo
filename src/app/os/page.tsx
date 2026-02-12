@@ -4,6 +4,7 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { EnrichedOS } from '@/lib/types';
+import { getOSStatusInfo } from '@/lib/utils';
 
 export default async function OSListPage() {
     const osList = await getAllOS();
@@ -30,48 +31,19 @@ export default async function OSListPage() {
         let technicianName: string | undefined;
         let closedAt: string | undefined;
 
-        // Normalize Excel status for check
-        const excelStatusLower = os.status.toLowerCase();
-        // Check if Excel says it is closed/done
-        const isExcelDone = excelStatusLower === 'concluído' || excelStatusLower === 'concluido' || excelStatusLower === 'encerrada';
-        const isExcelEncerrada = excelStatusLower === 'encerrada';
-
         if (exec) {
             technicianName = exec.technicianName;
 
-            // Logica solicitada: "se for encerrada sobreescreva por um tecnico, mude o status para..."
-            // If Excel is 'Encerrada' AND we have a local execution record (tech touched it),
-            // we override the display status to 'Em análise'.
+            const statusInfo = getOSStatusInfo({
+                osStatus: os.status,
+                execution: exec
+            });
 
-            // Try to extract specific closure status from obs (Saved as "Status: [Concluída|Sem Execução]\n...")
-            let closureStatus = 'Concluída'; // Default fallback
-            if (exec.obs) {
-                const match = exec.obs.match(/Status: (.*?)\n/);
-                if (match && match[1]) {
-                    closureStatus = match[1];
-                } else if (exec.obs.includes('Sem Execução')) {
-                    closureStatus = 'Sem Execução';
-                }
-            }
+            executionStatus = statusInfo.label;
 
-            const dynamicStatus = `${closureStatus} - Em análise`;
-
-            if (isExcelEncerrada) {
-                executionStatus = dynamicStatus;
+            // Only show closure date if it's actually finished (Concluída or Sem Execução)
+            if (executionStatus.includes('Concluída') || executionStatus.includes('Sem Execução')) {
                 closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
-            }
-            // If Excel is 'Concluído' (but not Encerrada? or treated same?), usually we respect Excel.
-            else if (isExcelDone) {
-                // Respect Excel status (concluido) -> executionStatus stays 'Pendente' so client uses os.status
-            }
-            else {
-                // Excel is OPEN (Iniciar, Em execução, etc.)
-                if (exec.status === 'DONE') {
-                    executionStatus = dynamicStatus;
-                    closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
-                } else if (exec.status === 'PENDING') {
-                    executionStatus = 'Em Execução';
-                }
             }
         }
 

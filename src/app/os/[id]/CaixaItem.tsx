@@ -25,7 +25,9 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
     const [isOpen, setIsOpen] = useState(false);
 
     let initialStatus: Status = 'UNTOUCHED';
-    if (initialChecklist) {
+    if (item.done) {
+        initialStatus = 'DONE';
+    } else if (initialChecklist) {
         initialStatus = initialChecklist.done ? 'DONE' : 'PENDING';
     }
     const [status, setStatus] = useState<Status>(initialStatus);

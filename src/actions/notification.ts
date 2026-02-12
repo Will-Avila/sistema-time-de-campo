@@ -17,6 +17,7 @@ export async function createNotification(data: {
     title: string;
     message: string;
     technicianId?: string;
+    technicianName?: string;
     osId?: string;
 }) {
     try {

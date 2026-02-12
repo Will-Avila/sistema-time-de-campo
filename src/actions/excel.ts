@@ -37,7 +37,7 @@ export async function uploadExcel(formData: FormData) {
         revalidatePath('/admin/dashboard');
         revalidatePath('/os');
 
-        return { success: true, message: 'Base de dados e banco sincronizados com sucesso!' };
+        return { success: true, message: syncResult.message };
     } catch (error) {
         logger.error('Error uploading excel', { error: String(error) });
         return { message: 'Erro ao atualizar base de dados.' };

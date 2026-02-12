@@ -71,7 +71,7 @@ model CaixaAlare {
 
 model LancaAlare {
   id        String   @id @default(uuid())
-  // Placeholders based on standard sheet structure, can be expanded
+  excelId   String?  // IdLanca from Excel
   osId      String?
   data      String?
   valor     Float?
@@ -85,8 +85,9 @@ model ServiceExecution {
   id           String      @id @default(uuid())
   osId         String      @unique // One execution per OS
   os           OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
-  technicianId String
-  technician   Technician  @relation(fields: [technicianId], references: [id])
+  technicianId String?
+  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  technicianName String?   // Archives the name for history even if tech is deleted
   status       String      @default("PENDING") // PENDING, DONE
   power        String?
   obs          String?
@@ -131,7 +132,8 @@ model Notification {
   createdAt    DateTime    @default(now())
   
   technicianId String?
-  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  technicianName String?   // Archives the name for history even if tech is deleted
   
   osId         String?     
   os           OrderOfService? @relation(fields: [osId], references: [id], onDelete: SetNull)

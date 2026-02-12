@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Calendar, MapPin, Box, Loader2, Building } from 'lucide-react';
 import { updatePreferences } from '@/actions/technician';
+import { getStatusVariantFromLabel } from '@/lib/utils';
+import { StatusBadge } from '@/components/os/StatusBadge';
 
 interface OSListClientProps {
     initialOSList: EnrichedOS[];
@@ -18,6 +20,8 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('Abertas');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 50;
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const router = useRouter();
 
@@ -25,6 +29,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída - em análise', 'sem execução - em análise'],
         'Concluídas': ['concluído', 'concluido', 'encerrada', 'concluída'],
         'Canceladas': ['cancelado'],
+        'Todas': [], // Empty array or any key not in other groups
     };
 
     // Get unique UFs
@@ -38,8 +43,8 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
             os.condominio?.toLowerCase().includes(searchTerm.toLowerCase()); // Include condo in search
 
         const allowedStatuses = STATUS_GROUPS[statusFilter];
-        // If allowedStatuses is undefined (Todas), match everything. Otherwise check inclusion.
-        const matchesStatus = !allowedStatuses || allowedStatuses.includes(os.status.toLowerCase());
+        // Match everything if filter is 'Todas' or if allowedStatuses is missing
+        const matchesStatus = statusFilter === 'Todas' || !allowedStatuses || allowedStatuses.includes(os.status.toLowerCase());
 
         return matchesUF && matchesSearch && matchesStatus;
     }).sort((a, b) => {
@@ -56,8 +61,15 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
 
     function handleUFChange(newUF: string) {
         setSelectedUF(newUF);
+        setCurrentPage(1);
         updatePreferences('lastUf', newUF);
     }
+
+    const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
+    const paginatedList = filteredList.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     /** Returns color classes for a date based on comparison with today */
     function getDateColor(excelSerial?: number): string {
@@ -85,14 +97,6 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         return os.status || 'Pendente';
     }
 
-    function getStatusVariant(status: string) {
-        if (status === 'Concluída') return 'success';
-        if (status === 'Sem Execução' || status === 'Cancelada') return 'destructive';
-        if (status === 'Em Execução') return 'warning';
-        if (status.includes('Sem Execução - Em análise')) return 'orange';
-        if (status.includes('Em análise')) return 'light-green';
-        return 'secondary';
-    }
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-6 md:pb-8 space-y-6 transition-colors">
@@ -113,7 +117,10 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                 placeholder="Buscar por protocolo, POP ou condomínio..."
                                 className="pl-9 bg-white border-slate-300 focus:bg-white transition-colors dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:bg-slate-950 dark:placeholder:text-slate-400 shadow-sm"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
 
@@ -139,7 +146,10 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                             <div className="relative">
                                 <select
                                     value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    onChange={(e) => {
+                                        setStatusFilter(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
                                     className="h-10 w-full md:w-[160px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                                 >
                                     {Object.keys(STATUS_GROUPS).map(s => (
@@ -160,7 +170,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
 
                 {/* Grid */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {filteredList.map((os) => (
+                    {paginatedList.map((os) => (
                         <div
                             key={os.id}
                             onClick={() => { setLoadingId(os.id); router.push(`/os/${os.id}`); }}
@@ -200,9 +210,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                 {os.pop || 'SEM POP'}
                                             </CardTitle>
                                         </div>
-                                        <Badge variant={getStatusVariant(getDisplayStatus(os))} className="shrink-0">
-                                            {getDisplayStatus(os)}
-                                        </Badge>
+                                        <StatusBadge label={getDisplayStatus(os)} className="shrink-0" />
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-5 pt-2 flex-1 flex flex-col justify-end space-y-4">
@@ -256,6 +264,31 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                         </div>
                     ))}
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6 border-t border-slate-200 dark:border-slate-800 mt-8">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 h-10 px-4 py-2 text-slate-900 dark:text-slate-100"
+                            >
+                                Anterior
+                            </button>
+                            <div className="text-sm font-medium text-slate-600 dark:text-slate-400 px-4">
+                                Página {currentPage} de {totalPages}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 h-10 px-4 py-2 text-slate-900 dark:text-slate-100"
+                            >
+                                Próximo
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {filteredList.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-white dark:bg-slate-900 rounded-lg border border-dashed border-slate-300 dark:border-slate-800">

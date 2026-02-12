@@ -48,14 +48,25 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             where: { osId }
         });
 
+        // Get tech name for archival
+        const tech = await prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true, fullName: true } });
+        const techName = tech?.fullName || tech?.name || 'Técnico';
+
         if (!execution) {
             execution = await prisma.serviceExecution.create({
                 data: {
                     osId,
                     technicianId,
+                    technicianName: techName,
                     status: 'PENDING',
                     obs: 'Iniciado via checklist',
                 }
+            });
+        } else if (!execution.technicianName) {
+            // Update existing execution with name if it was missing
+            execution = await prisma.serviceExecution.update({
+                where: { id: execution.id },
+                data: { technicianName: techName }
             });
         }
 
@@ -81,6 +92,14 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                 }
             });
             savedItemId = newItem.id;
+        }
+
+        // Update OS status if item is marked as done
+        if (done) {
+            await prisma.orderOfService.update({
+                where: { id: osId },
+                data: { status: 'Em execução' }
+            });
         }
 
         // 5. Handle File Uploads (Only if Done)
@@ -128,14 +147,14 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             const proto = osInfo?.protocolo || osId;
             const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
             const ctoName = ctoItem?.cto || itemId;
-            const tech = await prisma.technician.findUnique({ where: { id: execution.technicianId }, select: { name: true, fullName: true } });
-            const techName = tech?.fullName || tech?.name || 'Técnico';
+
             await createNotification({
                 type: 'CHECKLIST',
                 title: 'Caixa Verificada',
                 message: `${techName} marcou CTO ${ctoName} na OS ${proto}`,
-                technicianId: execution.technicianId,
-                osId
+                technicianId: execution.technicianId || undefined,
+                technicianName: techName,
+                osId: proto // Use 'proto' here to avoid potential confusion/shadowing with the outer 'osId' if 'proto' is the intended display value.
             });
         }
 
@@ -245,14 +264,23 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
             where: { osId }
         });
 
+        const tech = await prisma.technician.findUnique({ where: { id: session.id }, select: { name: true, fullName: true } });
+        const techName = tech?.fullName || tech?.name || 'Técnico';
+
         if (!execution) {
             execution = await prisma.serviceExecution.create({
                 data: {
                     osId,
                     technicianId: session.id,
+                    technicianName: techName,
                     status: 'PENDING',
                     obs: 'Iniciado via upload de fotos',
                 }
+            });
+        } else if (!execution.technicianName) {
+            execution = await prisma.serviceExecution.update({
+                where: { id: execution.id },
+                data: { technicianName: techName }
             });
         }
 

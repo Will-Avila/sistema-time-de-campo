@@ -40,6 +40,10 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
     const files = formData.getAll('photos') as File[];
 
     try {
+        // Get tech name for archival
+        const tech = await prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true, fullName: true } });
+        const techName = tech?.fullName || tech?.name || 'Técnico';
+
         // 3. Save to DB (Handle existing execution from checklist)
         let execution = await prisma.serviceExecution.findFirst({
             where: { osId }
@@ -50,6 +54,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
                 where: { id: execution.id },
                 data: {
                     technicianId,
+                    technicianName: techName,
                     status: 'DONE',
                     obs: `Status: ${status}\n${obs}`,
                 }
@@ -59,6 +64,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
                 data: {
                     osId,
                     technicianId,
+                    technicianName: techName,
                     status: 'DONE',
                     power: '',
                     obs: `Status: ${status}\n${obs}`,
@@ -106,13 +112,13 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
         const { getOSById: getOS } = await import('@/lib/excel');
         const osInfo = await getOS(osId);
         const proto = osInfo?.protocolo || osId;
-        const tech = await prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true, fullName: true } });
-        const techName = tech?.fullName || tech?.name || 'Técnico';
+
         await createNotification({
             type: 'OS_CLOSE',
             title: 'OS Encerrada',
             message: `${techName} encerrou a OS ${proto}. Status: ${status}`,
             technicianId,
+            technicianName: techName, // Pass to notification too
             osId
         });
 
