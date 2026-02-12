@@ -46,16 +46,16 @@ export default async function DashboardPage() {
                             Visão geral das operações • Atualizado em tempo real
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
                         <SyncDataButton />
                         <ExcelUploadButton />
-                        <Link href="/os" className="inline-flex items-center gap-2 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-9 px-4 transition-colors shadow-sm">
-                            <Wrench className="h-4 w-4" />
+                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-9 px-4 transition-colors shadow-sm whitespace-nowrap">
+                            <Wrench className="h-4 w-4 shrink-0" />
                             Ordens de Serviço
                         </Link>
-                        <Link href="/admin/technicians" className="inline-flex items-center gap-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white h-9 px-4 transition-colors shadow-sm">
-                            <Users className="h-4 w-4" />
-                            Técnicos
+                        <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 transition-colors shadow-sm whitespace-nowrap">
+                            <Users className="h-4 w-4 shrink-0" />
+                            Usuários
                         </Link>
                     </div>
                 </header>
@@ -84,15 +84,15 @@ export default async function DashboardPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">Encerradas Hoje</p>
                     </div>
 
-                    {/* Total Concluídas */}
+                    {/* Concluídas esse mês */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
                                 <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{data.stats.completedTotal}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Total Encerradas</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{data.stats.completedMonth}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Concluídas esse mês</p>
                     </div>
 
                     {/* Em Progresso */}
@@ -120,11 +120,11 @@ export default async function DashboardPage() {
                     {/* Taxa de Conclusão */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-teal-50 dark:bg-teal-950/50 flex items-center justify-center">
-                                <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                                <TrendingUp className="h-4 w-4 text-primary" />
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">{data.stats.completionRate}%</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.stats.completionRate}%</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Conclusão</p>
                     </div>
                 </div>
@@ -133,11 +133,11 @@ export default async function DashboardPage() {
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Progresso Geral</span>
-                        <span className="text-sm font-semibold text-teal-600 dark:text-teal-400">{data.stats.completionRate}%</span>
+                        <span className="text-sm font-semibold text-primary">{data.stats.completionRate}%</span>
                     </div>
                     <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-500"
+                            className="h-full bg-primary rounded-full transition-all duration-500"
                             style={{ width: `${data.stats.completionRate}%` }}
                         />
                     </div>
@@ -154,7 +154,7 @@ export default async function DashboardPage() {
                     <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
-                                <Bell className="h-4 w-4 text-teal-500" />
+                                <Bell className="h-4 w-4 text-primary" />
                                 Atividade Recente
                             </CardTitle>
                         </CardHeader>
@@ -233,7 +233,7 @@ export default async function DashboardPage() {
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
                                 <Users className="h-4 w-4 text-blue-500" />
-                                Desempenho dos Técnicos
+                                Desempenho das Equipes
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-0">
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
                                 <div className="space-y-3 max-h-[320px] overflow-y-auto">
                                     {data.techPerformance.map((tech: any, i: number) => (
                                         <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                                            <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0 shadow-sm">
                                                 {tech.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -282,65 +282,73 @@ export default async function DashboardPage() {
                                 Ordens de Serviço
                                 <Badge variant="secondary" className="ml-2">{data.osList.length}</Badge>
                             </CardTitle>
-                            <Link href="/os" className="text-xs text-teal-600 hover:text-teal-700 dark:text-teal-400 font-medium flex items-center gap-1 transition-colors">
+                            <Link href="/os" className="text-xs text-primary font-medium flex items-center gap-1 hover:opacity-80 transition-all">
                                 Ver todas <ArrowRight className="h-3 w-3" />
                             </Link>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b dark:border-slate-700">
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Protocolo</th>
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">POP</th>
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden sm:table-cell">UF</th>
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Prazo</th>
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Caixas</th>
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Técnico</th>
-                                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.osList.slice(0, 25).map((os: any) => {
-                                        const progressPct = os.totalCaixas > 0 ? Math.round((os.checklistDone / os.totalCaixas) * 100) : 0;
-                                        return (
-                                            <tr key={os.id} className="border-b dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                <td className="py-3 px-3">
-                                                    <Link href={`/os/${os.id}`} className="font-mono text-xs text-teal-600 dark:text-teal-400 hover:underline">
-                                                        {os.protocolo || '-'}
-                                                    </Link>
-                                                </td>
-                                                <td className="py-3 px-3 text-sm dark:text-slate-300">{os.pop}</td>
-                                                <td className="py-3 px-3 dark:text-slate-300 hidden sm:table-cell">
-                                                    <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{os.uf}</span>
-                                                </td>
-                                                <td className="py-3 px-3 text-xs text-muted-foreground hidden md:table-cell">{os.dataPrevExec}</td>
-                                                <td className="py-3 px-3 hidden md:table-cell">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[60px]">
-                                                            <div
-                                                                className={`h-full rounded-full transition-all ${progressPct === 100 ? 'bg-emerald-500' : progressPct > 0 ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-                                                                style={{ width: `${progressPct}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                                                            {os.checklistDone}/{os.totalCaixas}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 px-3 text-xs dark:text-slate-300 hidden lg:table-cell">{os.technicianName}</td>
-                                                <td className="py-3 px-3">
-                                                    <StatusBadge
-                                                        label={os.status === 'DONE' ? 'Concluída' : (os.checklistDone > 0 ? 'Em execução' : 'Pendente')}
-                                                        showIcon={false}
-                                                    />
-                                                </td>
+                        <div className="relative">
+                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 pb-2">
+                                <div className="min-w-[800px]">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b dark:border-slate-700">
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Protocolo</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">POP</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden sm:table-cell">UF</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Prazo</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Caixas</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Responsável</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody>
+                                            {data.osList.slice(0, 25).map((os: any) => {
+                                                const progressPct = os.totalCaixas > 0 ? Math.round((os.checklistDone / os.totalCaixas) * 100) : 0;
+                                                return (
+                                                    <tr key={os.id} className="border-b dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                        <td className="py-3 px-3">
+                                                            <Link href={`/os/${os.id}`} className="font-mono text-xs text-primary hover:underline">
+                                                                {os.protocolo || '-'}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-sm dark:text-slate-300">{os.pop}</td>
+                                                        <td className="py-3 px-3 dark:text-slate-300 hidden sm:table-cell">
+                                                            <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{os.uf}</span>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-xs text-muted-foreground hidden md:table-cell">{os.dataPrevExec}</td>
+                                                        <td className="py-3 px-3 hidden md:table-cell">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[60px]">
+                                                                    <div
+                                                                        className={`h-full rounded-full transition-all ${progressPct === 100 ? 'bg-emerald-500' : progressPct > 0 ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                                                        style={{ width: `${progressPct}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                                                    {os.checklistDone}/{os.totalCaixas}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-xs dark:text-slate-300 hidden lg:table-cell">{os.technicianName}</td>
+                                                        <td className="py-3 px-3">
+                                                            <StatusBadge
+                                                                label={os.status === 'DONE' ? 'Concluída' : (os.checklistDone > 0 ? 'Em execução' : 'Pendente')}
+                                                                showIcon={false}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div className="flex md:hidden items-center justify-center gap-2 py-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-muted-foreground bg-slate-50/50 dark:bg-slate-800/20 -mx-6 px-6">
+                                <ArrowRight className="h-3 w-3 animate-pulse" />
+                                Deslize para ver mais detalhes
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

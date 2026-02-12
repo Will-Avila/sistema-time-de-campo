@@ -24,7 +24,7 @@ interface Notification {
     title: string;
     message: string;
     createdAt: Date;
-    technician?: { name: string };
+    equipe?: { name: string; fullName: string | null; nomeEquipe: string | null };
     read: boolean;
     osId?: string | null;
 }
@@ -88,7 +88,7 @@ export function NotificationBell() {
                             <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Notificações</h4>
                             {unreadCount > 0 && (
                                 <button
-                                    className="text-xs text-teal-600 hover:text-teal-700 dark:text-teal-400 font-medium transition-colors"
+                                    className="text-xs text-primary hover:opacity-80 font-medium transition-colors"
                                     onClick={handleMarkAllAsRead}
                                 >
                                     Marcar todas como lidas
@@ -99,7 +99,7 @@ export function NotificationBell() {
                         <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                             {isLoading && notifications.length === 0 ? (
                                 <div className="p-8 text-center">
-                                    <div className="animate-spin h-5 w-5 border-2 border-slate-300 border-t-teal-600 rounded-full mx-auto mb-2" />
+                                    <div className="animate-spin h-5 w-5 border-2 border-slate-300 border-t-primary rounded-full mx-auto mb-2" />
                                     <p className="text-xs text-slate-500">Carregando...</p>
                                 </div>
                             ) : notifications.length === 0 ? (
@@ -135,7 +135,7 @@ export function NotificationBell() {
                                                     </p>
                                                 </div>
                                                 <button
-                                                    className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-teal-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                    className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleMarkAsRead(notification.id);

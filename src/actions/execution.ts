@@ -23,7 +23,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
     const session = await requireAuth().catch(() => null);
     if (!session) return { success: false, message: 'Não autenticado.' };
 
-    const technicianId = session.id;
+    const equipeId = session.id;
 
     // 2. Validate input
     const parsed = closeOSSchema.safeParse({
@@ -41,8 +41,8 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
 
     try {
         // Get tech name for archival
-        const tech = await prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true, fullName: true } });
-        const techName = tech?.fullName || tech?.name || 'Técnico';
+        const equipe = await prisma.equipe.findUnique({ where: { id: equipeId }, select: { name: true, fullName: true, nomeEquipe: true } });
+        const techName = equipe?.fullName || equipe?.nomeEquipe || equipe?.name || 'Equipe';
 
         // 3. Save to DB (Handle existing execution from checklist)
         let execution = await prisma.serviceExecution.findFirst({
@@ -53,7 +53,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
             execution = await prisma.serviceExecution.update({
                 where: { id: execution.id },
                 data: {
-                    technicianId,
+                    equipeId,
                     technicianName: techName,
                     status: 'DONE',
                     obs: `Status: ${status}\n${obs}`,
@@ -63,7 +63,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
             execution = await prisma.serviceExecution.create({
                 data: {
                     osId,
-                    technicianId,
+                    equipeId,
                     technicianName: techName,
                     status: 'DONE',
                     power: '',
@@ -117,7 +117,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
             type: 'OS_CLOSE',
             title: 'OS Encerrada',
             message: `${techName} encerrou a OS ${proto}. Status: ${status}`,
-            technicianId,
+            equipeId,
             technicianName: techName, // Pass to notification too
             osId
         });

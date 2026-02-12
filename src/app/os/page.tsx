@@ -11,15 +11,15 @@ export default async function OSListPage() {
 
     // Fetch all executions to enrich OS cards with status
     const executions = await prisma.serviceExecution.findMany({
-        select: { osId: true, status: true, obs: true, updatedAt: true, technician: { select: { name: true } } }
+        select: { osId: true, status: true, obs: true, updatedAt: true, equipe: { select: { name: true, nomeEquipe: true, fullName: true } } }
     });
 
-    const executionMap = new Map<string, { status: string; obs: string | null; technicianName: string; updatedAt: Date }>();
+    const executionMap = new Map<string, { status: string; obs: string | null; equipeName: string; updatedAt: Date }>();
     for (const exec of executions) {
         executionMap.set(exec.osId, {
             status: exec.status,
             obs: exec.obs,
-            technicianName: exec.technician.name,
+            equipeName: exec.equipe?.fullName || exec.equipe?.nomeEquipe || exec.equipe?.name || '-',
             updatedAt: exec.updatedAt
         });
     }
@@ -28,11 +28,11 @@ export default async function OSListPage() {
     const enrichedList: EnrichedOS[] = osList.map(os => {
         const exec = executionMap.get(os.id);
         let executionStatus = 'Pendente';
-        let technicianName: string | undefined;
+        let equipeName: string | undefined;
         let closedAt: string | undefined;
 
         if (exec) {
-            technicianName = exec.technicianName;
+            equipeName = exec.equipeName;
 
             const statusInfo = getOSStatusInfo({
                 osStatus: os.status,
@@ -47,7 +47,7 @@ export default async function OSListPage() {
             }
         }
 
-        return { ...os, executionStatus, technicianName, closedAt };
+        return { ...os, executionStatus, equipeName, closedAt };
     });
 
     // Get Session & Preferences (centralized)
@@ -55,7 +55,7 @@ export default async function OSListPage() {
     let lastUf = 'Todos';
 
     if (session) {
-        const tech = await prisma.technician.findUnique({
+        const tech = await prisma.equipe.findUnique({
             where: { id: session.id },
             select: { lastUf: true }
         });

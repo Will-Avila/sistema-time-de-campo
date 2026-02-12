@@ -98,7 +98,7 @@ export function OSAdminEditForm({ osId, initialData }: OSAdminEditFormProps) {
                 <Textarea
                     value={descricao}
                     onChange={e => setDescricao(e.target.value)}
-                    placeholder="Informações adicionais para o técnico..."
+                    placeholder="Informações adicionais para a equipe..."
                     className="h-40 resize-y"
                 />
             </div>

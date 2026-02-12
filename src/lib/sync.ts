@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import { readFile } from 'fs/promises';
 import { prisma } from './db';
 import { logger } from './logger';
+import bcrypt from 'bcryptjs';
 
 const EXCEL_PATH = process.env.EXCEL_PATH || 'C:\\Programas\\PROJETOS\\planilha\\Os.xlsx';
 
@@ -54,6 +55,14 @@ export async function syncExcelToDB() {
                     rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
                     cenario: String(row.Cenario || ''),
                     protocolo: String(row.Protocolo || ''),
+                    mes: String(row.Mes || row.MES || ''),
+                    valorServico: typeof row.ValorServico === 'number' ? row.ValorServico : 0,
+                    statusMedicao: String(row.StatusMedicao || ''),
+                    statusFinal: String(row.StatusFinal || ''),
+                    tempo: String(row.Tempo || ''),
+                    facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 0,
+                    caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
+                    tipoOs: String(row.TipoOs || ''),
                 },
                 create: {
                     id: osId,
@@ -67,6 +76,14 @@ export async function syncExcelToDB() {
                     rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
                     cenario: String(row.Cenario || ''),
                     protocolo: String(row.Protocolo || ''),
+                    mes: String(row.Mes || row.MES || ''),
+                    valorServico: typeof row.ValorServico === 'number' ? row.ValorServico : 0,
+                    statusMedicao: String(row.StatusMedicao || ''),
+                    statusFinal: String(row.StatusFinal || ''),
+                    tempo: String(row.Tempo || ''),
+                    facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 0,
+                    caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
+                    tipoOs: String(row.TipoOs || ''),
                 }
             });
             osCount++;
@@ -107,26 +124,46 @@ export async function syncExcelToDB() {
                 update: {
                     osId,
                     cto: String(row.Cto || ''),
+                    pop: String(row.Pop || ''),
+                    cidade: String(row.Cidade || ''),
+                    uf: String(row.UF || ''),
                     chassi: String(row.Chassi || ''),
                     placa: String(row.Placa || ''),
                     olt: String(row.OLT || ''),
+                    cenario: String(row.Cenario || ''),
+                    bairro: String(row.Bairro || ''),
                     endereco: String(row.Endereco || ''),
                     lat: row.Lat ? parseFloat(String(row.Lat)) : null,
                     long: row.Long ? parseFloat(String(row.Long)) : null,
                     status: boxStatus,
+                    valor: typeof row.Valor === 'number' ? row.Valor : 0,
+                    equipe: String(row.Equipe || ''),
+                    obs: String(row.OBS || ''),
+                    data: formatExcelDate(row.Data),
+                    nomeEquipe: String(row.NomeEquipe || ''),
                     excelId: excelId || null,
                 },
                 create: {
                     id: excelId || `idx-${osId}-${currentIndex}`,
                     osId,
                     cto: String(row.Cto || ''),
+                    pop: String(row.Pop || ''),
+                    cidade: String(row.Cidade || ''),
+                    uf: String(row.UF || ''),
                     chassi: String(row.Chassi || ''),
                     placa: String(row.Placa || ''),
                     olt: String(row.OLT || ''),
+                    cenario: String(row.Cenario || ''),
+                    bairro: String(row.Bairro || ''),
                     endereco: String(row.Endereco || ''),
                     lat: row.Lat ? parseFloat(String(row.Lat)) : null,
                     long: row.Long ? parseFloat(String(row.Long)) : null,
                     status: boxStatus,
+                    valor: typeof row.Valor === 'number' ? row.Valor : 0,
+                    equipe: String(row.Equipe || ''),
+                    obs: String(row.OBS || ''),
+                    data: formatExcelDate(row.Data),
+                    nomeEquipe: String(row.NomeEquipe || ''),
                     excelId: excelId || null,
                 }
             });
@@ -148,8 +185,9 @@ export async function syncExcelToDB() {
             }
         }
 
-        // 3. Sync LancaAlare (Future use)
+        // 3. Sync LancaAlare
         const lancaSheet = workbook.Sheets['LancaAlares'];
+        let lancaCount = 0;
         if (lancaSheet) {
             const lancaRows: any[] = XLSX.utils.sheet_to_json(lancaSheet);
             logger.info(`Found ${lancaRows.length} Lanca rows in Excel.`);
@@ -157,35 +195,124 @@ export async function syncExcelToDB() {
             let lancaIndex = 0;
             for (const row of lancaRows) {
                 const currentIndex = lancaIndex++;
-                const osId = String(row.OS || '');
-                const excelId = String(row.IdLanca || '');
+                const osId = String(row.Os || '');
+                const excelId = String(row.IdLancamento || '');
 
                 await prisma.lancaAlare.upsert({
                     where: { id: excelId || `lanca-${osId}-${currentIndex}` },
                     update: {
                         excelId: excelId || null,
                         osId: osId || null,
-                        data: formatExcelDate(row.Data),
+                        de: String(row.De || ''),
+                        para: String(row.Para || ''),
+                        previsao: String(row.Previsao || ''),
+                        cenario: String(row.Cenario || ''),
                         valor: typeof row.Valor === 'number' ? row.Valor : 0,
-                        descricao: String(row.Descricao || ''),
+                        cabo: String(row.Cabo || ''),
+                        status: String(row.Status || ''),
+                        lancado: String(row.Lancado || ''),
+                        cenarioReal: String(row.CenarioReal || ''),
+                        valorReal: typeof row.ValorReal === 'number' ? row.ValorReal : 0,
+                        difLanc: typeof row.DifLanc === 'number' ? row.DifLanc : 0,
+                        orcadoAtual: typeof row.OrcadoAtual === 'number' ? row.OrcadoAtual : 0,
+                        data: formatExcelDate(row.Data),
+                        equipe: String(row.Equipe || ''),
                     },
                     create: {
                         id: excelId || `lanca-${osId}-${currentIndex}`,
                         excelId: excelId || null,
                         osId: osId || null,
-                        data: formatExcelDate(row.Data),
+                        de: String(row.De || ''),
+                        para: String(row.Para || ''),
+                        previsao: String(row.Previsao || ''),
+                        cenario: String(row.Cenario || ''),
                         valor: typeof row.Valor === 'number' ? row.Valor : 0,
-                        descricao: String(row.Descricao || ''),
+                        cabo: String(row.Cabo || ''),
+                        status: String(row.Status || ''),
+                        lancado: String(row.Lancado || ''),
+                        cenarioReal: String(row.CenarioReal || ''),
+                        valorReal: typeof row.ValorReal === 'number' ? row.ValorReal : 0,
+                        difLanc: typeof row.DifLanc === 'number' ? row.DifLanc : 0,
+                        orcadoAtual: typeof row.OrcadoAtual === 'number' ? row.OrcadoAtual : 0,
+                        data: formatExcelDate(row.Data),
+                        equipe: String(row.Equipe || ''),
                     }
                 });
+                lancaCount++;
+            }
+        }
+
+        // 4. Sync Equipes
+        const equipeSheet = workbook.Sheets['Equipes'];
+        let equipeCount = 0;
+        if (equipeSheet) {
+            const equipeRows: any[] = XLSX.utils.sheet_to_json(equipeSheet);
+            logger.info(`Found ${equipeRows.length} Equipe rows in Excel.`);
+
+            const defaultPassword = await bcrypt.hash('12345678', 10);
+
+            for (const row of equipeRows) {
+                const excelId = String(row.IdEquipe || '');
+                if (!excelId) continue;
+
+                const nomeEquipe = String(row.NomeEquipe || '');
+
+                // Helper to generate a default login name if it's new
+                const generateName = (nome: string) => {
+                    return nome.toLowerCase()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[^a-z0-9]/g, '');
+                };
+
+                const existing = await prisma.equipe.findUnique({ where: { excelId } });
+
+                if (existing) {
+                    await prisma.equipe.update({
+                        where: { excelId },
+                        data: {
+                            codEquipe: String(row.CodEquipe || ''),
+                            nomeEquipe: nomeEquipe,
+                            prestadora: String(row.Prestadora || ''),
+                            classificacao: String(row.Classificacao || ''),
+                            unidade: String(row.Unidade || ''),
+                            descEquipe: String(row.DescEquipe || ''),
+                            centro: String(row.Centro || ''),
+                        }
+                    });
+                } else {
+                    let baseName = generateName(nomeEquipe) || `eq${row.CodEquipe || excelId}`;
+                    let finalName = baseName;
+                    let counter = 1;
+                    while (await prisma.equipe.findUnique({ where: { name: finalName } })) {
+                        finalName = `${baseName}${counter}`;
+                        counter++;
+                    }
+
+                    await prisma.equipe.create({
+                        data: {
+                            excelId,
+                            codEquipe: String(row.CodEquipe || ''),
+                            nomeEquipe: nomeEquipe,
+                            name: finalName,
+                            password: defaultPassword,
+                            isAdmin: false,
+                            prestadora: String(row.Prestadora || ''),
+                            classificacao: String(row.Classificacao || ''),
+                            unidade: String(row.Unidade || ''),
+                            descEquipe: String(row.DescEquipe || ''),
+                            centro: String(row.Centro || ''),
+                        }
+                    });
+                }
+                equipeCount++;
             }
         }
 
         logger.info('Synchronization completed successfully.');
         return {
             success: true,
-            message: `Sincronizado: ${osCount} OS e ${caixaCount} Caixas.`,
-            stats: { osCount, caixaCount }
+            message: `Sincronizado: ${osCount} OS, ${caixaCount} Caixas, ${lancaCount} Lançamentos e ${equipeCount} Equipes.`,
+            stats: { osCount, caixaCount, lancaCount, equipeCount }
         };
 
     } catch (error) {

@@ -27,7 +27,7 @@ export default async function OSDetailPage({ params }: PageProps) {
 
     const execution = await prisma.serviceExecution.findFirst({
         where: { osId: os.id },
-        include: { technician: true, photos: true }
+        include: { equipe: true, photos: true }
     });
 
     const statusInfo = getOSStatusInfo({
@@ -159,12 +159,12 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 </div>
                             )}
 
-                            {execution?.technician && (
+                            {execution?.equipe && (
                                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
-                                    <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Técnico Responsável</span>
+                                    <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Equipe Responsável</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         <User className="h-4 w-4 text-slate-400" />
-                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{execution.technician.fullName || execution.technician.name}</p>
+                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name}</p>
                                     </div>
                                 </div>
                             )}
@@ -278,7 +278,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
                                 <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
                                     <CheckCircle className="h-4 w-4 text-emerald-500" />
-                                    Detalhes do Encerramento (Técnico)
+                                    Detalhes do Encerramento (Responsável)
                                     {execution.updatedAt && (
                                         <span className="ml-auto text-xs font-normal text-muted-foreground">
                                             {execution.updatedAt.toLocaleString('pt-BR')}

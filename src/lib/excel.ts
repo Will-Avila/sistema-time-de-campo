@@ -10,6 +10,14 @@ export interface OS {
     rawPrevExec?: number;
     dataConclusao?: string;
     rawConclusao?: number;
+    mes?: string;
+    valorServico?: number;
+    statusMedicao?: string;
+    statusFinal?: string;
+    tempo?: string;
+    facilidadesPlanejadas?: number;
+    caixasPlanejadas?: number;
+    tipoOs?: string;
     cenario: string;
     protocolo: string;
     totalCaixas: number;
@@ -22,11 +30,24 @@ export interface OS {
 export interface CaixaItem {
     id: string;
     cto: string;
+    pop: string;
+    cidade: string;
+    uf: string;
+    chassi?: string;
+    placa?: string;
+    olt?: string;
+    cenario: string;
+    bairro: string;
     chassiPath: string;
     endereco: string;
     lat: number | null;
     long: number | null;
     status: string;
+    valor: number;
+    equipe: string;
+    obs: string;
+    data: string;
+    nomeEquipe: string;
     done: boolean;
 }
 
@@ -58,6 +79,14 @@ export async function getAllOS(): Promise<OS[]> {
         rawPrevExec: rec.rawPrevExec,
         dataConclusao: rec.dataConclusao,
         rawConclusao: rec.rawConclusao,
+        mes: rec.mes,
+        valorServico: rec.valorServico,
+        statusMedicao: rec.statusMedicao,
+        statusFinal: rec.statusFinal,
+        tempo: rec.tempo,
+        facilidadesPlanejadas: rec.facilidadesPlanejadas,
+        caixasPlanejadas: rec.caixasPlanejadas,
+        tipoOs: rec.tipoOs,
         cenario: rec.cenario,
         protocolo: rec.protocolo,
         totalCaixas: rec.caixas.length,
@@ -97,11 +126,24 @@ export async function getOSById(id: string) {
         return {
             id: c.id,
             cto: c.cto,
+            pop: c.pop,
+            cidade: c.cidade,
+            uf: c.uf,
+            chassi: c.chassi || undefined,
+            placa: c.placa || undefined,
+            olt: c.olt || undefined,
+            cenario: c.cenario,
+            bairro: c.bairro,
             chassiPath: pathParts.filter(Boolean).join('/'),
             endereco: c.endereco || '',
             lat: c.lat,
             long: c.long,
             status: c.status,
+            valor: c.valor,
+            equipe: c.equipe,
+            obs: c.obs,
+            data: c.data,
+            nomeEquipe: c.nomeEquipe,
             done: c.status === 'OK'
         };
     });
@@ -117,6 +159,14 @@ export async function getOSById(id: string) {
         rawPrevExec: os.rawPrevExec,
         dataConclusao: os.dataConclusao,
         rawConclusao: os.rawConclusao,
+        mes: os.mes,
+        valorServico: os.valorServico,
+        statusMedicao: os.statusMedicao,
+        statusFinal: os.statusFinal,
+        tempo: os.tempo,
+        facilidadesPlanejadas: os.facilidadesPlanejadas,
+        caixasPlanejadas: os.caixasPlanejadas,
+        tipoOs: os.tipoOs,
         cenario: os.cenario,
         totalCaixas: items.length,
         items,

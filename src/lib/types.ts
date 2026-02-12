@@ -16,7 +16,7 @@ export type ActionResult<T = void> =
  */
 export interface EnrichedOS extends OS {
     executionStatus: string;
-    technicianName?: string;
+    equipeName?: string;
     closedAt?: string;
 }
 
@@ -46,14 +46,15 @@ export interface ChecklistData {
     photos: { id: string; path: string }[];
 }
 
-// ─── Technician (safe, no password) ────────────────────
+// ─── Equipe / Usuário (safe, no password) ──────────────
 /**
- * Technician data as returned by getTechnicians() — excludes password.
+ * Equipe data as returned by getEquipes() — excludes password.
  */
-export interface SafeTechnician {
+export interface SafeEquipe {
     id: string;
     name: string;
     fullName: string | null;
+    nomeEquipe: string | null;
     phone: string | null;
     isAdmin: boolean;
     createdAt: Date;

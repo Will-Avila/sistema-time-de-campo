@@ -54,12 +54,12 @@ export function ExcelUploadButton() {
                 variant="outline"
                 disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="gap-2"
+                className="gap-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-9 px-4 transition-colors shadow-sm"
             >
                 {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                 ) : (
-                    <UploadCloud className="h-4 w-4" />
+                    <UploadCloud className="h-4 w-4 text-blue-500" />
                 )}
                 {isUploading ? 'Enviando...' : 'Atualizar Base'}
             </Button>

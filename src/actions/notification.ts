@@ -16,7 +16,7 @@ export async function createNotification(data: {
     type: NotificationType;
     title: string;
     message: string;
-    technicianId?: string;
+    equipeId?: string;
     technicianName?: string;
     osId?: string;
 }) {
@@ -65,8 +65,8 @@ async function syncNewOSNotifications() {
 
         logger.info(`Found ${newOSs.length} new OSs to notify.`);
 
-        // 4. Get all active technicians (inc. admins) to broadcast to
-        const technicians = await prisma.technician.findMany({
+        // 4. Get all active equipes (inc. admins) to broadcast to
+        const equipes = await prisma.equipe.findMany({
             select: { id: true }
         });
 
@@ -86,13 +86,13 @@ async function syncNewOSNotifications() {
             const message = `A OS ${osDisplay} foi adicionada em ${os.uf}, prazo ${os.dataPrevExec}`;
 
             // We use createMany for efficiency if possible, but Prisma w/ SQLite createMany is supported.
-            const notificationsData = technicians.map(tech => ({
+            const notificationsData = equipes.map(eq => ({
                 type: 'NEW_OS',
                 title: 'Nova Ordem de Serviço',
                 message: message,
                 read: false,
                 osId: os.id,
-                technicianId: tech.id,
+                equipeId: eq.id,
                 createdAt: new Date()
             }));
 
@@ -122,20 +122,20 @@ export async function getUnreadNotifications() {
             // 2. Their own 'NEW_OS' notifications
             whereClause.OR = [
                 { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
-                { type: 'NEW_OS', technicianId: session.id }
+                { type: 'NEW_OS', equipeId: session.id }
             ];
         } else {
             // Tech sees:
             // 1. Only their own 'NEW_OS' notifications
             whereClause.type = 'NEW_OS';
-            whereClause.technicianId = session.id;
+            whereClause.equipeId = session.id;
         }
 
         const notifications = await prisma.notification.findMany({
             where: whereClause,
             orderBy: { createdAt: 'desc' },
             take: 20,
-            include: { technician: { select: { name: true, fullName: true } } }
+            include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
         });
         return notifications;
     } catch (error) {
@@ -156,7 +156,7 @@ export async function markAsRead(id: string) {
         // 1. If it's targeted (NEW_OS), only recipient can read.
         // 2. If it's system (CHECKLIST/OS_CLOSE), any Admin can read.
         const isSystemNotif = ['CHECKLIST', 'OS_CLOSE'].includes(notification.type);
-        const isRecipient = notification.technicianId === session.id;
+        const isRecipient = notification.equipeId === session.id;
 
         if (isSystemNotif) {
             if (!session.isAdmin) return { success: false, message: 'Não autorizado.' };
@@ -189,11 +189,11 @@ export async function markAllAsRead() {
         if (session.isAdmin) {
             whereClause.OR = [
                 { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
-                { type: 'NEW_OS', technicianId: session.id }
+                { type: 'NEW_OS', equipeId: session.id }
             ];
         } else {
             whereClause.type = 'NEW_OS';
-            whereClause.technicianId = session.id;
+            whereClause.equipeId = session.id;
         }
 
         await prisma.notification.updateMany({

@@ -11,18 +11,20 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { CaixaItemData, ChecklistData } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface CaixaItemProps {
     item: CaixaItemData;
     osId: string;
-    technicianName?: string;
+    equipeName?: string;
     initialChecklist?: ChecklistData | null;
 }
 
 type Status = 'DONE' | 'PENDING' | 'UNTOUCHED';
 
-export default function CaixaItem({ item, osId, technicianName, initialChecklist }: CaixaItemProps) {
+export default function CaixaItem({ item, osId, equipeName, initialChecklist }: CaixaItemProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [mapDialogOpen, setMapDialogOpen] = useState(false);
 
     let initialStatus: Status = 'UNTOUCHED';
     if (item.done) {
@@ -165,8 +167,6 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
     }
 
     // Styles based on status
-
-    // Styles based on status
     const getStatusColor = () => {
         if (status === 'DONE') return 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800';
         if (status === 'PENDING') return 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800';
@@ -213,16 +213,22 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                 {/* Sub-info */}
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm text-primary font-medium">
-                        <Circle className="h-3 w-3 fill-current" />
+                        <div className="w-4 flex items-center justify-center shrink-0">
+                            <Circle className="h-3 w-3 fill-current" />
+                        </div>
                         <span>{item.chassiPath}</span>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                        <div className="w-4 flex items-center justify-center shrink-0 mt-0.5">
+                            <MapPin className="h-4 w-4" />
+                        </div>
                         <span className="line-clamp-2">{item.endereco}</span>
                     </div>
                     {(item.lat && item.long) && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Globe className="h-4 w-4 shrink-0" />
+                            <div className="w-4 flex items-center justify-center shrink-0">
+                                <Globe className="h-4 w-4" />
+                            </div>
                             <span>{item.lat}, {item.long}</span>
                         </div>
                     )}
@@ -243,8 +249,8 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                                 </Button>
                             )}
                         </div>
-                        {technicianName && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Técnico: <span className="font-medium text-slate-700 dark:text-slate-300">{technicianName}</span></p>
+                        {equipeName && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Responsável: <span className="font-medium text-slate-700 dark:text-slate-300">{equipeName}</span></p>
                         )}
                     </div>
                 )}
@@ -278,13 +284,13 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
 
                 {/* Map Link */}
                 {item.lat && item.long && (
-                    <a
-                        href={`https://www.google.com/maps?q=${item.lat},${item.long}`}
-                        target="_blank"
-                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 dark:bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 dark:hover:bg-blue-600 shadow-sm"
+                    <Button
+                        variant="default"
+                        className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                        onClick={() => setMapDialogOpen(true)}
                     >
                         Abrir no Mapa
-                    </a>
+                    </Button>
                 )}
             </div>
 
@@ -296,7 +302,96 @@ export default function CaixaItem({ item, osId, technicianName, initialChecklist
                 initialIndex={viewerInitialIndex}
             />
 
-            {/* MODAL */}
+            {/* Map Selector Dialog */}
+            <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
+                <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-center pb-2">Escolha o aplicativo</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-3 py-4 pt-0">
+                        <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.long}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm group"
+                            onClick={() => setMapDialogOpen(false)}
+                        >
+                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                                <Image
+                                    src="/assets/icons/google-maps.jpg"
+                                    alt="Google Maps"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Google Maps</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Recomendado</div>
+                            </div>
+                        </a>
+
+                        <a
+                            href={`https://waze.com/ul?ll=${item.lat},${item.long}&navigate=yes`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm group"
+                            onClick={() => setMapDialogOpen(false)}
+                        >
+                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                                <Image
+                                    src="/assets/icons/waze.png"
+                                    alt="Waze"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-cyan-500 transition-colors">Waze</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Trânsito em tempo real</div>
+                            </div>
+                        </a>
+
+                        <a
+                            href={`http://maps.apple.com/?daddr=${item.lat},${item.long}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm sm:hidden group"
+                            onClick={() => setMapDialogOpen(false)}
+                        >
+                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                                <Image
+                                    src="/assets/icons/apple-maps.jpg"
+                                    alt="Apple Maps"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">Apple Maps</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Nativo iOS</div>
+                            </div>
+                        </a>
+
+                        <a
+                            href={`geo:${item.lat},${item.long}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm group"
+                            onClick={() => setMapDialogOpen(false)}
+                        >
+                            <div className="w-12 h-12 shrink-0 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                                <Globe className="h-6 w-6 text-slate-600 dark:text-slate-400 group-hover:scale-110 transition-transform" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-semibold text-slate-900 dark:text-slate-100">Outro App</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Escolher app instalado</div>
+                            </div>
+                        </a>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* MODAL (Existing Edit/Finish Modal) */}
             {
                 isOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">

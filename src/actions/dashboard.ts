@@ -21,23 +21,23 @@ export async function getDashboardData() {
     // 2. Get Execution Data from DB
     const executions = await prisma.serviceExecution.findMany({
         include: {
-            technician: { select: { name: true, fullName: true } },
+            equipe: { select: { name: true, fullName: true, nomeEquipe: true } },
             checklist: { select: { done: true } }
         },
         orderBy: { updatedAt: 'desc' }
     });
 
-    // 3. Get Technicians
-    const technicians = await prisma.technician.findMany({
+    // 3. Get Equipes (Users/Teams)
+    const equipes = await prisma.equipe.findMany({
         where: { isAdmin: false },
-        select: { id: true, name: true, fullName: true, phone: true }, // Added phone
+        select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true },
     });
 
     // 4. Get Recent Notifications
     const recentNotifications = await prisma.notification.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: { technician: { select: { name: true, fullName: true } } }
+        include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
     });
 
     // Create a map for fast lookup: OS ID -> Execution
@@ -51,14 +51,14 @@ export async function getDashboardData() {
         const execution = executionMap.get(os.id) || executionMap.get(os.pop);
 
         let status = 'PENDING';
-        let technicianName = '-';
+        let equipeName = '-';
         let lastUpdate: Date | null = null;
         let checklistTotal = 0;
         let checklistDone = 0;
 
         if (execution) {
             status = execution.status;
-            technicianName = execution.technician?.fullName || execution.technician?.name || '-';
+            equipeName = execution.equipe?.fullName || execution.equipe?.nomeEquipe || execution.equipe?.name || '-';
             lastUpdate = execution.updatedAt;
             checklistTotal = execution.checklist.length;
             checklistDone = execution.checklist.filter(c => c.done).length;
@@ -73,9 +73,11 @@ export async function getDashboardData() {
             uf: os.uf,
             cenario: os.cenario,
             dataPrevExec: os.dataPrevExec,
+            dataConclusao: os.dataConclusao || '-',
+            mes: os.mes || '-',
             totalCaixas: os.totalCaixas,
             status,
-            technicianName,
+            equipeName,
             lastUpdate: lastUpdate ? lastUpdate.toISOString() : null,
             checklistTotal,
             checklistDone,
@@ -83,23 +85,41 @@ export async function getDashboardData() {
     });
 
     // 6. Calculate Stats
-    const total = osList.length;
+    const finishedStatuses = ['concluída', 'concluido', 'encerrada', 'cancelado'];
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // OS Ativas -> Exact number (not finished)
+    const total = osList.filter(os => !finishedStatuses.includes(os.status.toLowerCase())).length;
 
-    const completedToday = executions.filter(e =>
-        e.status === 'DONE' && new Date(e.updatedAt) >= today
+    const todayDate = new Date().toLocaleDateString('pt-BR'); // DD/MM/YYYY
+
+    // Encerradas hoje -> dataConclusao = today
+    // Note: We search in excelOS or the reconciled osList.
+    const completedToday = osList.filter(os => os.dataConclusao === todayDate).length;
+
+    // Completed This Month -> Using 'mes' field
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const currentMonthName = months[new Date().getMonth()];
+
+    const completedMonth = osList.filter(os =>
+        os.mes === currentMonthName &&
+        ['concluída', 'concluido', 'encerrada'].includes(os.status.toLowerCase())
     ).length;
 
-    const completedTotal = executions.filter(e => e.status === 'DONE').length;
+    const completedTotal = excelOS.filter(os => finishedStatuses.includes(os.status.toLowerCase())).length;
 
-    const pending = osList.filter(item => item.status === 'PENDING').length;
+    const pending = osList.filter(item =>
+        !finishedStatuses.includes(item.status.toLowerCase()) &&
+        item.status === 'PENDING'
+    ).length;
+
     const inProgress = osList.filter(item =>
-        item.status === 'IN_PROGRESS' || (item.checklistDone > 0 && item.status !== 'DONE')
+        !finishedStatuses.includes(item.status.toLowerCase()) &&
+        (item.status === 'IN_PROGRESS' || (item.checklistDone > 0 && item.status !== 'DONE'))
     ).length;
 
-    const completionRate = total > 0 ? Math.round((completedTotal / (total + completedTotal)) * 100) : 0;
+    const completionRate = (total + completedTotal) > 0
+        ? Math.round((completedTotal / (total + completedTotal)) * 100)
+        : 0;
 
     // 7. UF Breakdown
     const ufMap = new Map<string, { total: number; done: number }>();
@@ -116,11 +136,11 @@ export async function getDashboardData() {
 
     // 8. Technician Performance
     const techMap = new Map<string, { name: string; phone: string | null; completed: number; pending: number; checklistItems: number }>();
-    technicians.forEach(t => {
-        techMap.set(t.id, { name: t.fullName || t.name, phone: t.phone, completed: 0, pending: 0, checklistItems: 0 });
+    equipes.forEach(t => {
+        techMap.set(t.id, { name: t.fullName || t.nomeEquipe || t.name, phone: t.phone, completed: 0, pending: 0, checklistItems: 0 });
     });
     executions.forEach(exec => {
-        const entry = techMap.get(exec.technicianId);
+        const entry = techMap.get(exec.equipeId || '');
         if (entry) {
             if (exec.status === 'DONE') entry.completed++;
             else entry.pending++;
@@ -138,7 +158,7 @@ export async function getDashboardData() {
         title: n.title,
         message: n.message,
         createdAt: n.createdAt.toISOString(),
-        techName: n.technician?.fullName || n.technician?.name || null,
+        techName: n.equipe?.fullName || n.equipe?.nomeEquipe || n.equipe?.name || null,
         read: n.read,
     }));
 
@@ -147,10 +167,11 @@ export async function getDashboardData() {
             total,
             completedToday,
             completedTotal,
+            completedMonth,
             pending,
             inProgress,
             completionRate,
-            technicianCount: technicians.length,
+            equipeCount: equipes.length,
         },
         ufBreakdown,
         techPerformance,

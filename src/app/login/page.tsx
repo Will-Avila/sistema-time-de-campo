@@ -47,7 +47,7 @@ export default function LoginPage() {
                     </div>
                     <CardTitle className="text-2xl font-bold text-slate-900">XON Serviços</CardTitle>
                     <CardDescription>
-                        Acesso restrito para técnicos e administradores
+                        Acesso restrito para equipes e administradores
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

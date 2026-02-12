@@ -24,7 +24,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
     const session = await requireAuth().catch(() => null);
     if (!session) return { success: false, message: 'Não autenticado.' };
 
-    const technicianId = session.id;
+    const equipeId = session.id;
 
     // 2. Validate input
     const parsed = checklistSchema.safeParse({
@@ -48,15 +48,15 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             where: { osId }
         });
 
-        // Get tech name for archival
-        const tech = await prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true, fullName: true } });
-        const techName = tech?.fullName || tech?.name || 'Técnico';
+        // Get equipe name for archival
+        const equipe = await prisma.equipe.findUnique({ where: { id: equipeId }, select: { name: true, fullName: true, nomeEquipe: true } });
+        const techName = equipe?.fullName || equipe?.nomeEquipe || equipe?.name || 'Equipe';
 
         if (!execution) {
             execution = await prisma.serviceExecution.create({
                 data: {
                     osId,
-                    technicianId,
+                    equipeId,
                     technicianName: techName,
                     status: 'PENDING',
                     obs: 'Iniciado via checklist',
@@ -152,7 +152,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                 type: 'CHECKLIST',
                 title: 'Caixa Verificada',
                 message: `${techName} marcou CTO ${ctoName} na OS ${proto}`,
-                technicianId: execution.technicianId || undefined,
+                equipeId: execution.equipeId || undefined,
                 technicianName: techName,
                 osId: proto // Use 'proto' here to avoid potential confusion/shadowing with the outer 'osId' if 'proto' is the intended display value.
             });
@@ -264,14 +264,14 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
             where: { osId }
         });
 
-        const tech = await prisma.technician.findUnique({ where: { id: session.id }, select: { name: true, fullName: true } });
-        const techName = tech?.fullName || tech?.name || 'Técnico';
+        const equipe = await prisma.equipe.findUnique({ where: { id: session.id }, select: { name: true, fullName: true, nomeEquipe: true } });
+        const techName = equipe?.fullName || equipe?.nomeEquipe || equipe?.name || 'Equipe';
 
         if (!execution) {
             execution = await prisma.serviceExecution.create({
                 data: {
                     osId,
-                    technicianId: session.id,
+                    equipeId: session.id,
                     technicianName: techName,
                     status: 'PENDING',
                     obs: 'Iniciado via upload de fotos',

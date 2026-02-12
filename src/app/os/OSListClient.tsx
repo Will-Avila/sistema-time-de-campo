@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Calendar, MapPin, Box, Loader2, Building } from 'lucide-react';
-import { updatePreferences } from '@/actions/technician';
+import { updatePreferences } from '@/actions/equipe';
 import { getStatusVariantFromLabel } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
 
@@ -55,6 +55,24 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
             const dateB = b.closedAt ? new Date(b.closedAt).getTime() : (b.rawConclusao ? (b.rawConclusao - 25569) * 86400000 : 0);
             return dateB - dateA; // Descending
         }
+
+        // Custom sort for 'Abertas': Em execução > Iniciar > Others
+        if (statusFilter === 'Abertas') {
+            const getPriority = (os: EnrichedOS) => {
+                const effectiveStatus = getDisplayStatus(os).toLowerCase();
+                if (effectiveStatus.includes('execução') || effectiveStatus.includes('execucao')) return 3;
+                if (effectiveStatus === 'iniciar') return 2;
+                return 1;
+            };
+
+            const priorityA = getPriority(a);
+            const priorityB = getPriority(b);
+
+            if (priorityA !== priorityB) {
+                return priorityB - priorityA; // Higher priority first
+            }
+        }
+
         // Default sort: already sorted by prevExec in Excel parser, but we preserve it
         return 0;
     });
@@ -101,7 +119,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-6 md:pb-8 space-y-6 transition-colors">
 
-            <div className="pt-20 px-6 md:px-8 space-y-6"> {/* Added padding top for fixed header */}
+            <div className="pt-20 px-4 md:px-8 space-y-6"> {/* Added padding top for fixed header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Ordens de Serviço</h1>
@@ -124,46 +142,48 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                             />
                         </div>
 
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <Filter className="h-4 w-4 text-muted-foreground" />
-                            <div className="relative">
-                                <select
-                                    value={selectedUF}
-                                    onChange={(e) => handleUFChange(e.target.value)}
-                                    className="h-10 w-full md:w-[180px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                                >
-                                    {ufs.map(uf => (
-                                        <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                                    <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+                                <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+                                    <div className="relative w-full sm:w-auto">
+                                        <select
+                                            value={selectedUF}
+                                            onChange={(e) => handleUFChange(e.target.value)}
+                                            className="h-10 w-full sm:w-[150px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                        >
+                                            {ufs.map(uf => (
+                                                <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                            <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative w-full sm:w-auto">
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => {
+                                                setStatusFilter(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                        >
+                                            {Object.keys(STATUS_GROUPS).map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                            <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <div className="relative">
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => {
-                                        setStatusFilter(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                    className="h-10 w-full md:w-[160px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                                >
-                                    {Object.keys(STATUS_GROUPS).map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                                    <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
-                                </div>
+                            <div className="text-sm font-medium text-muted-foreground bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-3 py-2 rounded-md whitespace-nowrap w-full sm:w-auto text-center">
+                                {filteredList.length} resultados
                             </div>
-                        </div>
-
-                        <div className="text-sm font-medium text-muted-foreground bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-3 py-2 rounded-md whitespace-nowrap">
-                            {filteredList.length} resultados
                         </div>
                     </CardContent>
                 </Card>
@@ -225,9 +245,9 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                 <span className="truncate text-xs">{os.cenario}</span>
                                             </div>
                                         )}
-                                        {os.technicianName && (
+                                        {os.equipeName && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
-                                                <span className="text-xs">👤 {os.technicianName}</span>
+                                                <span className="text-xs">👤 {os.equipeName}</span>
                                             </div>
                                         )}
                                     </div>

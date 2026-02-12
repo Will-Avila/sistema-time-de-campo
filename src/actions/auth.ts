@@ -30,16 +30,16 @@ export async function login(prevState: any, formData: FormData) {
     const { username, password } = validatedFields.data;
 
     try {
-        const technician = await prisma.technician.findUnique({
+        const equipe = await prisma.equipe.findFirst({
             where: { name: username },
         });
 
-        if (!technician) {
+        if (!equipe) {
             logger.warn(`Login failed: User not found`, { username });
             return { message: 'Credenciais inválidas.' };
         }
 
-        const passwordMatch = await bcrypt.compare(password, technician.password);
+        const passwordMatch = await bcrypt.compare(password, equipe.password);
 
         if (!passwordMatch) {
             logger.warn(`Login failed: Invalid password`, { username });
@@ -48,17 +48,17 @@ export async function login(prevState: any, formData: FormData) {
 
         // Generate JWT and set cookie using centralized auth
         const token = await createToken({
-            id: technician.id,
-            username: technician.name,
-            isAdmin: technician.isAdmin,
+            id: equipe.id,
+            username: equipe.name,
+            isAdmin: equipe.isAdmin,
         });
 
         setSessionCookie(token);
 
-        logger.info(`Login successful`, { username, technicianId: technician.id });
+        logger.info(`Login successful`, { username, equipeId: equipe.id });
 
         // Redirect based on role — reuse already-fetched data (no extra query)
-        redirect(technician.isAdmin ? '/admin/dashboard' : '/os');
+        redirect(equipe.isAdmin ? '/admin/dashboard' : '/os');
 
     } catch (error) {
         // redirect() throws a special error in Next.js — rethrow it

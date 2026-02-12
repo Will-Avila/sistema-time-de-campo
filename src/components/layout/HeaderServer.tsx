@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth';
 
 export async function HeaderServer() {
     const session = await getSession();
-    let username = 'Técnico';
+    let username = 'Usuário';
     let theme = 'light';
     let isAdmin = false;
 
@@ -13,14 +13,14 @@ export async function HeaderServer() {
         isAdmin = session.isAdmin;
 
         // Fetch full profile data (theme, fullName)
-        const tech = await prisma.technician.findUnique({
+        const eq = await prisma.equipe.findUnique({
             where: { id: session.id },
-            select: { theme: true, fullName: true, name: true }
+            select: { theme: true, fullName: true, name: true, nomeEquipe: true }
         });
-        if (tech) {
-            theme = tech.theme || 'light';
-            if (tech.fullName) {
-                username = tech.fullName;
+        if (eq) {
+            theme = eq.theme || 'light';
+            if (eq.fullName || eq.nomeEquipe) {
+                username = eq.fullName || eq.nomeEquipe || eq.name;
             }
         }
     }

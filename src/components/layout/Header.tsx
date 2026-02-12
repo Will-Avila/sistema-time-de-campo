@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Menu, LogOut, User, Sun, Moon, LayoutDashboard, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/actions/auth';
-import { updatePreferences } from '@/actions/technician';
+import { updatePreferences } from '@/actions/equipe';
 import Link from 'next/link';
 
 import { NotificationBell } from './NotificationBell';
@@ -40,7 +40,7 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
         <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm z-50 px-4 flex items-center justify-between transition-colors">
             {/* Left: Brand */}
             <div className="flex-1">
-                <Link href="/os" className="text-xl font-bold tracking-tighter text-teal-700 dark:text-teal-400">
+                <Link href="/os" className="text-xl font-bold tracking-tighter text-primary">
                     X-ON
                 </Link>
             </div>
@@ -49,7 +49,7 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <span className="font-medium text-sm hidden md:inline-block">Olá, {firstName}</span>
                 <span className="font-medium text-sm md:hidden">{firstName}</span>
-                <div className="bg-teal-100 dark:bg-teal-900 p-1.5 rounded-full text-teal-700 dark:text-teal-400">
+                <div className="bg-primary/10 dark:bg-primary/20 p-1.5 rounded-full text-primary">
                     <User className="h-4 w-4" />
                 </div>
             </div>
@@ -62,7 +62,7 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="text-slate-600 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-slate-800"
+                    className="text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10"
                 >
                     <Menu className="h-6 w-6" />
                 </Button>
@@ -103,7 +103,7 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
                                     className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
-                                    <LayoutDashboard className="h-4 w-4 text-teal-600" />
+                                    <LayoutDashboard className="h-4 w-4 text-primary" />
                                     Dashboard
                                 </Link>
                             </>

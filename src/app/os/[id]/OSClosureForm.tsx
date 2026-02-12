@@ -80,7 +80,7 @@ export default function OSClosureForm({ osId, triggerClassName, triggerSize = "s
                                 <div className="space-y-3">
                                     <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Situação Final</label>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <label className="relative flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all has-[:checked]:bg-teal-50/50 dark:has-[:checked]:bg-teal-900/30 has-[:checked]:border-teal-500 has-[:checked]:text-teal-700 dark:has-[:checked]:text-teal-400">
+                                        <label className="relative flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all has-[:checked]:bg-primary/10 dark:has-[:checked]:bg-primary/20 has-[:checked]:border-primary has-[:checked]:text-primary">
                                             <input type="radio" name="status" value="Concluída" className="sr-only" defaultChecked />
                                             <CheckCircle2 className="h-6 w-6 mb-2 text-slate-400" />
                                             <span className="font-bold text-sm">Concluída</span>

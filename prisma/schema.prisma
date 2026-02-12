@@ -7,21 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Technician {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  fullName  String?
-  phone     String?
-  password  String
-  isAdmin   Boolean  @default(false)
-  theme     String   @default("system") // system, light, dark
-  lastUf    String   @default("Todos")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  executions    ServiceExecution[]
-  notifications Notification[]
-}
 
 model OrderOfService {
   id            String   @id // Will store the IdOs from Excel
@@ -35,6 +20,14 @@ model OrderOfService {
   rawConclusao  Float    @default(0)
   cenario       String   @default("")
   protocolo     String   @default("")
+  mes           String   @default("")
+  valorServico  Float    @default(0)
+  statusMedicao String   @default("")
+  statusFinal   String   @default("")
+  tempo         String   @default("")
+  facilidadesPlanejadas Int @default(0)
+  caixasPlanejadas Int      @default(0)
+  tipoOs        String   @default("")
   
   // Relations
   caixas        CaixaAlare[]
@@ -55,13 +48,23 @@ model CaixaAlare {
   os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
   
   cto         String
+  pop         String   @default("")
+  cidade      String   @default("")
+  uf          String   @default("")
   chassi      String?
   placa       String?
   olt         String?
+  cenario     String   @default("")
+  bairro      String   @default("")
   endereco    String?
   lat         Float?
   long        Float?
   status      String   @default("Pendente") // OK, Pendente, etc
+  valor       Float    @default(0)
+  equipe      String   @default("")
+  obs         String   @default("")
+  data        String   @default("")
+  nomeEquipe  String   @default("")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -70,13 +73,53 @@ model CaixaAlare {
 }
 
 model LancaAlare {
-  id        String   @id @default(uuid())
-  excelId   String?  // IdLanca from Excel
-  osId      String?
-  data      String?
-  valor     Float?
-  descricao String?
+  id            String   @id @default(uuid())
+  excelId       String?  // IdLancamento from Excel
+  osId          String?
+  de            String   @default("")
+  para          String   @default("")
+  previsao      String   @default("")
+  cenario       String   @default("")
+  valor         Float?
+  cabo          String   @default("")
+  status        String   @default("")
+  lancado       String   @default("")
+  cenarioReal   String   @default("")
+  valorReal     Float    @default(0)
+  difLanc       Float    @default(0)
+  orcadoAtual   Float    @default(0)
+  data          String?
+  equipe        String   @default("")
+  descricao     String?
   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Equipe {
+  id            String   @id @default(uuid())
+  excelId       String?  @unique // IdEquipe from Excel
+  codEquipe     String   @default("")
+  nomeEquipe    String   @default("")
+  
+  // User fields
+  name          String   @default("") @unique
+  fullName      String?
+  password      String   @default("")
+  isAdmin       Boolean  @default(false)
+  theme         String   @default("system")
+  lastUf        String   @default("Todos")
+  phone         String?
+
+  prestadora    String   @default("")
+  classificacao String   @default("")
+  unidade       String   @default("")
+  descEquipe    String   @default("")
+  centro        String   @default("")
+
+  executions    ServiceExecution[] @relation("EquipeExecutions")
+  notifications Notification[] @relation("EquipeNotifications")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -85,8 +128,10 @@ model ServiceExecution {
   id           String      @id @default(uuid())
   osId         String      @unique // One execution per OS
   os           OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
-  technicianId String?
-  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  
+  equipeId     String?
+  equipe       Equipe?     @relation("EquipeExecutions", fields: [equipeId], references: [id], onDelete: SetNull)
+
   technicianName String?   // Archives the name for history even if tech is deleted
   status       String      @default("PENDING") // PENDING, DONE
   power        String?
@@ -131,8 +176,9 @@ model Notification {
   read         Boolean     @default(false)
   createdAt    DateTime    @default(now())
   
-  technicianId String?
-  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  equipeId     String?
+  equipe       Equipe?     @relation("EquipeNotifications", fields: [equipeId], references: [id], onDelete: SetNull)
+
   technicianName String?   // Archives the name for history even if tech is deleted
   
   osId         String?     

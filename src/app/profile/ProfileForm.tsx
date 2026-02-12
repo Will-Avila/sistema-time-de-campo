@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { updateProfile } from '@/actions/technician';
+import { updateProfile } from '@/actions/equipe';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,7 +54,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
         <Card className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                    <UserIcon className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                    <UserIcon className="h-6 w-6 text-primary" />
                     Editar Perfil
                 </CardTitle>
                 <CardDescription className="text-slate-500 dark:text-slate-400">
@@ -143,7 +143,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
                     </div>
 
                     <div className="flex justify-end pt-4">
-                        <Button type="submit" disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white min-w-[120px]">
+                        <Button type="submit" disabled={isLoading} className="min-w-[120px]">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Salvar Alterações
                         </Button>

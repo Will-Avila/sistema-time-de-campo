@@ -22,7 +22,7 @@ export default async function ProfilePage() {
         const { payload } = await jwtVerify(session, JWT_SECRET);
         const userId = payload.sub as string;
 
-        user = await prisma.technician.findUnique({
+        user = await prisma.equipe.findUnique({
             where: { id: userId },
             select: {
                 name: true,
