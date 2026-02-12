@@ -2,6 +2,7 @@
 
 import { requireAdmin } from '@/lib/auth';
 import { invalidateExcelCache } from '@/lib/excel';
+import { syncExcelToDB } from '@/lib/sync';
 import { writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { logger } from '@/lib/logger';
@@ -25,13 +26,18 @@ export async function uploadExcel(formData: FormData) {
 
         await writeFile(filePath, buffer);
 
-        // Invalidate cache so new data is read immediately
+        // Invalidate cache and SYNC with DB
         invalidateExcelCache();
+        const syncResult = await syncExcelToDB();
+
+        if (!syncResult.success) {
+            return { success: false, message: syncResult.message };
+        }
 
         revalidatePath('/admin/dashboard');
         revalidatePath('/os');
 
-        return { success: true, message: 'Base de dados atualizada com sucesso!' };
+        return { success: true, message: 'Base de dados e banco sincronizados com sucesso!' };
     } catch (error) {
         logger.error('Error uploading excel', { error: String(error) });
         return { message: 'Erro ao atualizar base de dados.' };

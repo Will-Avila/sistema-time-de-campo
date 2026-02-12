@@ -40,16 +40,31 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
     const files = formData.getAll('photos') as File[];
 
     try {
-        // 3. Save to DB
-        const execution = await prisma.serviceExecution.create({
-            data: {
-                osId,
-                technicianId,
-                status: 'DONE',
-                power: '',
-                obs: `Status: ${status}\n${obs}`,
-            }
+        // 3. Save to DB (Handle existing execution from checklist)
+        let execution = await prisma.serviceExecution.findFirst({
+            where: { osId }
         });
+
+        if (execution) {
+            execution = await prisma.serviceExecution.update({
+                where: { id: execution.id },
+                data: {
+                    technicianId,
+                    status: 'DONE',
+                    obs: `Status: ${status}\n${obs}`,
+                }
+            });
+        } else {
+            execution = await prisma.serviceExecution.create({
+                data: {
+                    osId,
+                    technicianId,
+                    status: 'DONE',
+                    power: '',
+                    obs: `Status: ${status}\n${obs}`,
+                }
+            });
+        }
 
         // 4. Handle File Uploads
         if (files.length > 0 && files[0].size > 0) {

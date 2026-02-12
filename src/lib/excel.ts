@@ -1,6 +1,4 @@
-import * as XLSX from 'xlsx';
-import { readFile } from 'fs/promises';
-import path from 'path';
+import { prisma } from './db';
 
 export interface OS {
     id: string;
@@ -15,7 +13,7 @@ export interface OS {
     cenario: string;
     protocolo: string;
     totalCaixas: number;
-    // Extra Info from DB
+    // Extra Info
     condominio?: string;
     descricao?: string;
     anexos?: { id: string; name: string; path: string; size: number; type: string }[];
@@ -34,169 +32,103 @@ export interface CaixaItem {
 
 export const ALLOWED_STATUSES = ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída', 'concluido', 'encerrada', 'cancelado'];
 
-const EXCEL_PATH = process.env.EXCEL_PATH || 'C:\\Programas\\PROJETOS\\planilha\\Os.xlsx';
-
-// ─── In-Memory Cache with TTL ───────────────────────────────────────
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds
-
-interface ExcelCache {
-    osData: Record<string, any>[];
-    caixaData: Record<string, any>[];
-    timestamp: number;
+function formatExcelDate(date: string | null): string {
+    return date || '-';
 }
 
-let cache: ExcelCache | null = null;
-
-function isCacheValid(): boolean {
-    return cache !== null && (Date.now() - cache.timestamp) < CACHE_TTL_MS;
-}
-
-/** Invalidate cache manually (e.g., if the file is known to have changed) */
-export function invalidateExcelCache() {
-    cache = null;
-}
-
-// ─── Helper Functions ───────────────────────────────────────────────
-function excelDateToJS(serial: number): Date | null {
-    if (!serial || isNaN(serial)) return null;
-    const utc_days = Math.floor(serial - 25569);
-    const utc_value = utc_days * 86400;
-    return new Date(utc_value * 1000);
-}
-
-function formatExcelDate(serial: any): string {
-    if (typeof serial === 'number') {
-        const date = excelDateToJS(serial);
-        return date ? date.toLocaleDateString('pt-BR') : '-';
-    }
-    return String(serial || '-');
-}
-
-// ─── Core Data Access ───────────────────────────────────────────────
-async function readExcelData(): Promise<{ osData: Record<string, any>[]; caixaData: Record<string, any>[] }> {
-    if (isCacheValid()) {
-        return { osData: cache!.osData, caixaData: cache!.caixaData };
-    }
-
-    const buffer = await readFile(EXCEL_PATH);
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-
-    const osSheet = workbook.Sheets['Os'];
-    const osData: Record<string, any>[] = osSheet ? XLSX.utils.sheet_to_json(osSheet) : [];
-
-    const caixaSheet = workbook.Sheets['CaixaAlares'];
-    const caixaData: Record<string, any>[] = caixaSheet ? XLSX.utils.sheet_to_json(caixaSheet) : [];
-
-    // Update cache
-    cache = { osData, caixaData, timestamp: Date.now() };
-
-    return { osData, caixaData };
-}
-
-// ─── Public API ─────────────────────────────────────────────────────
-export async function getExcelData() {
-    return readExcelData();
-}
-
-import { prisma } from './db';
-
+/**
+ * Fetch all OS from the Database.
+ */
 export async function getAllOS(): Promise<OS[]> {
-    const { osData, caixaData } = await readExcelData();
-
-    // Fetch DB Extras for all
-    const allExtras = await prisma.oSExtraInfo.findMany({
-        include: { attachments: true }
+    const osRecords = await prisma.orderOfService.findMany({
+        include: {
+            caixas: { select: { id: true } },
+            extraInfo: { include: { attachments: true } }
+        },
+        orderBy: { rawPrevExec: 'asc' }
     });
-    const extraMap = new Map(allExtras.map(e => [e.osId, e]));
 
-    return osData
-        .map((row) => {
-            const osId = String(row.IdOs || row.ID || '');
-            const totalCaixas = caixaData.filter((c) => String(c.OS) === osId).length;
-            const extra = extraMap.get(osId);
-
-            return {
-                id: osId,
-                pop: String(row.POP || row.Pop || ''),
-                status: String(row.StatusOperacao || '').trim(),
-                uf: String(row.UF || ''),
-                dataEntrante: formatExcelDate(row['Entrante']),
-                dataPrevExec: formatExcelDate(row['Prev. Exec.']),
-                rawPrevExec: typeof row['Prev. Exec.'] === 'number' ? row['Prev. Exec.'] : 0,
-                dataConclusao: formatExcelDate(row['Conclusao']),
-                rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
-                cenario: String(row.Cenario || ''),
-                protocolo: String(row.Protocolo || ''),
-                totalCaixas,
-                condominio: extra?.condominio || undefined,
-                descricao: extra?.descricao || undefined,
-                anexos: extra?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
-            };
-        })
-        .filter((os) => {
-            const s = os.status.toLowerCase();
-            return s === 'iniciar' || s === 'em execução' || s === 'em execucao'
-                || s === 'pend. cliente' || s === 'concluído' || s === 'concluido'
-                || s === 'encerrada' || s === 'cancelado';
-        })
-        .sort((a, b) => a.rawPrevExec - b.rawPrevExec);
+    return osRecords.map(rec => ({
+        id: rec.id,
+        pop: rec.pop,
+        status: rec.status,
+        uf: rec.uf,
+        dataEntrante: rec.dataEntrante,
+        dataPrevExec: rec.dataPrevExec,
+        rawPrevExec: rec.rawPrevExec,
+        dataConclusao: rec.dataConclusao,
+        rawConclusao: rec.rawConclusao,
+        cenario: rec.cenario,
+        protocolo: rec.protocolo,
+        totalCaixas: rec.caixas.length,
+        condominio: rec.extraInfo?.condominio || undefined,
+        descricao: rec.extraInfo?.descricao || undefined,
+        anexos: rec.extraInfo?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
+    }));
 }
 
+/**
+ * Fetch a single OS by ID (IdOs) or POP name.
+ */
 export async function getOSById(id: string) {
-    const { osData, caixaData } = await readExcelData();
-
-    const osRow = osData.find((row) => String(row.IdOs || row.ID) === id || String(row.POP || row.Pop) === id);
-
-    if (!osRow) return null;
-
-    const osId = String(osRow.IdOs || osRow.ID);
-    const pop = String(osRow.POP || osRow.Pop);
-
-    // Fetch Extra Info
-    const extra = await prisma.oSExtraInfo.findUnique({
-        where: { osId },
-        include: { attachments: true }
+    const os = await prisma.orderOfService.findFirst({
+        where: {
+            OR: [
+                { id: id },
+                { pop: id }
+            ]
+        },
+        include: {
+            caixas: true,
+            extraInfo: { include: { attachments: true } }
+        }
     });
 
-    const items: CaixaItem[] = caixaData
-        .filter((row) => String(row.OS) === osId)
-        .map((row, index) => {
-            const chassiPath = [
-                row.Pop || row.POP,
-                row.Chassi,
-                row.Placa,
-                row.OLT,
-                row.Cto
-            ].filter(Boolean).join('/');
+    if (!os) return null;
 
-            return {
-                id: String(row.IdCaixa || index),
-                cto: String(row.Cto || ''),
-                chassiPath,
-                endereco: String(row.Endereco || ''),
-                lat: row.Lat ? parseFloat(String(row.Lat)) : null,
-                long: row.Long ? parseFloat(String(row.Long)) : null,
-                status: String(row.Status || 'Pendente'),
-                done: row.Status === 'OK'
-            };
-        });
+    const items: CaixaItem[] = os.caixas.map(c => {
+        const pathParts = [];
+        pathParts.push(os.pop);
+        if (c.chassi) pathParts.push(c.chassi);
+        if (c.placa) pathParts.push(c.placa);
+        if (c.olt) pathParts.push(c.olt);
+        pathParts.push(c.cto);
+
+        return {
+            id: c.id,
+            cto: c.cto,
+            chassiPath: pathParts.filter(Boolean).join('/'),
+            endereco: c.endereco || '',
+            lat: c.lat,
+            long: c.long,
+            status: c.status,
+            done: c.status === 'OK'
+        };
+    });
 
     return {
-        id: String(osRow.IdOs || osRow.ID || pop),
-        pop,
-        status: String(osRow.StatusOperacao || ''),
-        protocolo: String(osRow.Protocolo || ''),
-        uf: String(osRow.UF || ''),
-        dataEntrante: formatExcelDate(osRow['Entrante']),
-        dataPrevExec: formatExcelDate(osRow['Prev. Exec.']),
-        rawPrevExec: typeof osRow['Prev. Exec.'] === 'number' ? osRow['Prev. Exec.'] : 0,
-        dataConclusao: formatExcelDate(osRow['Conclusao']),
-        rawConclusao: typeof osRow['Conclusao'] === 'number' ? osRow['Conclusao'] : 0,
-        cenario: String(osRow.Cenario || ''),
-        totalCaixas: items.length, // Added to fix missing property since we are constructing result manually
+        id: os.id,
+        pop: os.pop,
+        status: os.status,
+        protocolo: os.protocolo,
+        uf: os.uf,
+        dataEntrante: os.dataEntrante,
+        dataPrevExec: os.dataPrevExec,
+        rawPrevExec: os.rawPrevExec,
+        dataConclusao: os.dataConclusao,
+        rawConclusao: os.rawConclusao,
+        cenario: os.cenario,
+        totalCaixas: items.length,
         items,
-        condominio: extra?.condominio || undefined,
-        descricao: extra?.descricao || undefined,
-        anexos: extra?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
+        condominio: os.extraInfo?.condominio || undefined,
+        descricao: os.extraInfo?.descricao || undefined,
+        anexos: os.extraInfo?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
     };
+}
+
+/** 
+ * Export placeholders or helpers needed by other modules
+ */
+export function invalidateExcelCache() {
+    // No-op now that we use DB
 }

@@ -2,6 +2,17 @@
 
 import { prisma } from '@/lib/db';
 import { getAllOS } from '@/lib/excel';
+import { syncExcelToDB } from '@/lib/sync';
+import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/auth';
+
+export async function refreshData() {
+    await requireAdmin();
+    const result = await syncExcelToDB();
+    revalidatePath('/admin/dashboard');
+    revalidatePath('/os');
+    return result;
+}
 
 export async function getDashboardData() {
     // 1. Get Base OS Data from Excel (Filtered by 'Iniciar'/'Em Execução')

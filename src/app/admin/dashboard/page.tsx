@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
+import { SyncDataButton } from '@/components/SyncDataButton';
 
 function timeAgo(dateStr: string): string {
     const now = new Date();
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <SyncDataButton />
                         <ExcelUploadButton />
                         <Link href="/os" className="inline-flex items-center gap-2 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-9 px-4 transition-colors shadow-sm">
                             <Wrench className="h-4 w-4" />

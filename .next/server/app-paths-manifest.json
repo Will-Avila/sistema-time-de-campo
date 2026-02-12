@@ -1,7 +1,8 @@
 {
   "/os/page": "app/os/page.js",
-  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
   "/os/[id]/page": "app/os/[id]/page.js",
-  "/os/[id]/admin/page": "app/os/[id]/admin/page.js",
+  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
+  "/admin/technicians/page": "app/admin/technicians/page.js",
+  "/login/page": "app/login/page.js",
   "/admin/dashboard/page": "app/admin/dashboard/page.js"
 }
