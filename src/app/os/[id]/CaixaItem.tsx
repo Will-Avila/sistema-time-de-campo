@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { updateChecklistItem, deleteChecklistPhoto, resetChecklistItem, uploadChecklistPhotos } from '@/actions/checklist';
 import Image from 'next/image';
 import { Card, CardHeader } from '@/components/ui/card';
-import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2, Camera, Globe } from 'lucide-react';
+import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2, Camera, Globe, ImagePlus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageViewer } from '@/components/ui/image-viewer';
 import { Input } from '@/components/ui/input';
@@ -194,12 +194,16 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-full text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            className={`h-9 w-9 rounded-full transition-all ${isUploading ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600' : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 shadow-sm'}`}
                             onClick={() => document.getElementById(`file-upload-${item.cto}`)?.click()}
                             disabled={isLoading || isUploading}
-                            title="Adicionar Fotos"
+                            title="Anexar Fotos da Galeria"
                         >
-                            <Camera className="h-5 w-5" />
+                            {isUploading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <ImagePlus className="h-5 w-5" />
+                            )}
                         </Button>
                         <input
                             type="file"

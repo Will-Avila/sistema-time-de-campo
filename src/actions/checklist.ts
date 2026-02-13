@@ -116,7 +116,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
 
-            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
+            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
             const uploadDir = path.join(baseUploadDir, protocol);
 
             await mkdir(uploadDir, { recursive: true });
@@ -197,7 +197,7 @@ export async function deleteChecklistPhoto(photoId: string, osId: string) {
         let absolutePath = '';
         if (photo.path.startsWith('/api/images/')) {
             const relativePath = photo.path.replace('/api/images/', '');
-            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
+            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
         } else {
             absolutePath = path.join(process.cwd(), 'public', photo.path);
         }
@@ -242,7 +242,7 @@ export async function resetChecklistItem(osId: string, itemId: string) {
                 let absolutePath = '';
                 if (photo.path.startsWith('/api/images/')) {
                     const relativePath = photo.path.replace('/api/images/', '');
-                    absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
+                    absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
                 } else {
                     absolutePath = path.join(process.cwd(), 'public', photo.path);
                 }
@@ -321,7 +321,7 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
         const osData = await getOSById(osId);
         const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
 
-        const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
+        const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
         const uploadDir = path.join(baseUploadDir, protocol);
 
         await mkdir(uploadDir, { recursive: true });

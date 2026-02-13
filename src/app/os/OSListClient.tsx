@@ -6,7 +6,7 @@ import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Calendar, MapPin, Box, Loader2, Building } from 'lucide-react';
+import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench } from 'lucide-react';
 import { updatePreferences } from '@/actions/equipe';
 import { getStatusVariantFromLabel } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
@@ -73,7 +73,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
         return matchesUF && matchesSearch && matchesStatus;
     }).sort((a, b) => {
         const parseDate = (d: string | undefined) => {
-            if (!d || d === '-') return 0;
+            if (!d || d === '-') return Number.MAX_SAFE_INTEGER;
             // Handle ISO strings (e.g. 2024-02-13T...)
             if (d.includes('T') || (d.includes('-') && d.length > 8)) {
                 return new Date(d).getTime();
@@ -85,33 +85,27 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
             return new Date(year, month - 1, day).getTime();
         };
 
-        // Special sort for 'Concluídas': most recent first
+        // Special sort for 'Concluídas': most recent closure first
         if (statusFilter === 'Concluídas') {
             const dateA = parseDate(a.closedAt || a.dataConclusao);
             const dateB = parseDate(b.closedAt || b.dataConclusao);
             return dateB - dateA; // Descending
         }
 
-        // Special sort for 'Canceladas': entry date most recent first
-        if (statusFilter === 'Canceladas') {
+        // Special sort for 'Canceladas' and 'Todas': entry date most recent first (descending)
+        if (statusFilter === 'Canceladas' || statusFilter === 'Todas') {
             return parseDate(b.dataEntrante) - parseDate(a.dataEntrante);
         }
 
-        // Custom sort for 'Abertas': Em execução > Iniciar > Others
+        // For 'Abertas': Pure sort by deadline (dataPrevExec) ascending
         if (statusFilter === 'Abertas') {
-            const getPriority = (os: EnrichedOS) => {
-                const effectiveStatus = getDisplayStatus(os).toLowerCase();
-                if (effectiveStatus.includes('execução') || effectiveStatus.includes('execucao')) return 3;
-                if (effectiveStatus === 'iniciar') return 2;
-                return 1;
-            };
+            const dateA = parseDate(a.dataPrevExec);
+            const dateB = parseDate(b.dataPrevExec);
 
-            const priorityA = getPriority(a);
-            const priorityB = getPriority(b);
-
-            if (priorityA !== priorityB) {
-                return priorityB - priorityA; // Higher priority first
+            if (dateA !== dateB) {
+                return dateA - dateB;
             }
+            return (a.pop || '').localeCompare(b.pop || '');
         }
 
         return 0;
@@ -225,9 +219,10 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                 )}
-                                <CardHeader className="p-5 pb-3 space-y-0">
+                                <CardHeader className="p-5 pb-3 space-y-0 relative">
+                                    <StatusBadge label={getDisplayStatus(os)} className="absolute top-5 right-5 z-10" />
                                     <div className="flex justify-between items-start gap-4">
-                                        <div className="space-y-1.5 flex-1">
+                                        <div className="space-y-1.5 flex-1 pr-24">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <Badge variant="outline" className="font-mono text-xs text-muted-foreground border-slate-200 dark:border-slate-700">
                                                     {os.protocolo || 'SEM PROTOCOLO'}
@@ -252,7 +247,6 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                                 {os.pop || 'SEM POP'}
                                             </CardTitle>
                                         </div>
-                                        <StatusBadge label={getDisplayStatus(os)} className="shrink-0" />
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-5 pt-2 flex-1 flex flex-col justify-end space-y-4">
@@ -261,10 +255,10 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                             <Box className="h-4 w-4 text-slate-400 shrink-0" />
                                             <span className="font-medium text-slate-600 dark:text-slate-400">{os.totalCaixas} caixas</span>
                                         </div>
-                                        {os.cenario && (
+                                        {os.tipoOs && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
-                                                <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                                                <span className="truncate text-xs">{os.cenario}</span>
+                                                <Wrench className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                                <span className="truncate text-xs">{os.tipoOs}</span>
                                             </div>
                                         )}
                                         {os.equipeName && (

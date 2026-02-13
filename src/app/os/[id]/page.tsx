@@ -97,7 +97,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <Link href={`/os/${os.id}/admin`}>
                                 <Button variant="outline" size="lg" className="w-full gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
                                     <FileText className="h-4 w-4" />
-                                    Editar Info.
+                                    Add Detalhes
                                 </Button>
                             </Link>
                         )}
@@ -144,8 +144,8 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <div>
                                 <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Cenário</span>
                                 <div className="flex items-start gap-2 mt-1">
-                                    <Map className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                                    <p className="text-sm text-slate-700 dark:text-slate-300">{os.cenario || 'Não especificado'}</p>
+                                    <Wrench className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+                                    <p className="text-sm text-slate-700 dark:text-slate-300">{os.tipoOs || 'Não especificado'}</p>
                                 </div>
                             </div>
 

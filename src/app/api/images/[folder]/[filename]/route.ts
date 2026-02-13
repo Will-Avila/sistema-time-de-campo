@@ -36,9 +36,25 @@ export async function GET(
         // Determine content type based on extension
         const ext = path.extname(filename).toLowerCase();
         let contentType = 'application/octet-stream';
-        if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-        else if (ext === '.png') contentType = 'image/png';
-        else if (ext === '.webp') contentType = 'image/webp';
+
+        const mimeMap: Record<string, string> = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.webp': 'image/webp',
+            '.pdf': 'application/pdf',
+            '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            '.xls': 'application/vnd.ms-excel',
+            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.doc': 'application/msword',
+            '.txt': 'text/plain',
+            '.csv': 'text/csv',
+            '.zip': 'application/zip'
+        };
+
+        if (mimeMap[ext]) {
+            contentType = mimeMap[ext];
+        }
 
         return new NextResponse(fileBuffer, {
             headers: {

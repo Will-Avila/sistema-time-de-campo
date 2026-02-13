@@ -37,8 +37,14 @@ export async function saveOSAdminInfo(formData: FormData) {
 
             for (const file of filesToDelete) {
                 try {
-                    const togglePath = path.join(process.cwd(), 'public', file.path);
-                    await unlink(togglePath);
+                    let absolutePath = '';
+                    if (file.path.startsWith('/api/images/')) {
+                        const relativePath = file.path.replace('/api/images/', '');
+                        absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
+                    } else {
+                        absolutePath = path.join(process.cwd(), 'public', file.path);
+                    }
+                    await unlink(absolutePath);
                 } catch (e) {
                     console.error('Erro ao deletar arquivo do disco:', e);
                 }
@@ -51,7 +57,13 @@ export async function saveOSAdminInfo(formData: FormData) {
 
         // 3. Handle New Uploads
         if (newFiles.length > 0) {
-            const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'os-files', osId);
+            const { getOSById } = await import('@/lib/excel');
+            const osData = await getOSById(osId);
+            const protocol = osData?.protocolo || osId;
+
+            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
+            const uploadDir = path.join(baseUploadDir, protocol);
+
             try {
                 await mkdir(uploadDir, { recursive: true });
             } catch (e) { }
@@ -60,8 +72,9 @@ export async function saveOSAdminInfo(formData: FormData) {
                 if (file instanceof File && file.size > 0) {
                     const ext = path.extname(file.name);
                     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-                    const fileName = `${randomUUID()}-${safeName}`;
-                    const relativePath = `/uploads/os-files/${osId}/${fileName}`;
+                    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
+                    const fileName = `${uniqueSuffix}-${safeName}`;
+                    const apiPath = `/api/images/${protocol}/${fileName}`;
                     const absolutePath = path.join(uploadDir, fileName);
 
                     const buffer = Buffer.from(await file.arrayBuffer());
@@ -71,7 +84,7 @@ export async function saveOSAdminInfo(formData: FormData) {
                         data: {
                             osId: osId,
                             name: file.name,
-                            path: relativePath,
+                            path: apiPath,
                             type: file.type || ext,
                             size: file.size
                         }
