@@ -50,9 +50,7 @@ export async function syncExcelToDB() {
                     uf: String(row.UF || ''),
                     dataEntrante: formatExcelDate(row['Entrante']),
                     dataPrevExec: formatExcelDate(row['Prev. Exec.']),
-                    rawPrevExec: typeof row['Prev. Exec.'] === 'number' ? row['Prev. Exec.'] : 0,
                     dataConclusao: formatExcelDate(row['Conclusao']),
-                    rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
                     cenario: String(row.Cenario || ''),
                     protocolo: String(row.Protocolo || ''),
                     mes: String(row.Mes || row.MES || ''),
@@ -71,9 +69,7 @@ export async function syncExcelToDB() {
                     uf: String(row.UF || ''),
                     dataEntrante: formatExcelDate(row['Entrante']),
                     dataPrevExec: formatExcelDate(row['Prev. Exec.']),
-                    rawPrevExec: typeof row['Prev. Exec.'] === 'number' ? row['Prev. Exec.'] : 0,
                     dataConclusao: formatExcelDate(row['Conclusao']),
-                    rawConclusao: typeof row['Conclusao'] === 'number' ? row['Conclusao'] : 0,
                     cenario: String(row.Cenario || ''),
                     protocolo: String(row.Protocolo || ''),
                     mes: String(row.Mes || row.MES || ''),
@@ -141,6 +137,7 @@ export async function syncExcelToDB() {
                     obs: String(row.OBS || ''),
                     data: formatExcelDate(row.Data),
                     nomeEquipe: String(row.NomeEquipe || ''),
+                    potencia: String(row.Potência || ''),
                     excelId: excelId || null,
                 },
                 create: {
@@ -164,6 +161,7 @@ export async function syncExcelToDB() {
                     obs: String(row.OBS || ''),
                     data: formatExcelDate(row.Data),
                     nomeEquipe: String(row.NomeEquipe || ''),
+                    potencia: String(row.Potência || ''),
                     excelId: excelId || null,
                 }
             });

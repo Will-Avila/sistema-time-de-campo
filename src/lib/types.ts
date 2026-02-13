@@ -34,6 +34,11 @@ export interface CaixaItemData {
     long: number | null;
     status: string;
     done: boolean;
+    nomeEquipe?: string;
+    equipe?: string;
+    potencia?: string;
+    obs?: string;
+    certified?: boolean;
 }
 
 // ─── Checklist State ───────────────────────────────────
@@ -43,7 +48,9 @@ export interface CaixaItemData {
 export interface ChecklistData {
     done: boolean;
     power?: string | null;
-    photos: { id: string; path: string }[];
+    obs?: string | null;
+    photos: { id: string; path: string; equipeId?: string | null }[];
+    certified?: boolean;
 }
 
 // ─── Equipe / Usuário (safe, no password) ──────────────

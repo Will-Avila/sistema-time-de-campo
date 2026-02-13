@@ -12,23 +12,28 @@ import { toast } from '@/components/ui/toast';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { CaixaItemData, ChecklistData } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from '@/components/ui/textarea';
+import { Session } from '@/lib/auth';
 
 interface CaixaItemProps {
     item: CaixaItemData;
     osId: string;
-    equipeName?: string;
     initialChecklist?: ChecklistData | null;
+    equipeName?: string;
+    session?: Session | null;
 }
 
 type Status = 'DONE' | 'PENDING' | 'UNTOUCHED';
 
-export default function CaixaItem({ item, osId, equipeName, initialChecklist }: CaixaItemProps) {
+export default function CaixaItem({ item, osId, initialChecklist, equipeName, session }: CaixaItemProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [mapDialogOpen, setMapDialogOpen] = useState(false);
 
     let initialStatus: Status = 'UNTOUCHED';
     if (item.done) {
         initialStatus = 'DONE';
+    } else if (item.status === 'NOK') {
+        initialStatus = 'PENDING';
     } else if (initialChecklist) {
         initialStatus = initialChecklist.done ? 'DONE' : 'PENDING';
     }
@@ -45,7 +50,14 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
     const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
 
     // Form data
-    const [power, setPower] = useState(initialChecklist?.power || '');
+    const [power, setPower] = useState(initialChecklist?.power || item.potencia || '');
+    const [obs, setObs] = useState(initialChecklist?.obs || item.obs || '');
+    const [certified, setCertified] = useState(initialChecklist?.certified || item.certified || false);
+
+    // Access Control logic
+    const isOwner = session?.id === item.equipe;
+    const canUnmark = session?.isAdmin || isOwner;
+    // canEdit removed as per new requirement: technicians can always edit data
 
     // Confirm modal state
     const [confirmAction, setConfirmAction] = useState<{
@@ -60,6 +72,7 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
 
         const formData = new FormData(e.currentTarget);
         formData.append('done', 'true');
+        formData.append('certified', String(certified));
 
         const result = await updateChecklistItem(null, formData);
 
@@ -73,7 +86,7 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
         setIsLoading(false);
     }
 
-    async function handleMarkPending() {
+    async function handleMarkNotExecuted() {
         setIsLoading(true);
 
         const formData = new FormData();
@@ -86,7 +99,7 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
         if (result.success) {
             setStatus('PENDING');
             setIsOpen(false);
-            toast('Marcada como pendente.', 'warning');
+            toast('Marcada como não executada.', 'warning');
         } else {
             toast(result.message || 'Erro ao atualizar.', 'error');
         }
@@ -132,6 +145,7 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
         if (result.success) {
             setStatus('UNTOUCHED');
             setPower('');
+            setObs('');
             setShowPhotos(false);
             setIsOpen(false);
             toast('Caixa desmarcada.', 'success');
@@ -235,23 +249,35 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
                 </div>
 
                 {/* Result Data (Compact) */}
-                {status === 'DONE' && initialChecklist && (
+                {status === 'DONE' && (
                     <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700 space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                            <div className="font-medium text-slate-700 dark:text-slate-300">
-                                {initialChecklist.power && (
-                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Signal: {initialChecklist.power} dBm</span>
+                        {(initialChecklist?.power || item.potencia) && (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Signal: {initialChecklist?.power || item.potencia} dBm</span>
+                                    {certified && (
+                                        <span className="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                                            Certificada
+                                        </span>
+                                    )}
+                                </div>
+                                {initialChecklist && initialChecklist.photos.length > 0 && (
+                                    <Button variant="ghost" size="sm" onClick={() => setShowPhotos(!showPhotos)} className="h-7 text-xs gap-1 text-primary">
+                                        <Eye className="h-3 w-3" /> Ver {initialChecklist.photos.length} Fotos
+                                    </Button>
                                 )}
                             </div>
-                            {initialChecklist.photos.length > 0 && (
-                                <Button variant="ghost" size="sm" onClick={() => setShowPhotos(!showPhotos)} className="h-7 text-xs gap-1 text-primary">
-                                    <Eye className="h-3 w-3" /> Ver {initialChecklist.photos.length} Fotos
-                                </Button>
+                        )}
+                        {(initialChecklist?.obs || item.obs) && (
+                            <div className="bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-900/30 text-xs text-amber-800 dark:text-amber-400 italic">
+                                "{initialChecklist?.obs || item.obs}"
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                            {(item.nomeEquipe || equipeName) && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Responsável: <span className="font-medium text-slate-700 dark:text-slate-300">{item.nomeEquipe || equipeName}</span></p>
                             )}
                         </div>
-                        {equipeName && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Responsável: <span className="font-medium text-slate-700 dark:text-slate-300">{equipeName}</span></p>
-                        )}
                     </div>
                 )}
 
@@ -274,6 +300,7 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
                                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); requestDeletePhoto(p.id); }}
                                     className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover/photo:opacity-100 transition-opacity hover:bg-red-600"
                                     title="Excluir foto"
+                                    disabled={(!session?.isAdmin && p.equipeId !== session?.id)}
                                 >
                                     <Trash2 className="h-3 w-3" />
                                 </button>
@@ -408,54 +435,80 @@ export default function CaixaItem({ item, osId, equipeName, initialChecklist }: 
                                     <input type="hidden" name="osId" value={osId} />
                                     <input type="hidden" name="itemId" value={String(item.id || item.cto)} />
 
+                                    <div className="grid grid-cols-2 gap-4 items-end">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Potência (dBm)</label>
+                                            <Input
+                                                type="number"
+                                                name="power"
+                                                step="0.01"
+                                                min="-50"
+                                                max="-10"
+                                                value={power}
+                                                onChange={e => setPower(e.target.value)}
+                                                className="font-mono text-lg"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center space-x-2 h-10 bg-slate-100 dark:bg-slate-800 rounded-md px-3 border border-slate-200 dark:border-slate-700">
+                                            <input
+                                                type="checkbox"
+                                                id={`certified-${item.cto}`}
+                                                name="certified"
+                                                checked={certified}
+                                                onChange={e => setCertified(e.target.checked)}
+                                                className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <label htmlFor={`certified-${item.cto}`} className="text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                                                Certificada
+                                            </label>
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Potência (dBm)</label>
-                                        <Input
-                                            type="number"
-                                            name="power"
-                                            step="0.01"
-                                            min="-50"
-                                            max="-10"
-                                            required={status !== 'PENDING'}
-                                            value={power}
-                                            onChange={e => setPower(e.target.value)}
-                                            placeholder="-25"
-                                            className="font-mono text-lg"
+                                        <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Observação <span className="text-xs font-normal text-slate-400">(Opcional)</span></label>
+                                        <Textarea
+                                            name="obs"
+                                            value={obs}
+                                            onChange={e => setObs(e.target.value)}
+                                            rows={3}
+                                            placeholder="Descreve aqui qualquer detalhe importante..."
                                         />
-                                        <p className="text-xs text-muted-foreground">Faixa aceita: -10 a -50 dBm</p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3 pt-2">
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            onClick={handleMarkPending}
-                                            disabled={isLoading}
-                                            className="w-full"
-                                        >
-                                            Marcar Pendente
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            disabled={isLoading}
-                                            className="w-full"
-                                        >
-                                            {isLoading ? 'Salvando...' : 'Concluir'}
-                                        </Button>
-                                    </div>
+                                    <div className="flex flex-col gap-3 pt-2">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                onClick={handleMarkNotExecuted}
+                                                disabled={isLoading}
+                                                className="w-full"
+                                            >
+                                                Não Executada
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                className="w-full shadow-lg bg-emerald-600 hover:bg-emerald-700 h-10"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? 'Salvando...' : (status === 'DONE' ? 'Atualizar' : 'Concluir')}
+                                            </Button>
+                                        </div>
 
-                                    {(status === 'DONE' || status === 'PENDING') && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={requestReset}
-                                            disabled={isLoading}
-                                            className="w-full mt-2 gap-2 text-slate-500 dark:text-slate-400"
-                                        >
-                                            <Undo2 className="h-4 w-4" />
-                                            Desmarcar
-                                        </Button>
-                                    )}
+                                        {canUnmark && status !== 'PENDING' && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={requestReset}
+                                                disabled={isLoading}
+                                                className="w-full gap-2 text-rose-500 border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                                            >
+                                                <Undo2 className="h-4 w-4" />
+                                                Desmarcar
+                                            </Button>
+                                        )}
+                                    </div>
                                 </form>
                             </div>
                         </Card>

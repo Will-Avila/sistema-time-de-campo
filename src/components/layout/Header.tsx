@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { logout } from '@/actions/auth';
 import { updatePreferences } from '@/actions/equipe';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 
 import { NotificationBell } from './NotificationBell';
 
@@ -17,18 +18,17 @@ interface HeaderProps {
 
 export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [theme, setTheme] = useState(initialTheme || 'light');
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
     const firstName = username.split(' ')[0];
 
-    // Apply theme class to document
+    // Set theme based on server preference on mount
     useEffect(() => {
-        const root = document.documentElement;
-        if (theme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
+        setMounted(true);
+        if (initialTheme) {
+            setTheme(initialTheme);
         }
-    }, [theme]);
+    }, [initialTheme, setTheme]);
 
     async function handleToggleTheme() {
         const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -76,12 +76,14 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
                             onClick={handleToggleTheme}
                             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors text-left"
                         >
-                            {theme === 'dark' ? (
+                            {!mounted ? (
+                                <div className="h-4 w-4 animate-pulse bg-slate-200 dark:bg-slate-700 rounded-full" />
+                            ) : theme === 'dark' ? (
                                 <Sun className="h-4 w-4 text-amber-500" />
                             ) : (
                                 <Moon className="h-4 w-4 text-indigo-500" />
                             )}
-                            {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+                            {!mounted ? 'Carregando...' : (theme === 'dark' ? 'Modo Claro' : 'Modo Escuro')}
                         </button>
 
                         <div className="border-t border-slate-100 dark:border-slate-700 my-1" />

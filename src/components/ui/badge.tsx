@@ -11,10 +11,10 @@ function Badge({ className, variant = "default", ...props }: BadgeProps) {
         secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
-        success: "border-transparent bg-green-500 text-white hover:bg-green-600",
+        success: "border-emerald-500/50 bg-transparent text-emerald-600 dark:text-emerald-400 dark:border-emerald-500/30",
         warning: "border-transparent bg-yellow-500 text-white hover:bg-yellow-600",
         orange: "border-transparent bg-orange-500 text-white hover:bg-orange-600",
-        "light-green": "border-transparent bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-900/50 dark:text-green-300",
+        "light-green": "border-emerald-500/30 bg-transparent text-emerald-600 dark:text-emerald-400/80 dark:border-emerald-500/20",
     }
 
     return (

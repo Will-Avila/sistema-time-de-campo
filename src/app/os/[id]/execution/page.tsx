@@ -8,12 +8,15 @@ import { ArrowLeft } from 'lucide-react';
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import OSExecutionClient from './OSExecutionClient';
 
+import { getSession } from '@/lib/auth';
+
 interface PageProps {
     params: { id: string };
 }
 
 export default async function OSExecutionPage({ params }: PageProps) {
     const os = await getOSById(params.id);
+    const session = await getSession();
 
     if (!os) return notFound();
 
@@ -59,6 +62,7 @@ export default async function OSExecutionPage({ params }: PageProps) {
                 items={os.items}
                 checklistMap={checklistLookup}
                 equipeName={execution?.equipe?.fullName || execution?.equipe?.nomeEquipe || execution?.equipe?.name}
+                session={session}
             />
         </div>
     );

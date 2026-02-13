@@ -7,9 +7,7 @@ export interface OS {
     uf: string;
     dataEntrante: string;
     dataPrevExec: string;
-    rawPrevExec?: number;
     dataConclusao?: string;
-    rawConclusao?: number;
     mes?: string;
     valorServico?: number;
     statusMedicao?: string;
@@ -48,6 +46,7 @@ export interface CaixaItem {
     obs: string;
     data: string;
     nomeEquipe: string;
+    potencia: string;
     done: boolean;
 }
 
@@ -66,7 +65,7 @@ export async function getAllOS(): Promise<OS[]> {
             caixas: { select: { id: true } },
             extraInfo: { include: { attachments: true } }
         },
-        orderBy: { rawPrevExec: 'asc' }
+        orderBy: { pop: 'asc' }
     });
 
     return osRecords.map(rec => ({
@@ -76,9 +75,7 @@ export async function getAllOS(): Promise<OS[]> {
         uf: rec.uf,
         dataEntrante: rec.dataEntrante,
         dataPrevExec: rec.dataPrevExec,
-        rawPrevExec: rec.rawPrevExec,
         dataConclusao: rec.dataConclusao,
-        rawConclusao: rec.rawConclusao,
         mes: rec.mes,
         valorServico: rec.valorServico,
         statusMedicao: rec.statusMedicao,
@@ -115,6 +112,15 @@ export async function getOSById(id: string) {
 
     if (!os) return null;
 
+    // Fetch équipes for name resolution
+    const equipes = await prisma.equipe.findMany({
+        select: { id: true, fullName: true, nomeEquipe: true, name: true }
+    });
+    const equipeMap = new Map<string, string>();
+    equipes.forEach(e => {
+        equipeMap.set(e.id, e.fullName || e.nomeEquipe || e.name);
+    });
+
     const items: CaixaItem[] = os.caixas.map(c => {
         const pathParts = [];
         pathParts.push(os.pop);
@@ -122,6 +128,9 @@ export async function getOSById(id: string) {
         if (c.placa) pathParts.push(c.placa);
         if (c.olt) pathParts.push(c.olt);
         pathParts.push(c.cto);
+
+        // Resolve team name from map if possible
+        const resolvedNomeEquipe = (c.equipe && equipeMap.get(c.equipe)) || c.nomeEquipe;
 
         return {
             id: c.id,
@@ -143,7 +152,8 @@ export async function getOSById(id: string) {
             equipe: c.equipe,
             obs: c.obs,
             data: c.data,
-            nomeEquipe: c.nomeEquipe,
+            nomeEquipe: resolvedNomeEquipe,
+            potencia: c.potencia,
             done: c.status === 'OK'
         };
     });
@@ -156,9 +166,7 @@ export async function getOSById(id: string) {
         uf: os.uf,
         dataEntrante: os.dataEntrante,
         dataPrevExec: os.dataPrevExec,
-        rawPrevExec: os.rawPrevExec,
         dataConclusao: os.dataConclusao,
-        rawConclusao: os.rawConclusao,
         mes: os.mes,
         valorServico: os.valorServico,
         statusMedicao: os.statusMedicao,

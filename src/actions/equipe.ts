@@ -11,7 +11,7 @@ function isValidUsername(username: string) {
     return /^[a-zA-Z0-9]+$/.test(username);
 }
 
-export async function updatePreferences(key: 'theme' | 'lastUf', value: string) {
+export async function updatePreferences(key: 'theme' | 'lastUf' | 'lastSearch' | 'lastStatus', value: string) {
     const session = await requireAuth().catch(() => null);
     if (!session) return { message: 'Não autenticado.' };
 
@@ -21,10 +21,15 @@ export async function updatePreferences(key: 'theme' | 'lastUf', value: string) 
             data: { [key]: value }
         });
 
+        logger.info('Preferences updated', { userId: session.id, key, value });
         revalidatePath('/os');
         return { success: true };
-    } catch (error) {
-        logger.error('Error updating preferences', { error: String(error) });
+    } catch (error: any) {
+        if (error.code === 'P2025') {
+            logger.error('Preferences update failed: User record not found. User needs to re-login.', { userId: session.id });
+            return { message: 'Sessão expirada ou usuário não encontrado. Por favor, saia e entre novamente.' };
+        }
+        logger.error('Error updating preferences', { userId: session.id, key, value, error: String(error) });
         return { message: 'Erro ao salvar preferência.' };
     }
 }

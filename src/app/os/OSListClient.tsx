@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,16 +14,40 @@ import { StatusBadge } from '@/components/os/StatusBadge';
 interface OSListClientProps {
     initialOSList: EnrichedOS[];
     initialUf: string;
+    initialSearch?: string;
+    initialStatus?: string;
 }
 
-export default function OSListClient({ initialOSList, initialUf }: OSListClientProps) {
+export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus }: OSListClientProps) {
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('Abertas');
+    const [searchTerm, setSearchTerm] = useState(initialSearch || '');
+    const [statusFilter, setStatusFilter] = useState<string>(initialStatus || 'Abertas');
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 50;
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const router = useRouter();
+
+    // Persistent search term (debounced)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchTerm !== (initialSearch || '')) {
+                updatePreferences('lastSearch', searchTerm).then(() => router.refresh());
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, initialSearch, router]);
+
+    function handleUFChange(newUF: string) {
+        setSelectedUF(newUF);
+        setCurrentPage(1);
+        updatePreferences('lastUf', newUF).then(() => router.refresh());
+    }
+
+    function handleStatusChange(newStatus: string) {
+        setStatusFilter(newStatus);
+        setCurrentPage(1);
+        updatePreferences('lastStatus', newStatus).then(() => router.refresh());
+    }
 
     const STATUS_GROUPS: Record<string, string[]> = {
         'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída - em análise', 'sem execução - em análise'],
@@ -48,12 +72,29 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
 
         return matchesUF && matchesSearch && matchesStatus;
     }).sort((a, b) => {
+        const parseDate = (d: string | undefined) => {
+            if (!d || d === '-') return 0;
+            // Handle ISO strings (e.g. 2024-02-13T...)
+            if (d.includes('T') || (d.includes('-') && d.length > 8)) {
+                return new Date(d).getTime();
+            }
+            // Handle BR strings (DD/MM/YYYY)
+            const parts = d.split('/');
+            if (parts.length < 3) return 0;
+            const [day, month, year] = parts.map(Number);
+            return new Date(year, month - 1, day).getTime();
+        };
+
         // Special sort for 'Concluídas': most recent first
         if (statusFilter === 'Concluídas') {
-            // Priority: 1. App closedAt, 2. Excel Conclusao, 3. Fallback
-            const dateA = a.closedAt ? new Date(a.closedAt).getTime() : (a.rawConclusao ? (a.rawConclusao - 25569) * 86400000 : 0);
-            const dateB = b.closedAt ? new Date(b.closedAt).getTime() : (b.rawConclusao ? (b.rawConclusao - 25569) * 86400000 : 0);
+            const dateA = parseDate(a.closedAt || a.dataConclusao);
+            const dateB = parseDate(b.closedAt || b.dataConclusao);
             return dateB - dateA; // Descending
+        }
+
+        // Special sort for 'Canceladas': entry date most recent first
+        if (statusFilter === 'Canceladas') {
+            return parseDate(b.dataEntrante) - parseDate(a.dataEntrante);
         }
 
         // Custom sort for 'Abertas': Em execução > Iniciar > Others
@@ -73,15 +114,8 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
             }
         }
 
-        // Default sort: already sorted by prevExec in Excel parser, but we preserve it
         return 0;
     });
-
-    function handleUFChange(newUF: string) {
-        setSelectedUF(newUF);
-        setCurrentPage(1);
-        updatePreferences('lastUf', newUF);
-    }
 
     const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
     const paginatedList = filteredList.slice(
@@ -89,17 +123,15 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         currentPage * ITEMS_PER_PAGE
     );
 
-    /** Returns color classes for a date based on comparison with today */
-    function getDateColor(excelSerial?: number): string {
-        if (!excelSerial) return 'text-slate-700 dark:text-slate-300';
-        const dateMs = (excelSerial - 25569) * 86400000;
-        const date = new Date(dateMs);
+    function getDateColor(dateStr?: string): string {
+        if (!dateStr || dateStr === '-') return 'text-slate-700 dark:text-slate-300';
+
+        const [day, month, year] = dateStr.split('/').map(Number);
+        const date = new Date(year, month - 1, day);
         const today = new Date();
-        // Compare only year/month/day
         const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
-        if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
+
         if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
         if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
         return 'text-slate-700 dark:text-slate-300';
@@ -110,23 +142,18 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
         const s = os.status.toLowerCase();
         if (s === 'concluído' || s === 'concluido' || s === 'encerrada') return 'Concluída';
         if (s === 'cancelado') return 'Cancelada';
-        // If not concluded or cancelled, display the actual status from Excel (properly formatted is better, but raw is fine)
-        // Capitalize first letter?
         return os.status || 'Pendente';
     }
 
-
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-6 md:pb-8 space-y-6 transition-colors">
-
-            <div className="pt-20 px-4 md:px-8 space-y-6"> {/* Added padding top for fixed header */}
+            <div className="pt-20 px-4 md:px-8 space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Ordens de Serviço</h1>
                     </div>
                 </div>
 
-                {/* Filters */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative flex-1 w-full">
@@ -164,10 +191,7 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                     <div className="relative w-full sm:w-auto">
                                         <select
                                             value={statusFilter}
-                                            onChange={(e) => {
-                                                setStatusFilter(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
+                                            onChange={(e) => handleStatusChange(e.target.value)}
                                             className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                                         >
                                             {Object.keys(STATUS_GROUPS).map(s => (
@@ -188,7 +212,6 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                     </CardContent>
                 </Card>
 
-                {/* Grid */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {paginatedList.map((os) => (
                         <div
@@ -216,7 +239,6 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                                 )}
                                             </div>
 
-                                            {/* Condo Name */}
                                             {os.condominio && (
                                                 <div className="flex items-center gap-1.5 mb-0.5 mt-1">
                                                     <Building className="h-3.5 w-3.5 text-slate-500" />
@@ -263,21 +285,20 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                                         {getDisplayStatus(os) === 'Concluída' ? (
                                             <div>
                                                 <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Conclusão</span>
-                                                <div className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-                                                    <Calendar className="h-3 w-3 text-emerald-500/70" />
-                                                    {os.closedAt ? new Date(os.closedAt).toLocaleDateString('pt-BR') : (os.dataConclusao || '-')}
+                                                <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                                                    <Calendar className="h-3 w-3 text-slate-400" />
+                                                    {os.closedAt ? (os.closedAt.includes('T') ? new Date(os.closedAt).toLocaleDateString('pt-BR') : os.closedAt) : (os.dataConclusao || '-')}
                                                 </div>
                                             </div>
                                         ) : (
                                             <div>
                                                 <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
-                                                <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.rawPrevExec)}`}>
+                                                <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.dataPrevExec)}`}>
                                                     <Calendar className="h-3 w-3 text-slate-400" />
                                                     {os.dataPrevExec}
                                                 </div>
                                             </div>
                                         )}
-
                                     </div>
                                 </CardContent>
                             </Card>
@@ -285,7 +306,6 @@ export default function OSListClient({ initialOSList, initialUf }: OSListClientP
                     ))}
                 </div>
 
-                {/* Pagination Controls */}
                 {totalPages > 1 && (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6 border-t border-slate-200 dark:border-slate-800 mt-8">
                         <div className="flex items-center gap-2">

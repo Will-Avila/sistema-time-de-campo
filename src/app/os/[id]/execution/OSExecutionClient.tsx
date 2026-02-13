@@ -5,6 +5,7 @@ import { Search, Box, CheckCircle2, AlertCircle, Circle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import CaixaItem from '../CaixaItem';
 import { CaixaItemData, ChecklistData } from '@/lib/types';
+import { Session } from '@/lib/auth';
 
 interface OSExecutionClientProps {
     osId: string;
@@ -12,6 +13,7 @@ interface OSExecutionClientProps {
     items: CaixaItemData[];
     checklistMap: Record<string, ChecklistData>;
     equipeName?: string;
+    session: Session | null;
 }
 
 export default function OSExecutionClient({
@@ -19,7 +21,8 @@ export default function OSExecutionClient({
     protocolo,
     items,
     checklistMap,
-    equipeName
+    equipeName,
+    session
 }: OSExecutionClientProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -162,6 +165,7 @@ export default function OSExecutionClient({
                             osId={osId}
                             initialChecklist={item.checklistItem}
                             equipeName={equipeName}
+                            session={session}
                         />
                     ))
                 )}

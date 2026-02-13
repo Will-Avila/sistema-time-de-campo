@@ -43,7 +43,7 @@ export default async function OSListPage() {
 
             // Only show closure date if it's actually finished (Concluída or Sem Execução)
             if (executionStatus.includes('Concluída') || executionStatus.includes('Sem Execução')) {
-                closedAt = exec.updatedAt.toLocaleDateString('pt-BR');
+                closedAt = exec.updatedAt.toISOString();
             }
         }
 
@@ -53,14 +53,18 @@ export default async function OSListPage() {
     // Get Session & Preferences (centralized)
     const session = await getSession();
     let lastUf = 'Todos';
+    let lastSearch = '';
+    let lastStatus = 'Abertas';
 
     if (session) {
         const tech = await prisma.equipe.findUnique({
             where: { id: session.id },
-            select: { lastUf: true }
+            select: { lastUf: true, lastStatus: true, lastSearch: true }
         });
         if (tech) {
             lastUf = tech.lastUf || 'Todos';
+            lastSearch = tech.lastSearch || '';
+            lastStatus = tech.lastStatus || 'Abertas';
         }
     }
 
@@ -70,6 +74,8 @@ export default async function OSListPage() {
             <OSListClient
                 initialOSList={enrichedList}
                 initialUf={lastUf}
+                initialSearch={lastSearch}
+                initialStatus={lastStatus}
             />
         </>
     );

@@ -7,182 +7,170 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model OrderOfService {
-  id            String   @id // Will store the IdOs from Excel
-  pop           String
-  status        String   // StatusOperacao
-  uf            String   @default("")
-  dataEntrante  String   @default("")
-  dataPrevExec  String   @default("")
-  rawPrevExec   Float    @default(0)
-  dataConclusao String   @default("")
-  rawConclusao  Float    @default(0)
-  cenario       String   @default("")
-  protocolo     String   @default("")
-  mes           String   @default("")
-  valorServico  Float    @default(0)
-  statusMedicao String   @default("")
-  statusFinal   String   @default("")
-  tempo         String   @default("")
-  facilidadesPlanejadas Int @default(0)
-  caixasPlanejadas Int      @default(0)
-  tipoOs        String   @default("")
-  
-  // Relations
-  caixas        CaixaAlare[]
-  execution     ServiceExecution?
-  extraInfo     OSExtraInfo?
-  notifications Notification[]
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                    String            @id
+  pop                   String
+  status                String
+  uf                    String            @default("")
+  dataEntrante          String            @default("")
+  dataPrevExec          String            @default("")
+  dataConclusao         String            @default("")
+  cenario               String            @default("")
+  protocolo             String            @default("")
+  mes                   String            @default("")
+  valorServico          Float             @default(0)
+  statusMedicao         String            @default("")
+  statusFinal           String            @default("")
+  tempo                 String            @default("")
+  facilidadesPlanejadas Int               @default(0)
+  caixasPlanejadas      Int               @default(0)
+  tipoOs                String            @default("")
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  caixas                CaixaAlare[]
+  notifications         Notification[]
+  extraInfo             OSExtraInfo?
+  execution             ServiceExecution?
 
   @@index([status])
 }
 
 model CaixaAlare {
-  id          String   @id @default(uuid())
-  excelId     String?  // IdCaixa from Excel
-  osId        String
-  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
-  
-  cto         String
-  pop         String   @default("")
-  cidade      String   @default("")
-  uf          String   @default("")
-  chassi      String?
-  placa       String?
-  olt         String?
-  cenario     String   @default("")
-  bairro      String   @default("")
-  endereco    String?
-  lat         Float?
-  long        Float?
-  status      String   @default("Pendente") // OK, Pendente, etc
-  valor       Float    @default(0)
-  equipe      String   @default("")
-  obs         String   @default("")
-  data        String   @default("")
-  nomeEquipe  String   @default("")
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String         @id @default(uuid())
+  excelId    String?
+  osId       String
+  cto        String
+  pop        String         @default("")
+  cidade     String         @default("")
+  uf         String         @default("")
+  chassi     String?
+  placa      String?
+  olt        String?
+  cenario    String         @default("")
+  bairro     String         @default("")
+  endereco   String?
+  lat        Float?
+  long       Float?
+  status     String         @default("Pendente")
+  valor      Float          @default(0)
+  equipe     String         @default("")
+  obs        String         @default("")
+  data       String         @default("")
+  nomeEquipe String         @default("")
+  potencia   String         @default("")
+  certified  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  os         OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
 
   @@index([osId])
 }
 
 model LancaAlare {
-  id            String   @id @default(uuid())
-  excelId       String?  // IdLancamento from Excel
-  osId          String?
-  de            String   @default("")
-  para          String   @default("")
-  previsao      String   @default("")
-  cenario       String   @default("")
-  valor         Float?
-  cabo          String   @default("")
-  status        String   @default("")
-  lancado       String   @default("")
-  cenarioReal   String   @default("")
-  valorReal     Float    @default(0)
-  difLanc       Float    @default(0)
-  orcadoAtual   Float    @default(0)
-  data          String?
-  equipe        String   @default("")
-  descricao     String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  excelId     String?
+  osId        String?
+  de          String   @default("")
+  para        String   @default("")
+  previsao    String   @default("")
+  cenario     String   @default("")
+  valor       Float?
+  cabo        String   @default("")
+  status      String   @default("")
+  lancado     String   @default("")
+  cenarioReal String   @default("")
+  valorReal   Float    @default(0)
+  difLanc     Float    @default(0)
+  orcadoAtual Float    @default(0)
+  data        String?
+  equipe      String   @default("")
+  descricao   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Equipe {
-  id            String   @id @default(uuid())
-  excelId       String?  @unique // IdEquipe from Excel
-  codEquipe     String   @default("")
-  nomeEquipe    String   @default("")
-  
-  // User fields
-  name          String   @default("") @unique
+  id            String             @id @default(uuid())
+  excelId       String?            @unique
+  codEquipe     String             @default("")
+  nomeEquipe    String             @default("")
+  name          String             @unique @default("")
   fullName      String?
-  password      String   @default("")
-  isAdmin       Boolean  @default(false)
-  theme         String   @default("system")
-  lastUf        String   @default("Todos")
+  password      String             @default("")
+  isAdmin       Boolean            @default(false)
+  theme         String             @default("system")
+  lastUf        String             @default("Todos")
+  lastSearch    String             @default("")
+  lastStatus    String             @default("Abertas")
   phone         String?
-
-  prestadora    String   @default("")
-  classificacao String   @default("")
-  unidade       String   @default("")
-  descEquipe    String   @default("")
-  centro        String   @default("")
-
+  prestadora    String             @default("")
+  classificacao String             @default("")
+  unidade       String             @default("")
+  descEquipe    String             @default("")
+  centro        String             @default("")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  notifications Notification[]     @relation("EquipeNotifications")
   executions    ServiceExecution[] @relation("EquipeExecutions")
-  notifications Notification[] @relation("EquipeNotifications")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  photos        Photo[]            @relation("EquipePhotos")
 }
 
 model ServiceExecution {
-  id           String      @id @default(uuid())
-  osId         String      @unique // One execution per OS
-  os           OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
-  
-  equipeId     String?
-  equipe       Equipe?     @relation("EquipeExecutions", fields: [equipeId], references: [id], onDelete: SetNull)
-
-  technicianName String?   // Archives the name for history even if tech is deleted
-  status       String      @default("PENDING") // PENDING, DONE
-  power        String?
-  obs          String?
-  
-  photos       Photo[]
-  checklist    Checklist[]
-
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id             String         @id @default(uuid())
+  osId           String         @unique
+  equipeId       String?
+  technicianName String?
+  status         String         @default("PENDING")
+  power          String?
+  obs            String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  checklist      Checklist[]
+  photos         Photo[]
+  equipe         Equipe?        @relation("EquipeExecutions", fields: [equipeId], references: [id])
+  os             OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
 
   @@index([osId])
 }
 
 model Photo {
-  id          String           @id @default(uuid())
+  id          String            @id @default(uuid())
   executionId String?
-  execution   ServiceExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
   checklistId String?
-  checklist   Checklist?       @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  equipeId    String?
   path        String
-  createdAt   DateTime         @default(now())
+  createdAt   DateTime          @default(now())
+  checklist   Checklist?        @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  execution   ServiceExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  equipe      Equipe?           @relation("EquipePhotos", fields: [equipeId], references: [id], onDelete: SetNull)
 }
 
 model Checklist {
   id          String           @id @default(uuid())
   executionId String
-  execution   ServiceExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
-  itemId      String           // Links to item ID (cto or excelId in CaixaAlare)
+  itemId      String
   done        Boolean          @default(false)
-  power       String?          // db/dBm value
+  power       String?
+  obs         String?
+  certified   Boolean          @default(false)
+  execution   ServiceExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
   photos      Photo[]
 
   @@unique([executionId, itemId])
 }
 
 model Notification {
-  id           String      @id @default(uuid())
-  type         String      // CHECKLIST, OS_CLOSE, NEW_OS
-  title        String
-  message      String
-  read         Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-  
-  equipeId     String?
-  equipe       Equipe?     @relation("EquipeNotifications", fields: [equipeId], references: [id], onDelete: SetNull)
-
-  technicianName String?   // Archives the name for history even if tech is deleted
-  
-  osId         String?     
-  os           OrderOfService? @relation(fields: [osId], references: [id], onDelete: SetNull)
+  id             String          @id @default(uuid())
+  type           String
+  title          String
+  message        String
+  read           Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  equipeId       String?
+  technicianName String?
+  osId           String?
+  os             OrderOfService? @relation(fields: [osId], references: [id])
+  equipe         Equipe?         @relation("EquipeNotifications", fields: [equipeId], references: [id])
 
   @@index([read, createdAt])
 }
@@ -190,23 +178,21 @@ model Notification {
 model OSExtraInfo {
   id          String         @id @default(uuid())
   osId        String         @unique
-  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
   condominio  String?
   descricao   String?
-  
-  attachments OSAttachment[]
-
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  attachments OSAttachment[]
+  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
 }
 
 model OSAttachment {
-  id            String       @id @default(uuid())
-  extraInfoId   String
-  extraInfo     OSExtraInfo  @relation(fields: [extraInfoId], references: [id], onDelete: Cascade)
-  name          String
-  path          String
-  type          String       // MIME type or extension
-  size          Int          // Bytes
-  createdAt     DateTime     @default(now())
+  id          String      @id @default(uuid())
+  extraInfoId String
+  name        String
+  path        String
+  type        String
+  size        Int
+  createdAt   DateTime    @default(now())
+  extraInfo   OSExtraInfo @relation(fields: [extraInfoId], references: [id], onDelete: Cascade)
 }
