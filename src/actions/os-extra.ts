@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto';
 
 export async function saveOSAdminInfo(formData: FormData) {
     try {
-        const session = await requireAdmin(); // Or check session.isAdmin manually if strictly needed
+        const session = await requireAdmin();
     } catch (e) {
         return { success: false, message: 'Acesso negado. Apenas administradores.' };
     }
@@ -18,30 +18,16 @@ export async function saveOSAdminInfo(formData: FormData) {
     const condominio = formData.get('condominio') as string;
     const descricao = formData.get('descricao') as string;
     const deletedFileIds = formData.getAll('deletedFileIds') as string[];
-    const newFiles = formData.getAll('files') as File[]; // Cast as File[]
+    const newFiles = formData.getAll('files') as File[];
 
     if (!osId) return { success: false, message: 'ID da OS inválido.' };
 
     try {
-        // 1. Update/Create OSExtraInfo
-        // Check if exists
-        const existing = await prisma.oSExtraInfo.findUnique({ where: { osId } });
-
-        let extraInfoId = existing?.id;
-
-        if (existing) {
-            await prisma.oSExtraInfo.update({
-                where: { id: existing.id },
-                data: { condominio, descricao }
-            });
-        } else {
-            const created = await prisma.oSExtraInfo.create({
-                data: { osId, condominio, descricao }
-            });
-            extraInfoId = created.id;
-        }
-
-        if (!extraInfoId) throw new Error('Falha ao obter ID da info extra.');
+        // 1. Update OrderOfService directly
+        await prisma.orderOfService.update({
+            where: { id: osId },
+            data: { condominio, descricao }
+        });
 
         // 2. Handle Deletions
         if (deletedFileIds.length > 0) {
@@ -50,7 +36,6 @@ export async function saveOSAdminInfo(formData: FormData) {
             });
 
             for (const file of filesToDelete) {
-                // Delete from disk
                 try {
                     const togglePath = path.join(process.cwd(), 'public', file.path);
                     await unlink(togglePath);
@@ -66,14 +51,13 @@ export async function saveOSAdminInfo(formData: FormData) {
 
         // 3. Handle New Uploads
         if (newFiles.length > 0) {
-            // Ensure directory exists
             const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'os-files', osId);
             try {
                 await mkdir(uploadDir, { recursive: true });
             } catch (e) { }
 
             for (const file of newFiles) {
-                if (file instanceof File) {
+                if (file instanceof File && file.size > 0) {
                     const ext = path.extname(file.name);
                     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
                     const fileName = `${randomUUID()}-${safeName}`;
@@ -85,7 +69,7 @@ export async function saveOSAdminInfo(formData: FormData) {
 
                     await prisma.oSAttachment.create({
                         data: {
-                            extraInfoId: extraInfoId,
+                            osId: osId,
                             name: file.name,
                             path: relativePath,
                             type: file.type || ext,
@@ -97,7 +81,7 @@ export async function saveOSAdminInfo(formData: FormData) {
         }
 
         revalidatePath(`/os/${osId}`);
-        revalidatePath(`/os`); // For the list view updates
+        revalidatePath(`/os`);
         return { success: true, message: 'Informações salvas com sucesso.' };
 
     } catch (error) {

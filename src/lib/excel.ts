@@ -48,6 +48,8 @@ export interface CaixaItem {
     nomeEquipe: string;
     potencia: string;
     done: boolean;
+    certified: boolean;
+    photos: { id: string; path: string; equipeId?: string | null }[];
 }
 
 export const ALLOWED_STATUSES = ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída', 'concluido', 'encerrada', 'cancelado'];
@@ -63,7 +65,7 @@ export async function getAllOS(): Promise<OS[]> {
     const osRecords = await prisma.orderOfService.findMany({
         include: {
             caixas: { select: { id: true } },
-            extraInfo: { include: { attachments: true } }
+            attachments: true
         },
         orderBy: { pop: 'asc' }
     });
@@ -87,9 +89,9 @@ export async function getAllOS(): Promise<OS[]> {
         cenario: rec.cenario,
         protocolo: rec.protocolo,
         totalCaixas: rec.caixas.length,
-        condominio: rec.extraInfo?.condominio || undefined,
-        descricao: rec.extraInfo?.descricao || undefined,
-        anexos: rec.extraInfo?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
+        condominio: rec.condominio || undefined,
+        descricao: rec.descricao || undefined,
+        anexos: rec.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
     }));
 }
 
@@ -105,8 +107,10 @@ export async function getOSById(id: string) {
             ]
         },
         include: {
-            caixas: true,
-            extraInfo: { include: { attachments: true } }
+            caixas: {
+                include: { photos: true }
+            },
+            attachments: true
         }
     });
 
@@ -154,7 +158,13 @@ export async function getOSById(id: string) {
             data: c.data,
             nomeEquipe: resolvedNomeEquipe,
             potencia: c.potencia,
-            done: c.status === 'OK'
+            done: c.status === 'OK',
+            certified: c.certified,
+            photos: c.photos.map(p => ({
+                id: p.id,
+                path: p.path,
+                equipeId: p.equipeId
+            }))
         };
     });
 
@@ -178,9 +188,9 @@ export async function getOSById(id: string) {
         cenario: os.cenario,
         totalCaixas: items.length,
         items,
-        condominio: os.extraInfo?.condominio || undefined,
-        descricao: os.extraInfo?.descricao || undefined,
-        anexos: os.extraInfo?.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
+        condominio: os.condominio || undefined,
+        descricao: os.descricao || undefined,
+        anexos: os.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
     };
 }
 

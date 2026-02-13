@@ -58,7 +58,7 @@ export async function syncExcelToDB() {
                     statusMedicao: String(row.StatusMedicao || ''),
                     statusFinal: String(row.StatusFinal || ''),
                     tempo: String(row.Tempo || ''),
-                    facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 0,
+                    facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 1, // Fix: default 1 to avoid possible issues, actually 0 is fine
                     caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
                     tipoOs: String(row.TipoOs || ''),
                 },

@@ -4,14 +4,13 @@ import { useState, useMemo } from 'react';
 import { Search, Box, CheckCircle2, AlertCircle, Circle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import CaixaItem from '../CaixaItem';
-import { CaixaItemData, ChecklistData } from '@/lib/types';
+import { CaixaItemData } from '@/lib/types';
 import { Session } from '@/lib/auth';
 
 interface OSExecutionClientProps {
     osId: string;
     protocolo: string;
     items: CaixaItemData[];
-    checklistMap: Record<string, ChecklistData>;
     equipeName?: string;
     session: Session | null;
 }
@@ -20,7 +19,6 @@ export default function OSExecutionClient({
     osId,
     protocolo,
     items,
-    checklistMap,
     equipeName,
     session
 }: OSExecutionClientProps) {
@@ -29,28 +27,27 @@ export default function OSExecutionClient({
     const enrichedItems = useMemo(() => {
         return items.map(item => {
             const itemId = String(item.id || item.cto);
-            const checklistItem = checklistMap[itemId];
 
-            let status: 'DONE' | 'PENDING' | 'UNTOUCHED' = 'UNTOUCHED';
-            if (item.done) {
-                status = 'DONE';
-            } else if (checklistItem) {
-                status = checklistItem.done ? 'DONE' : 'PENDING';
+            // Logic must match CaixaItem's initialStatus logic
+            let executionStatus: 'DONE' | 'PENDING' | 'UNTOUCHED' = 'UNTOUCHED';
+            if (item.done || item.status === 'OK') {
+                executionStatus = 'DONE';
+            } else if (item.status === 'NOK') {
+                executionStatus = 'PENDING';
             }
 
             return {
                 ...item,
                 itemId,
-                checklistItem,
-                status
+                executionStatus
             };
         });
-    }, [items, checklistMap]);
+    }, [items]);
 
     const stats = useMemo(() => {
         const total = enrichedItems.length;
-        const done = enrichedItems.filter(i => i.status === 'DONE').length;
-        const pending = enrichedItems.filter(i => i.status === 'PENDING').length;
+        const done = enrichedItems.filter(i => i.executionStatus === 'DONE').length;
+        const pending = enrichedItems.filter(i => i.executionStatus === 'PENDING').length;
         const untouched = total - done - pending;
 
         return {
@@ -163,7 +160,6 @@ export default function OSExecutionClient({
                             key={item.itemId}
                             item={{ ...item, id: item.itemId }}
                             osId={osId}
-                            initialChecklist={item.checklistItem}
                             equipeName={equipeName}
                             session={session}
                         />

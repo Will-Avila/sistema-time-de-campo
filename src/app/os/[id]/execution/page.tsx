@@ -25,20 +25,9 @@ export default async function OSExecutionPage({ params }: PageProps) {
         where: { osId: os.id },
         include: {
             equipe: true,
-            photos: true,
-            checklist: {
-                include: { photos: true }
-            }
+            photos: true
         }
     });
-
-    // Create a plain object for checklist lookup (better for serialization)
-    const checklistLookup: Record<string, any> = {};
-    if (execution?.checklist) {
-        execution.checklist.forEach(item => {
-            checklistLookup[item.itemId] = item;
-        });
-    }
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-slate-950 pb-10 transition-colors">
@@ -60,7 +49,6 @@ export default async function OSExecutionPage({ params }: PageProps) {
                 osId={os.id}
                 protocolo={os.protocolo}
                 items={os.items}
-                checklistMap={checklistLookup}
                 equipeName={execution?.equipe?.fullName || execution?.equipe?.nomeEquipe || execution?.equipe?.name}
                 session={session}
             />

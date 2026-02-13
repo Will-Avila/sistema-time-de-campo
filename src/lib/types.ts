@@ -23,35 +23,13 @@ export interface EnrichedOS extends OS {
 // ─── Caixa Item Data (typed Excel item) ────────────────
 /**
  * Typed version of Excel caixa item, used in CaixaItem component.
- * Replaces `item: any` throughout the codebase.
+ * We now rely on the central CaixaItem definition from excel.ts.
  */
-export interface CaixaItemData {
-    id: string;
-    cto: string;
-    chassiPath: string;
-    endereco: string;
-    lat: number | null;
-    long: number | null;
-    status: string;
-    done: boolean;
-    nomeEquipe?: string;
-    equipe?: string;
-    potencia?: string;
-    obs?: string;
-    certified?: boolean;
-}
+export type CaixaItemData = CaixaItem;
 
 // ─── Checklist State ───────────────────────────────────
-/**
- * Shape of checklist data passed from server to CaixaItem component.
- */
-export interface ChecklistData {
-    done: boolean;
-    power?: string | null;
-    obs?: string | null;
-    photos: { id: string; path: string; equipeId?: string | null }[];
-    certified?: boolean;
-}
+// ChecklistData is deprecated as we merged Checklist into CaixaAlare.
+// Use CaixaItemData (which is CaixaItem) instead.
 
 // ─── Equipe / Usuário (safe, no password) ──────────────
 /**

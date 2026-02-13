@@ -1,5 +1,13 @@
 {
-  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
+  "/_not-found": "app/_not-found.js",
+  "/admin/equipes/page": "app/admin/equipes/page.js",
+  "/api/images/[folder]/[filename]/route": "app/api/images/[folder]/[filename]/route.js",
+  "/login/page": "app/login/page.js",
+  "/os/[id]/admin/page": "app/os/[id]/admin/page.js",
   "/os/[id]/page": "app/os/[id]/page.js",
-  "/os/page": "app/os/page.js"
+  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
+  "/os/page": "app/os/page.js",
+  "/page": "app/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js"
 }

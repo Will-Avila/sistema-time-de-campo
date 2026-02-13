@@ -12,7 +12,7 @@ import { toast } from '@/components/ui/toast';
 interface Photo {
     id: string;
     path: string;
-    checklistId?: string | null;
+    caixaId?: string | null;
 }
 
 interface OSPhotosGalleryProps {

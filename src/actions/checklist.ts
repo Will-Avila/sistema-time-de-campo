@@ -79,38 +79,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             });
         }
 
-        // 4. Update or Create Checklist Item
-        const existingItem = await prisma.checklist.findFirst({
-            where: { executionId: execution.id, itemId }
-        });
-
-        let savedItemId = existingItem?.id;
-
-        if (existingItem) {
-            await prisma.checklist.update({
-                where: { id: existingItem.id },
-                data: {
-                    done,
-                    power: done ? (power || null) : null,
-                    certified: done ? certified : false,
-                    obs: done ? (obs || null) : null
-                }
-            });
-        } else {
-            const newItem = await prisma.checklist.create({
-                data: {
-                    executionId: execution.id,
-                    itemId,
-                    done,
-                    power: done ? (power || null) : null,
-                    certified: done ? certified : false,
-                    obs: done ? (obs || null) : null
-                }
-            });
-            savedItemId = newItem.id;
-        }
-
-        // Update Box status, Ownership and Technician Name
+        // 4. Update Box status, Ownership and Technician Name
         const boxStatus = done ? 'OK' : 'NOK';
 
         // Prepare data for CaixaAlare update
@@ -141,7 +110,8 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
         }
 
         // 5. Handle File Uploads (Only if Done)
-        if (done && files.length > 0 && files[0].size > 0 && savedItemId) {
+        // Using itemId as designated caixaId
+        if (done && files.length > 0 && files[0].size > 0) {
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
@@ -168,7 +138,8 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                 await prisma.photo.create({
                     data: {
                         executionId: execution.id,
-                        checklistId: savedItemId,
+                        caixaId: itemId,
+                        equipeId: equipeId,
                         path: `/api/images/${protocol}/${fileName}`
                     }
                 });
@@ -205,6 +176,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
         return { success: false, message: 'Erro ao atualizar item.' };
     }
 }
+
 
 export async function deleteChecklistPhoto(photoId: string, osId: string) {
     const session = await requireAuth().catch(() => null);
@@ -259,37 +231,26 @@ export async function resetChecklistItem(osId: string, itemId: string) {
             return { success: false, message: 'Não autorizado. Apenas o técnico que realizou a caixa ou um administrador podem desmarcar.' };
         }
 
-        const execution = await prisma.serviceExecution.findFirst({
-            where: { osId }
+        // Find all photos associated with this box (caixaId = itemId)
+        const photos = await prisma.photo.findMany({
+            where: { caixaId: itemId }
         });
 
-        if (execution) {
-            const checklistItem = await prisma.checklist.findFirst({
-                where: { executionId: execution.id, itemId },
-                include: { photos: true }
-            });
-
-            if (checklistItem) {
-                // Delete associated photos (files + records)
-                for (const photo of checklistItem.photos) {
-                    try {
-                        let absolutePath = '';
-                        if (photo.path.startsWith('/api/images/')) {
-                            const relativePath = photo.path.replace('/api/images/', '');
-                            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
-                        } else {
-                            absolutePath = path.join(process.cwd(), 'public', photo.path);
-                        }
-                        await import('fs/promises').then(fs => fs.unlink(absolutePath));
-                    } catch (e) {
-                        logger.warn('Error deleting photo file', { error: String(e) });
-                    }
-                    await prisma.photo.delete({ where: { id: photo.id } });
+        // Delete associated photos (files + records)
+        for (const photo of photos) {
+            try {
+                let absolutePath = '';
+                if (photo.path.startsWith('/api/images/')) {
+                    const relativePath = photo.path.replace('/api/images/', '');
+                    absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos', relativePath);
+                } else {
+                    absolutePath = path.join(process.cwd(), 'public', photo.path);
                 }
-
-                // Delete checklist item
-                await prisma.checklist.delete({ where: { id: checklistItem.id } });
+                await import('fs/promises').then(fs => fs.unlink(absolutePath));
+            } catch (e) {
+                logger.warn('Error deleting photo file', { error: String(e) });
             }
+            await prisma.photo.delete({ where: { id: photo.id } });
         }
 
         // Always Reset Box status in CaixaAlare
@@ -298,7 +259,10 @@ export async function resetChecklistItem(osId: string, itemId: string) {
             data: {
                 status: 'Pendente',
                 equipe: '',
-                nomeEquipe: ''
+                nomeEquipe: '',
+                potencia: '',
+                certified: false,
+                obs: ''
             }
         });
 
@@ -316,9 +280,10 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
 
     const osId = formData.get('osId') as string;
     const itemId = formData.get('itemId') as string;
-    const power = formData.get('power') as string;
-    const obs = formData.get('obs') as string;
-    const certified = formData.get('certified') === 'on' || formData.get('certified') === 'true';
+    // power/obs/certified are handled via updateChecklistItem usually, but here we just upload photos mainly.
+    // If we wanted to update status via upload, we would need those. But usually upload is supplemental or separate?
+    // The original logic created a checklist item. Here we assume the box manages state.
+
     const files = formData.getAll('photos') as File[];
 
     if (!osId || !itemId || files.length === 0) {
@@ -351,21 +316,6 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
             });
         }
 
-        // 2. Find or Create Checklist Item
-        let checklistItem = await prisma.checklist.findFirst({
-            where: { executionId: execution.id, itemId }
-        });
-
-        if (!checklistItem) {
-            checklistItem = await prisma.checklist.create({
-                data: {
-                    executionId: execution.id,
-                    itemId,
-                    done: false, // Default to false if just adding photos? Or keep it as is.
-                }
-            });
-        }
-
         // 3. Process Files
         const { getOSById } = await import('@/lib/excel');
         const osData = await getOSById(osId);
@@ -391,7 +341,8 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
             await prisma.photo.create({
                 data: {
                     executionId: execution.id,
-                    checklistId: checklistItem.id,
+                    caixaId: itemId,
+                    equipeId: session.id,
                     path: `/api/images/${protocol}/${fileName}`
                 }
             });

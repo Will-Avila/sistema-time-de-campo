@@ -294,9 +294,9 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     </div>
                                 </div>
 
-                                {execution.photos.filter(p => !p.checklistId).length > 0 && (
+                                {execution.photos.filter(p => !p.caixaId).length > 0 && (
                                     <OSPhotosGallery
-                                        photos={execution.photos.filter(p => !p.checklistId)}
+                                        photos={execution.photos.filter(p => !p.caixaId)}
                                         osId={os.id}
                                         allowDelete={true}
                                     />

@@ -27,9 +27,11 @@ model OrderOfService {
   tipoOs                String            @default("")
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
+  condominio            String?
+  descricao             String?
+  attachments           OSAttachment[]
   caixas                CaixaAlare[]
   notifications         Notification[]
-  extraInfo             OSExtraInfo?
   execution             ServiceExecution?
 
   @@index([status])
@@ -62,6 +64,7 @@ model CaixaAlare {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   os         OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
+  photos     Photo[]
 
   @@index([osId])
 }
@@ -125,7 +128,6 @@ model ServiceExecution {
   obs            String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  checklist      Checklist[]
   photos         Photo[]
   equipe         Equipe?        @relation("EquipeExecutions", fields: [equipeId], references: [id])
   os             OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
@@ -136,27 +138,13 @@ model ServiceExecution {
 model Photo {
   id          String            @id @default(uuid())
   executionId String?
-  checklistId String?
+  caixaId     String?
   equipeId    String?
   path        String
   createdAt   DateTime          @default(now())
-  checklist   Checklist?        @relation(fields: [checklistId], references: [id], onDelete: Cascade)
   execution   ServiceExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
   equipe      Equipe?           @relation("EquipePhotos", fields: [equipeId], references: [id], onDelete: SetNull)
-}
-
-model Checklist {
-  id          String           @id @default(uuid())
-  executionId String
-  itemId      String
-  done        Boolean          @default(false)
-  power       String?
-  obs         String?
-  certified   Boolean          @default(false)
-  execution   ServiceExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
-  photos      Photo[]
-
-  @@unique([executionId, itemId])
+  caixa       CaixaAlare?       @relation(fields: [caixaId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -175,24 +163,13 @@ model Notification {
   @@index([read, createdAt])
 }
 
-model OSExtraInfo {
-  id          String         @id @default(uuid())
-  osId        String         @unique
-  condominio  String?
-  descricao   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  attachments OSAttachment[]
-  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
-}
-
 model OSAttachment {
-  id          String      @id @default(uuid())
-  extraInfoId String
+  id          String         @id @default(uuid())
+  osId        String
   name        String
   path        String
   type        String
   size        Int
-  createdAt   DateTime    @default(now())
-  extraInfo   OSExtraInfo @relation(fields: [extraInfoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
 }

@@ -10,7 +10,7 @@ import { ImageViewer } from '@/components/ui/image-viewer';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { CaixaItemData, ChecklistData } from '@/lib/types';
+import { CaixaItemData } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Session } from '@/lib/auth';
@@ -18,14 +18,13 @@ import { Session } from '@/lib/auth';
 interface CaixaItemProps {
     item: CaixaItemData;
     osId: string;
-    initialChecklist?: ChecklistData | null;
     equipeName?: string;
     session?: Session | null;
 }
 
 type Status = 'DONE' | 'PENDING' | 'UNTOUCHED';
 
-export default function CaixaItem({ item, osId, initialChecklist, equipeName, session }: CaixaItemProps) {
+export default function CaixaItem({ item, osId, equipeName, session }: CaixaItemProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [mapDialogOpen, setMapDialogOpen] = useState(false);
 
@@ -34,8 +33,6 @@ export default function CaixaItem({ item, osId, initialChecklist, equipeName, se
         initialStatus = 'DONE';
     } else if (item.status === 'NOK') {
         initialStatus = 'PENDING';
-    } else if (initialChecklist) {
-        initialStatus = initialChecklist.done ? 'DONE' : 'PENDING';
     }
     const [status, setStatus] = useState<Status>(initialStatus);
 
@@ -49,10 +46,9 @@ export default function CaixaItem({ item, osId, initialChecklist, equipeName, se
     const [viewerOpen, setViewerOpen] = useState(false);
     const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
 
-    // Form data
-    const [power, setPower] = useState(initialChecklist?.power || item.potencia || '');
-    const [obs, setObs] = useState(initialChecklist?.obs || item.obs || '');
-    const [certified, setCertified] = useState(initialChecklist?.certified || item.certified || false);
+    const [power, setPower] = useState(item.potencia || '');
+    const [obs, setObs] = useState(item.obs || '');
+    const [certified, setCertified] = useState(item.certified || false);
 
     // Access Control logic
     const isOwner = session?.id === item.equipe;
@@ -248,43 +244,49 @@ export default function CaixaItem({ item, osId, initialChecklist, equipeName, se
                     )}
                 </div>
 
-                {/* Result Data (Compact) */}
-                {status === 'DONE' && (
+                {/* Result Data & Photos Toggle */}
+                {(status === 'DONE' || (item.photos && item.photos.length > 0)) && (
                     <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700 space-y-2 text-sm">
-                        {(initialChecklist?.power || item.potencia) && (
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
-                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Signal: {initialChecklist?.power || item.potencia} dBm</span>
-                                    {certified && (
-                                        <span className="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-                                            Certificada
-                                        </span>
-                                    )}
-                                </div>
-                                {initialChecklist && initialChecklist.photos.length > 0 && (
-                                    <Button variant="ghost" size="sm" onClick={() => setShowPhotos(!showPhotos)} className="h-7 text-xs gap-1 text-primary">
-                                        <Eye className="h-3 w-3" /> Ver {initialChecklist.photos.length} Fotos
-                                    </Button>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+                                {status === 'DONE' && item.potencia && (
+                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Signal: {item.potencia} dBm</span>
+                                )}
+                                {status === 'DONE' && certified && (
+                                    <span className="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                                        Certificada
+                                    </span>
                                 )}
                             </div>
-                        )}
-                        {(initialChecklist?.obs || item.obs) && (
-                            <div className="bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-900/30 text-xs text-amber-800 dark:text-amber-400 italic">
-                                "{initialChecklist?.obs || item.obs}"
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                            {(item.nomeEquipe || equipeName) && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Responsável: <span className="font-medium text-slate-700 dark:text-slate-300">{item.nomeEquipe || equipeName}</span></p>
+                            {item.photos && item.photos.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowPhotos(!showPhotos)}
+                                    className={`h-7 text-xs gap-1 ${showPhotos ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-primary'}`}
+                                >
+                                    <Eye className="h-3 w-3" /> {showPhotos ? 'Esconder' : `Ver ${item.photos.length}`} Fotos
+                                </Button>
                             )}
                         </div>
+
+                        {status === 'DONE' && item.obs && (
+                            <div className="bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-900/30 text-xs text-amber-800 dark:text-amber-400 italic">
+                                &quot;{item.obs}&quot;
+                            </div>
+                        )}
+                        {status === 'DONE' && (item.nomeEquipe || equipeName) && (
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Responsável: <span className="font-medium text-slate-700 dark:text-slate-300">{item.nomeEquipe || equipeName}</span></p>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {/* Always show photos if they exist, regardless of status */}
-                {(showPhotos || (status !== 'DONE' && initialChecklist && initialChecklist.photos.length > 0)) && initialChecklist?.photos && (
+                {/* Photo Grid - strictly controlled by showPhotos */}
+                {showPhotos && item.photos && item.photos.length > 0 && (
                     <div className="mt-3 grid grid-cols-5 sm:grid-cols-6 gap-2 animate-in fade-in duration-300">
-                        {initialChecklist.photos.map((p, idx) => (
+                        {item.photos.map((p, idx) => (
                             <div key={p.id} className="relative aspect-square overflow-hidden rounded-md border border-slate-100 dark:border-slate-700 shadow-sm group/photo">
                                 <Image
                                     src={p.path}
@@ -325,7 +327,7 @@ export default function CaixaItem({ item, osId, initialChecklist, equipeName, se
             <ImageViewer
                 isOpen={viewerOpen}
                 onClose={() => setViewerOpen(false)}
-                images={initialChecklist?.photos.map(p => p.path) || []}
+                images={item.photos?.map(p => p.path) || []}
                 initialIndex={viewerInitialIndex}
             />
 
