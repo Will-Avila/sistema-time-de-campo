@@ -149,22 +149,43 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
         revalidatePath('/admin/dashboard');
         revalidatePath('/os');
 
-        // Create Notification if marked as done
-        if (done) {
-            const { createNotification } = await import('@/actions/notification');
-            const { getOSById: getOS } = await import('@/lib/excel');
-            const osInfo = await getOS(osId);
-            const proto = osInfo?.protocolo || osId;
-            const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
-            const ctoName = ctoItem?.cto || itemId;
+        // Create Notification if marked as done OR not verified
+        const { createNotification } = await import('@/actions/notification');
+        const { getOSById: getOS } = await import('@/lib/excel');
+        const osInfo = await getOS(osId);
+        const proto = osInfo?.protocolo || osId;
+        const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
+        const ctoName = ctoItem?.cto || itemId;
 
+        if (done) {
             await createNotification({
-                type: 'CHECKLIST',
+                type: 'CHECKLIST' as any,
                 title: 'Caixa Verificada',
                 message: `${techName} marcou CTO ${ctoName} na OS ${proto}${obs ? ` (Obs: ${obs})` : ''}`,
                 equipeId: execution.equipeId || undefined,
                 technicianName: techName,
-                osId: osId // Use the actual DB ID here, not proto
+                osId: osId
+            });
+
+            if (files.length > 0 && files[0].size > 0) {
+                await createNotification({
+                    type: 'CHECKLIST' as any,
+                    title: 'Fotos Anexadas',
+                    message: `${techName} enviou ${files.length} foto(s) da CTO ${ctoName} na OS ${proto}`,
+                    equipeId: execution.equipeId || undefined,
+                    technicianName: techName,
+                    osId: osId
+                });
+            }
+        } else {
+            // Marked as NOT Verified
+            await createNotification({
+                type: 'CHECKLIST' as any,
+                title: 'Caixa NÃO Verificada',
+                message: `${techName} marcou CTO ${ctoName} como não verificada na OS ${proto}${obs ? ` (Alerta: ${obs})` : ''}`,
+                equipeId: execution.equipeId || undefined,
+                technicianName: techName,
+                osId: osId
             });
         }
 
@@ -253,6 +274,27 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         });
 
         revalidatePath(`/os/${osId}`);
+
+        // Create notification for reset
+        const { createNotification } = await import('@/actions/notification');
+        const { getOSById: getOS } = await import('@/lib/excel');
+        const osInfo = await getOS(osId);
+        const proto = osInfo?.protocolo || osId;
+        const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
+        const ctoName = ctoItem?.cto || itemId;
+
+        const resetEquipe = await prisma.equipe.findUnique({ where: { id: session.id }, select: { name: true, fullName: true, nomeEquipe: true } });
+        const resetTechName = resetEquipe?.fullName || resetEquipe?.nomeEquipe || resetEquipe?.name || 'Equipe';
+
+        await createNotification({
+            type: 'CHECKLIST' as any,
+            title: 'Caixa Desmarcada',
+            message: `${resetTechName} desmarcou a CTO ${ctoName} na OS ${proto} (fotos removidas)`,
+            equipeId: session.id,
+            technicianName: resetTechName,
+            osId: osId
+        });
+
         return { success: true, message: 'Item desmarcado.' };
     } catch (error) {
         logger.error('Error resetting checklist', { error: String(error) });
@@ -333,6 +375,24 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
         }
 
         revalidatePath(`/os/${osId}`);
+
+        // Create notification for photos upload
+        const { createNotification } = await import('@/actions/notification');
+        const { getOSById: getOS } = await import('@/lib/excel');
+        const osInfo = await getOS(osId);
+        const proto = osInfo?.protocolo || osId;
+        const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
+        const ctoName = ctoItem?.cto || itemId;
+
+        await createNotification({
+            type: 'CHECKLIST' as any,
+            title: 'Novas Fotos Anexadas',
+            message: `${techName} enviou ${files.length} novas foto(s) da CTO ${ctoName} na OS ${proto}`,
+            equipeId: session.id,
+            technicianName: techName,
+            osId: osId
+        });
+
         return { success: true, message: 'Fotos adicionadas.' };
     } catch (error) {
         logger.error('Error uploading photos', { error: String(error) });

@@ -194,7 +194,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500 dark:text-slate-400" />
                             <Input
                                 placeholder="Buscar por protocolo, POP ou condomínio..."
-                                className="pl-9 bg-white border-slate-300 focus:bg-white transition-colors dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:bg-slate-950 dark:placeholder:text-slate-400 shadow-sm"
+                                className="pl-9 bg-slate-100 border-slate-300 focus:bg-white transition-colors dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:bg-slate-950 dark:placeholder:text-slate-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700"
                                 value={searchTerm}
                                 onChange={(e) => {
                                     setSearchTerm(e.target.value);

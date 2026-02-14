@@ -31,6 +31,23 @@ export default async function OSDetailPage({ params }: PageProps) {
         include: { equipe: true, photos: true }
     });
 
+    const caixas = await prisma.caixaAlare.findMany({
+        where: { osId: os.id },
+        select: { status: true, nomeEquipe: true }
+    });
+
+    const teamSet = new Set<string>();
+    caixas.forEach(c => {
+        if (c.status === 'OK' || c.status === 'Concluído') {
+            const name = c.nomeEquipe?.trim();
+            if (name && name !== '-') {
+                teamSet.add(name);
+            }
+        }
+    });
+
+    const aggregatedTeams = Array.from(teamSet).sort().join(', ');
+
     const statusInfo = getOSStatusInfo({
         osStatus: os.status,
         execution
@@ -160,12 +177,14 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 </div>
                             )}
 
-                            {execution?.equipe && (
+                            {(aggregatedTeams || execution?.equipe) && (
                                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
-                                    <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Equipe Responsável</span>
+                                    <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Equipe(s) em Campo</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         <User className="h-4 w-4 text-slate-400" />
-                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name}</p>
+                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                            {aggregatedTeams || (execution?.equipe ? (execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name) : '-')}
+                                        </p>
                                     </div>
                                 </div>
                             )}

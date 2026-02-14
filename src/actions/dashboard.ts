@@ -21,7 +21,7 @@ export async function getDashboardData() {
     const [osRecords, excelOSList, equipes, recentNotifications] = await Promise.all([
         prisma.orderOfService.findMany({
             include: {
-                caixas: { select: { status: true } },
+                caixas: { select: { status: true, nomeEquipe: true } },
                 execution: {
                     include: {
                         equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
@@ -44,49 +44,17 @@ export async function getDashboardData() {
 
     // 4. Merge Data for the List (Use Excel as base for metadata like dataConclusao)
     const executionMap = new Map(osRecords.map(r => [r.id, r]));
+    const { enrichOS } = await import('@/lib/os-enrichment');
+
     const osList = excelOSList.map(os => {
         const dbRecord = executionMap.get(os.id);
-        const execution = dbRecord?.execution;
-
-        let status = 'PENDING';
-        let equipeName = '-';
-
-        // Determine the most recent update date (OS metadata vs App Execution)
-        let lastUpdate: Date | null = dbRecord?.updatedAt || null;
-        if (execution && execution.updatedAt) {
-            if (!lastUpdate || execution.updatedAt > lastUpdate) {
-                lastUpdate = execution.updatedAt;
-            }
-        }
-
-        const checklistTotal = dbRecord?.caixas.length || 0;
-        const checklistDone = dbRecord?.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length || 0;
-
-        if (execution) {
-            status = execution.status;
-            equipeName = execution.equipe?.fullName || execution.equipe?.nomeEquipe || execution.equipe?.name || '-';
-        } else {
-            if (os.status.toLowerCase().includes('execu')) status = 'IN_PROGRESS';
-        }
+        const enriched = enrichOS(os, dbRecord as any);
 
         return {
-            id: os.id,
-            protocolo: os.protocolo,
-            pop: os.pop,
-            uf: os.uf,
-            cenario: os.cenario,
-            dataPrevExec: os.dataPrevExec,
-            dataConclusao: os.dataConclusao || '-',
-            mes: os.mes || '-',
-            totalCaixas: checklistTotal,
-            status,
-            equipeName,
-            lastUpdate: lastUpdate ? lastUpdate.toISOString() : null,
-            executionUpdatedAt: execution?.updatedAt ? execution.updatedAt.toISOString() : null,
-            checklistTotal,
-            checklistDone,
+            ...enriched,
+            status: enriched.executionStatus === 'Concluída' ? 'DONE' :
+                enriched.executionStatus === 'Em execução' ? 'IN_PROGRESS' : 'PENDING',
             rawStatus: os.status,
-            executionStatus: execution ? getOSStatusInfo({ osStatus: os.status, execution }).label : 'Pendente',
         };
     });
 
@@ -113,9 +81,6 @@ export async function getDashboardData() {
         .sort((a, b) => b.count - a.count);
 
     const todayDate = getTodaySP();
-    const now = new Date();
-    const monthsBRShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-    const currentMonthPattern = `${monthsBRShort[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
 
     const completedToday = osList.filter(os => {
         // Condition 1: Explicit closure date in Excel for TODAY
@@ -137,7 +102,7 @@ export async function getDashboardData() {
             s.includes('CANCELAD') || raw === 'CANCELADO';
 
         // Strict App Today check: Only count if it's finished AND (explicit tech work today OR explicit Excel date)
-        const isAppToday = os.lastUpdate && isSameDaySP(os.lastUpdate, todayDate) && isFinished &&
+        const isAppToday = os.lastUpdate && isSameDaySP(new Date(os.lastUpdate), todayDate) && isFinished &&
             (execUpdateToday || isExcelToday);
 
         return isExcelToday || isAppToday;
@@ -181,6 +146,21 @@ export async function getDashboardData() {
             OPEN_EXCEL_STATUSES.includes(s);
     }).length;
 
+    const emExecucaoOS = osList.filter(item => {
+        const s = (item.rawStatus || '').toUpperCase().trim();
+        return s === 'EM EXECUÇÃO' || s === 'EM EXECUCAO';
+    });
+    const emExecucaoCount = emExecucaoOS.length;
+
+    const emExecucaoUfMap: Record<string, number> = {};
+    emExecucaoOS.forEach(os => {
+        const uf = os.uf || 'N/A';
+        emExecucaoUfMap[uf] = (emExecucaoUfMap[uf] || 0) + 1;
+    });
+    const emExecucaoUfBreakdown = Object.entries(emExecucaoUfMap)
+        .map(([uf, count]) => ({ uf, count }))
+        .sort((a, b) => b.count - a.count);
+
     const completionRate = (open + completedTotal) > 0
         ? Math.round((completedTotal / (open + completedTotal)) * 100)
         : 0;
@@ -205,8 +185,6 @@ export async function getDashboardData() {
         techMap.set(t.id, { name: t.fullName || t.nomeEquipe || t.name, phone: t.phone, completed: 0, pending: 0, checklistItems: 0 });
     });
 
-    // We can't use 'executions' variable anymore since we refactored the query.
-    // Let's use osRecords to get performance data.
     osRecords.forEach(os => {
         const exec = os.execution;
         if (exec && exec.equipeId) {
@@ -232,6 +210,7 @@ export async function getDashboardData() {
         createdAt: n.createdAt.toISOString(),
         techName: n.equipe?.fullName || n.equipe?.nomeEquipe || n.equipe?.name || null,
         read: n.read,
+        osId: n.osId,
     }));
 
     return {
@@ -246,6 +225,8 @@ export async function getDashboardData() {
             completedMonth,
             pending,
             inProgress,
+            emExecucao: emExecucaoCount,
+            emExecucaoUfBreakdown,
             completionRate,
             equipeCount: equipes.length,
         },

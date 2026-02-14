@@ -14,9 +14,10 @@ export default async function TodayOSPage() {
     const osList = await getAllOS();
     const todayDate = getTodaySP();
 
-    // 1. Get Base OS Data from Prisma (to get updatedAt)
+    // 1. Get Base OS Data from Prisma (to get updatedAt, caixas, execution)
     const osRecords = await prisma.orderOfService.findMany({
         include: {
+            caixas: { select: { status: true, nomeEquipe: true } },
             execution: {
                 include: {
                     equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
@@ -26,66 +27,40 @@ export default async function TodayOSPage() {
     });
 
     const dbMap = new Map(osRecords.map(r => [r.id, r]));
+    const { enrichOS } = await import('@/lib/os-enrichment');
 
-    // Enrich and Filter for Today
-    const todayList: EnrichedOS[] = [];
-
-    for (const os of osList) {
+    // 2. Enrich the Excel list
+    const enrichedList: EnrichedOS[] = osList.map(os => {
         const dbRecord = dbMap.get(os.id);
-        const exec = dbRecord?.execution;
-        const todayDateStr = todayDate;
+        return enrichOS(os, dbRecord as any);
+    });
 
-        // Conditions for "Today" (same as dashboard)
-        const isExcelToday = os.dataConclusao === todayDateStr;
+    // 3. Filter for Today (Sync with dashboard.ts logic)
+    const todayList = enrichedList.filter(os => {
+        // Condition 1: Explicit closure date in Excel for TODAY
+        const isExcelToday = os.dataConclusao === todayDate;
 
-        let executionStatus = 'Pendente';
-        let equipeName: string | undefined;
-        let closedAt: string | undefined;
-        let lastUpdateDate: Date | null = dbRecord?.updatedAt || null;
-        let isAppToday = false;
+        // If Excel says it was closed on a different day, it CANNOT be today's work
+        if (os.dataConclusao !== '-' && os.dataConclusao !== todayDate) return false;
 
-        // Determine the most recent update date (OS metadata vs App Execution)
-        if (exec && exec.updatedAt) {
-            equipeName = exec.equipe?.fullName || exec.equipe?.nomeEquipe || exec.equipe?.name || '-';
-            if (!lastUpdateDate || exec.updatedAt > lastUpdateDate) {
-                lastUpdateDate = exec.updatedAt;
-            }
-        }
+        // Condition 2: Technical work completed by the app TODAY
+        const dbRecord = dbMap.get(os.id);
+        const execUpdateToday = dbRecord?.execution?.updatedAt && isSameDaySP(dbRecord.execution.updatedAt, todayDate);
 
-        const statusInfo = getOSStatusInfo({ osStatus: os.status, execution: exec });
-        executionStatus = statusInfo.label;
-
-        const s = (executionStatus || '').toUpperCase().trim();
+        const s = (os.executionStatus || '').toUpperCase().trim();
         const raw = (os.status || '').toUpperCase().trim();
-
-        const now = new Date();
-        const monthsBRShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-        const currentMonthPattern = `${monthsBRShort[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
-
         const isFinished =
             s.includes('CONCLUÍD') || s.includes('CONCLUID') ||
             s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') ||
             s.includes('EM ANÁLIS') || s.includes('EM ANALIS') ||
             s.includes('CANCELAD') || raw === 'CANCELADO';
 
-        const execUpdateToday = exec?.updatedAt && isSameDaySP(exec.updatedAt, todayDateStr);
-        const isCurrentMonth = os.mes === currentMonthPattern;
-
-        isAppToday = lastUpdateDate && isSameDaySP(lastUpdateDate, todayDateStr) && isFinished &&
+        // Strict App Today check: Only count if it's finished AND (explicit tech work today OR explicit Excel date)
+        const isAppToday = os.lastUpdate && isSameDaySP(new Date(os.lastUpdate), todayDate) && isFinished &&
             (execUpdateToday || isExcelToday);
 
-        if (isAppToday || isExcelToday) {
-            closedAt = lastUpdateDate?.toISOString();
-            todayList.push({
-                ...os,
-                executionStatus,
-                equipeName,
-                closedAt,
-                lastUpdate: lastUpdateDate?.toISOString(),
-                executionUpdatedAt: exec?.updatedAt ? exec.updatedAt.toISOString() : null
-            });
-        }
-    }
+        return isExcelToday || isAppToday;
+    });
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">

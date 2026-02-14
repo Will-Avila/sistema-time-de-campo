@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
     LayoutDashboard, CheckCircle, Clock, Users, TrendingUp,
-    Activity, ArrowRight, AlertTriangle, Bell, Wrench, MapPin
+    Activity, ArrowRight, AlertTriangle, Bell, Wrench, MapPin,
+    Camera, Trash2
 } from 'lucide-react';
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
@@ -115,16 +116,33 @@ export default async function DashboardPage() {
                         </div>
                     </Link>
 
-                    {/* Concluídas esse mês */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
-                                <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    {/* Em Execução (Excel) */}
+                    <Link href="/admin/executing" className="block group">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-orange-200 dark:hover:border-orange-900/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="h-8 w-8 rounded-lg bg-orange-50 dark:bg-orange-950/50 flex items-center justify-center">
+                                    <Activity className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-orange-500 transition-colors" />
+                            </div>
+                            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{data.stats.emExecucao}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 font-semibold tracking-tight">Em Execução</p>
+
+                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
+                                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                                    {(data.stats.emExecucaoUfBreakdown || []).map((item: any) => (
+                                        <div key={item.uf} className="flex flex-col items-center min-w-[20px]">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">{item.uf}</span>
+                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-none">{String(item.count).padStart(2, '0')}</span>
+                                        </div>
+                                    ))}
+                                    {(!data.stats.emExecucaoUfBreakdown || data.stats.emExecucaoUfBreakdown.length === 0) && (
+                                        <span className="text-[10px] text-slate-400 italic">Nenhuma OS em execução</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{data.stats.completedMonth}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Concluídas esse mês</p>
-                    </div>
+                    </Link>
 
                     {/* Em Progresso */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -197,22 +215,46 @@ export default async function DashboardPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-1 max-h-[320px] overflow-y-auto">
-                                    {data.activityFeed.map((item: any) => (
-                                        <div key={item.id} className="flex gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                            <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${item.type === 'OS_CLOSE' ? 'bg-blue-500' : 'bg-amber-500'}`} />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
-                                                    {item.title}
-                                                </p>
-                                                <p className="text-[11px] text-muted-foreground truncate leading-relaxed">
-                                                    {item.message}
-                                                </p>
-                                                <p className="text-[10px] text-slate-400 mt-0.5">
-                                                    {timeAgo(item.createdAt)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {data.activityFeed.map((item: any) => {
+                                        const targetPath = item.osId
+                                            ? (item.type === 'CHECKLIST' ? `/os/${item.osId}/execution` : `/os/${item.osId}`)
+                                            : '#';
+
+                                        const isPhoto = item.title.toLowerCase().includes('foto');
+                                        const isNOK = item.title.toLowerCase().includes('não verificada') || item.title.toLowerCase().includes('nao verificada');
+                                        const isReset = item.title.toLowerCase().includes('desmarcada');
+
+                                        return (
+                                            <Link
+                                                key={item.id}
+                                                href={targetPath}
+                                                className={`flex gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${item.osId ? 'cursor-pointer' : 'cursor-default'}`}
+                                            >
+                                                <div className={`mt-1 shrink-0`}>
+                                                    {isPhoto ? (
+                                                        <Camera className="h-4 w-4 text-emerald-500" />
+                                                    ) : isNOK ? (
+                                                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                                                    ) : isReset ? (
+                                                        <Trash2 className="h-4 w-4 text-slate-500" />
+                                                    ) : (
+                                                        <div className={`h-2 w-2 rounded-full ${item.type === 'OS_CLOSE' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                                                        {item.title}
+                                                    </p>
+                                                    <p className="text-[11px] text-muted-foreground truncate leading-relaxed">
+                                                        {item.message}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5">
+                                                        {timeAgo(item.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </CardContent>

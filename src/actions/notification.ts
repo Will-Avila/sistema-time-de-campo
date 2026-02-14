@@ -114,7 +114,7 @@ export async function getUnreadNotifications() {
     await syncNewOSNotifications();
 
     try {
-        let whereClause: any = { read: false };
+        let whereClause: any = { archived: false };
 
         if (session.isAdmin) {
             // Admin sees:
@@ -179,12 +179,12 @@ export async function markAsRead(id: string) {
     }
 }
 
-export async function markAllAsRead() {
+export async function archiveAllNotifications() {
     const session = await getSession();
     if (!session) return { success: false, message: 'Não autorizado.' };
 
     try {
-        let whereClause: any = { read: false };
+        let whereClause: any = { archived: false };
 
         if (session.isAdmin) {
             whereClause.OR = [
@@ -198,7 +198,7 @@ export async function markAllAsRead() {
 
         await prisma.notification.updateMany({
             where: whereClause,
-            data: { read: true }
+            data: { archived: true, read: true } as any
         });
 
         revalidatePath('/admin');

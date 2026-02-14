@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check } from 'lucide-react';
-import { getUnreadNotifications, markAsRead, markAllAsRead } from '@/actions/notification';
+import { Bell, Check, Camera, AlertTriangle, Trash2 } from 'lucide-react';
+import { getUnreadNotifications, markAsRead, archiveAllNotifications } from '@/actions/notification';
 import { Button } from '@/components/ui/button';
 
 function timeAgo(date: Date | string): string {
@@ -47,24 +47,22 @@ export function NotificationBell() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleMarkAsRead = async (id: string) => {
-        // Optimistic update
-        setNotifications(prev => prev.filter(n => n.id !== id));
+    const handleMarkAsReadLocal = async (id: string) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
         await markAsRead(id);
     };
 
-    const handleMarkAllAsRead = async () => {
+    const handleClearNotifications = async () => {
         const currentNotifications = [...notifications];
         setNotifications([]);
-        const result = await markAllAsRead();
+        const result = await archiveAllNotifications();
         if (!result.success) {
-            // Revert if failed (optional, but good UX)
             setNotifications(currentNotifications);
         }
         setIsOpen(false);
     };
 
-    const unreadCount = notifications.length;
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
         <div className="relative">
@@ -76,7 +74,9 @@ export function NotificationBell() {
             >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-950 animate-pulse" />
+                    <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-1 ring-white dark:ring-slate-950 animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
                 )}
             </Button>
 
@@ -86,12 +86,12 @@ export function NotificationBell() {
                     <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between p-4 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
                             <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Notificações</h4>
-                            {unreadCount > 0 && (
+                            {notifications.length > 0 && (
                                 <button
                                     className="text-xs text-primary hover:opacity-80 font-medium transition-colors"
-                                    onClick={handleMarkAllAsRead}
+                                    onClick={handleClearNotifications}
                                 >
-                                    Marcar todas como lidas
+                                    Limpar notificações
                                 </button>
                             )}
                         </div>
@@ -114,15 +114,38 @@ export function NotificationBell() {
                                             key={notification.id}
                                             onClick={() => {
                                                 if (notification.osId) {
-                                                    handleMarkAsRead(notification.id);
-                                                    router.push(`/os/${notification.osId}`);
+                                                    if (!notification.read) {
+                                                        handleMarkAsReadLocal(notification.id);
+                                                    }
+
+                                                    const targetPath = notification.type === 'CHECKLIST'
+                                                        ? `/os/${notification.osId}/execution`
+                                                        : `/os/${notification.osId}`;
+                                                    router.push(targetPath);
                                                     setIsOpen(false);
                                                 }
                                             }}
-                                            className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative group ${notification.osId ? 'cursor-pointer' : ''}`}
+                                            className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative group ${notification.osId ? 'cursor-pointer' : ''} ${notification.read ? 'opacity-50 grayscale-[0.5]' : ''}`}
                                         >
                                             <div className="flex gap-3">
-                                                <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${notification.type === 'OS_CLOSE' ? 'bg-blue-500' : notification.type === 'NEW_OS' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                {!notification.read && (
+                                                    <div className="mt-1.5 shrink-0">
+                                                        {notification.title.toLowerCase().includes('foto') ? (
+                                                            <Camera className="h-3.5 w-3.5 text-emerald-500" />
+                                                        ) : (notification.title.toLowerCase().includes('não verificada') || notification.title.toLowerCase().includes('nao verificada')) ? (
+                                                            <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                                                        ) : notification.title.toLowerCase().includes('desmarcada') ? (
+                                                            <Trash2 className="h-3.5 w-3.5 text-slate-500" />
+                                                        ) : (
+                                                            <div className={`h-2 w-2 rounded-full ${notification.type === 'OS_CLOSE' ? 'bg-blue-500' : notification.type === 'NEW_OS' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {notification.read && (
+                                                    <div className="mt-1.5 shrink-0">
+                                                        <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                                    </div>
+                                                )}
                                                 <div className="flex-1 space-y-1">
                                                     <p className="text-sm font-medium leading-none text-slate-900 dark:text-slate-100">
                                                         {notification.title}
@@ -138,7 +161,7 @@ export function NotificationBell() {
                                                     className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleMarkAsRead(notification.id);
+                                                        handleMarkAsReadLocal(notification.id);
                                                     }}
                                                     title="Marcar como lida"
                                                 >

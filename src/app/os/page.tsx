@@ -11,52 +11,25 @@ export const dynamic = 'force-dynamic';
 export default async function OSListPage() {
     const osList = await getAllOS();
 
-    // Fetch all executions to enrich OS cards with status
-    const executions = await prisma.serviceExecution.findMany({
-        select: { osId: true, status: true, obs: true, updatedAt: true, equipe: { select: { name: true, nomeEquipe: true, fullName: true } } }
-    });
-
-    const executionMap = new Map<string, { status: string; obs: string | null; equipeName: string; updatedAt: Date }>();
-    for (const exec of executions) {
-        executionMap.set(exec.osId, {
-            status: exec.status,
-            obs: exec.obs,
-            equipeName: exec.equipe?.fullName || exec.equipe?.nomeEquipe || exec.equipe?.name || '-',
-            updatedAt: exec.updatedAt
-        });
-    }
-
-    // Enrich OS list with execution status
-    const enrichedList: EnrichedOS[] = osList.map(os => {
-        const exec = executionMap.get(os.id);
-        let executionStatus = 'Pendente';
-        let equipeName: string | undefined;
-        let closedAt: string | undefined;
-
-        if (exec) {
-            equipeName = exec.equipeName;
-
-            const statusInfo = getOSStatusInfo({
-                osStatus: os.status,
-                execution: exec
-            });
-
-            executionStatus = statusInfo.label;
-
-            // Only show closure date if it's actually finished (Concluída or Sem Execução)
-            const labelUpper = executionStatus.toUpperCase();
-            if (labelUpper.includes('CONCLUÍDA') || labelUpper.includes('CONCLUIDA') || labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) {
-                closedAt = exec.updatedAt.toISOString();
+    // Fetch all records from Prisma to enrich the Excel data
+    const osRecords = await prisma.orderOfService.findMany({
+        include: {
+            caixas: { select: { status: true, nomeEquipe: true } },
+            execution: {
+                include: {
+                    equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
+                }
             }
         }
+    });
 
-        return {
-            ...os,
-            executionStatus,
-            equipeName,
-            closedAt,
-            executionUpdatedAt: exec?.updatedAt ? exec.updatedAt.toISOString() : null
-        };
+    const dbMap = new Map(osRecords.map(r => [r.id, r]));
+    const { enrichOS } = await import('@/lib/os-enrichment');
+
+    // Enrich OS list with execution status and teams
+    const enrichedList: EnrichedOS[] = osList.map(os => {
+        const dbRecord = dbMap.get(os.id);
+        return enrichOS(os, dbRecord as any);
     });
 
     // Get Session & Preferences (centralized)

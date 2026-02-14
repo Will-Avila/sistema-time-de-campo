@@ -1,5 +1,10 @@
 {
   "pages": {
+    "/os/[id]/execution/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/os/[id]/execution/page.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -11,16 +16,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/loading.js"
     ],
-    "/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
-    ],
-    "/admin/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/admin/dashboard/page.js"
-    ],
     "/os/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -31,10 +26,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/os/[id]/page.js"
     ],
-    "/admin/today/page": [
+    "/admin/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin/today/page.js"
+      "static/chunks/app/admin/dashboard/page.js"
     ]
   }
 }

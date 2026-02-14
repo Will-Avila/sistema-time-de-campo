@@ -156,6 +156,7 @@ model Notification {
   title          String
   message        String
   read           Boolean         @default(false)
+  archived       Boolean         @default(false)
   createdAt      DateTime        @default(now())
   equipeId       String?
   technicianName String?
@@ -163,7 +164,7 @@ model Notification {
   os             OrderOfService? @relation(fields: [osId], references: [id])
   equipe         Equipe?         @relation("EquipeNotifications", fields: [equipeId], references: [id])
 
-  @@index([read, createdAt])
+  @@index([read, archived, createdAt])
   @@index([equipeId])
 }
 

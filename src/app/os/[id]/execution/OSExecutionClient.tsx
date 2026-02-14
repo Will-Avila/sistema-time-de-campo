@@ -121,7 +121,7 @@ export default function OSExecutionClient({
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                     <Input
                         placeholder="Buscar caixa (ex: FLA21-0123)..."
-                        className="pl-10 h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl focus-visible:ring-blue-500 focus-visible:border-blue-500"
+                        className="pl-10 h-11 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-800 shadow-sm rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 focus-visible:ring-blue-500 focus-visible:border-blue-500"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />

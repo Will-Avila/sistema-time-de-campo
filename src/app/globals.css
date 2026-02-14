@@ -4,35 +4,39 @@
 
 @layer base {
     :root {
-        --background: 182 10% 97%;
-        /* subtle petrol tint */
-        --foreground: 182 50% 10%;
-        /* deep petrol blue */
+        --background: 210 20% 94%;
+        /* warm grey off-white — comfortable, not blinding */
+        --foreground: 215 25% 15%;
+        /* deep slate for strong readability */
 
-        --card: 0 0% 100%;
-        --card-foreground: 182 50% 10%;
+        --card: 210 15% 97%;
+        /* soft cream-white, not pure white */
+        --card-foreground: 215 25% 15%;
 
-        --popover: 0 0% 100%;
-        --popover-foreground: 182 50% 10%;
+        --popover: 210 15% 97%;
+        --popover-foreground: 215 25% 15%;
 
         --primary: 182 64% 18%;
-        /* base petrol blue from image */
+        /* petrol blue — brand identity preserved */
         --primary-foreground: 182 10% 98%;
 
-        --secondary: 182 15% 94%;
+        --secondary: 210 15% 90%;
+        /* slightly darker secondary for visual depth */
         --secondary-foreground: 182 64% 15%;
 
-        --muted: 182 15% 94%;
-        --muted-foreground: 182 20% 40%;
+        --muted: 210 15% 90%;
+        --muted-foreground: 215 15% 42%;
 
-        --accent: 182 20% 92%;
+        --accent: 210 15% 88%;
+        /* visible accent separation from background */
         --accent-foreground: 182 64% 15%;
 
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 210 40% 98%;
 
-        --border: 182 15% 88%;
-        --input: 182 15% 88%;
+        --border: 210 15% 85%;
+        /* slightly more visible borders */
+        --input: 210 15% 85%;
         --ring: 182 64% 18%;
 
         --radius: 0.5rem;
@@ -41,7 +45,6 @@
     .dark {
         --background: 222 47% 4%;
         --foreground: 210 40% 98%;
-        /* subtle blue-grey */
 
         --card: 222 47% 6%;
         --card-foreground: 210 40% 98%;
@@ -50,7 +53,6 @@
         --popover-foreground: 210 40% 98%;
 
         --primary: 217 91% 60%;
-        /* standard blue */
         --primary-foreground: 222 47% 6%;
 
         --secondary: 222 47% 12%;
@@ -78,5 +80,17 @@
 
     body {
         @apply bg-background text-foreground antialiased;
+    }
+
+    /* Soften hardcoded bg-white in light mode to a warm off-white */
+    :root .bg-white {
+        --tw-bg-opacity: 1;
+        background-color: rgb(247 248 250 / var(--tw-bg-opacity));
+    }
+
+    /* Soften hardcoded bg-slate-50 in light mode */
+    :root .bg-slate-50 {
+        --tw-bg-opacity: 1;
+        background-color: rgb(241 243 246 / var(--tw-bg-opacity));
     }
 }
