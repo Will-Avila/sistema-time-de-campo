@@ -1,7 +1,6 @@
 {
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
   "/os/[id]/page": "app/os/[id]/page.js",
-  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
   "/os/page": "app/os/page.js",
-  "/api/images/[folder]/[filename]/route": "app/api/images/[folder]/[filename]/route.js",
-  "/os/[id]/admin/page": "app/os/[id]/admin/page.js"
+  "/admin/today/page": "app/admin/today/page.js"
 }

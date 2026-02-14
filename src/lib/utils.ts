@@ -16,43 +16,46 @@ export function getOSStatusInfo(params: {
 }) {
     const { osStatus, execution } = params;
 
-    const excelStatusLower = (osStatus || '').toLowerCase();
-    const isExcelDone = excelStatusLower === 'concluído' || excelStatusLower === 'concluido' || excelStatusLower === 'encerrada';
-    const isExcelEncerrada = excelStatusLower === 'encerrada' || excelStatusLower === 'concluído' || excelStatusLower === 'concluido';
-    const isExcelEmExecucao = excelStatusLower === 'em execução' || excelStatusLower === 'em execucao';
+    const excelStatusUpper = (osStatus || '').toUpperCase().trim();
+    const isExcelDone = ['CONCLUÍDO', 'CONCLUIDO'].includes(excelStatusUpper);
+    const isExcelEmExecucao = ['EM EXECUÇÃO', 'EM EXECUCAO'].includes(excelStatusUpper);
+    const isExcelCancelado = ['CANCELADO'].includes(excelStatusUpper);
 
     let label = osStatus || 'Pendente';
     let variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "orange" | "light-green" = "secondary";
     let icon: LucideIcon = AlertTriangle;
 
     if (execution) {
-        // ... (existing closure logic)
         let closureResult = 'Concluída';
         if (execution.obs) {
+            const obsUpper = execution.obs.toUpperCase();
             const match = execution.obs.match(/Status: (.*?)\n/);
             if (match && match[1]) {
                 closureResult = match[1];
-            } else if (execution.obs.includes('Sem Execução')) {
+            } else if (obsUpper.includes('SEM EXECUÇÃO') || obsUpper.includes('SEM EXECUCAO')) {
                 closureResult = 'Sem Execução';
             }
         }
 
-        if (isExcelEncerrada) {
-            label = closureResult;
-            variant = label.includes('Sem Execução') ? 'destructive' : 'success';
-            icon = CheckCircle;
-        } else if (execution.status === 'DONE') {
+        const labelUpper = closureResult.toUpperCase().trim();
+
+        // Priority 1: If Excel says it's officially CLOSED/DONE or CANCELLED
+        if (isExcelDone || isExcelCancelado) {
+            label = isExcelCancelado ? 'Cancelada' : closureResult;
+            variant = (labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO') || isExcelCancelado) ? 'destructive' : 'success';
+            icon = (labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO') || isExcelCancelado) ? AlertTriangle : CheckCircle;
+        }
+        // Priority 2: If App says it's DONE but Excel isn't updated yet, show "In Analysis"
+        else if (execution.status === 'DONE') {
             label = `${closureResult} - Em análise`;
-            variant = label.includes('Sem Execução') ? 'orange' : 'light-green';
+            variant = (labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) ? 'orange' : 'light-green';
             icon = Clock;
-        } else if (execution.status === 'PENDING' || isExcelEmExecucao) {
+        }
+        // Priority 3: Ongoing execution
+        else if (execution.status === 'PENDING' || isExcelEmExecucao) {
             label = 'Em execução';
             variant = 'warning';
             icon = Wrench;
-        } else if (isExcelDone) {
-            label = 'Concluída';
-            variant = 'success';
-            icon = CheckCircle;
         }
     } else if (isExcelEmExecucao) {
         label = 'Em execução';
@@ -62,7 +65,7 @@ export function getOSStatusInfo(params: {
         label = 'Concluída';
         variant = 'success';
         icon = CheckCircle;
-    } else if (excelStatusLower === 'cancelado') {
+    } else if (excelStatusUpper === 'CANCELADO') {
         label = 'Cancelada';
         variant = 'destructive';
         icon = AlertTriangle;
@@ -76,15 +79,69 @@ export function getOSStatusInfo(params: {
  * Centralizes color logic for status badges.
  */
 export function getStatusVariantFromLabel(label: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "orange" | "light-green" {
-    const s = (label || '').toLowerCase();
+    const s = (label || '').toUpperCase().trim();
 
-    if (s === 'concluída' || s === 'concluida') return 'success';
-    if (s === 'sem execução' || s === 'cancelada') return 'destructive';
-    if (s === 'em execução' || s === 'em execucao') return 'warning';
+    if (s === 'CONCLUÍDA' || s === 'CONCLUIDA' || s === 'CONCLUÍDO' || s === 'CONCLUIDO') return 'success';
+    if (s === 'SEM EXECUÇÃO' || s === 'SEM EXECUCAO' || s === 'CANCELADA' || s === 'CANCELADO') return 'destructive';
+    if (s === 'EM EXECUÇÃO' || s === 'EM EXECUCAO') return 'warning';
 
     // Check for analytic/partial statuses
-    if (s.includes('sem execução - em análise') || s.includes('sem execucao - em analise')) return 'orange';
-    if (s.includes('em análise') || s.includes('em analise')) return 'light-green';
+    if (s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO')) {
+        if (s.includes('EM ANÁLISE') || s.includes('EM ANALISE')) return 'orange';
+        return 'destructive';
+    }
+
+    if (s.includes('EM ANÁLISE') || s.includes('EM ANALISE')) return 'light-green';
 
     return 'secondary';
+}
+
+/**
+ * Returns today's date string in DD/MM/YYYY format for America/Sao_Paulo timezone.
+ */
+export function getTodaySP() {
+    const str = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).format(new Date());
+    // Normalize string (remove narrow non-breaking spaces or other hidden chars)
+    return str.replace(/[^0-9/]/g, '').trim();
+}
+
+/**
+ * Returns the date string in DD/MM/YYYY format for America/Sao_Paulo timezone for a given Date.
+ */
+export function getDateSP(date: Date | string | null | undefined) {
+    if (!date) return '-';
+    let d: Date;
+    if (typeof date === 'string') {
+        // If it's already DD/MM/YYYY, return as is (but normalized)
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date.trim();
+        d = new Date(date);
+    } else {
+        d = date;
+    }
+
+    if (isNaN(d.getTime())) return '-';
+
+    const str = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).format(d);
+
+    return str.replace(/[^0-9/]/g, '').trim();
+}
+
+/**
+ * Checks if a given date (ISO string or Date object) matches a specific DD/MM/YYYY date in SP timezone.
+ */
+export function isSameDaySP(date: Date | string | null | undefined, targetDateBR: string) {
+    if (!date || !targetDateBR) return false;
+    const dateSP = getDateSP(date);
+    const targetSP = targetDateBR.replace(/[^0-9/]/g, '').trim();
+    return dateSP === targetSP;
 }

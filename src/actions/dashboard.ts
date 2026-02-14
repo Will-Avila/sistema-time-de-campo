@@ -5,6 +5,7 @@ import { getAllOS } from '@/lib/excel';
 import { syncExcelToDB } from '@/lib/sync';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
+import { getOSStatusInfo, getTodaySP, isSameDaySP } from '@/lib/utils';
 
 export async function refreshData() {
     await requireAdmin();
@@ -15,42 +16,50 @@ export async function refreshData() {
 }
 
 export async function getDashboardData() {
-    // 1. Get Base OS Data from Database (all with their boxes)
-    const osRecords = await prisma.orderOfService.findMany({
-        include: {
-            caixas: { select: { status: true } },
-            execution: {
-                include: {
-                    equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
+    // 1. Get Base OS Data
+    const [osRecords, excelOSList, equipes, recentNotifications] = await Promise.all([
+        prisma.orderOfService.findMany({
+            include: {
+                caixas: { select: { status: true } },
+                execution: {
+                    include: {
+                        equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
+                    }
                 }
-            }
-        },
-        orderBy: { updatedAt: 'desc' }
-    });
+            },
+            orderBy: { updatedAt: 'desc' }
+        }),
+        getAllOS(),
+        prisma.equipe.findMany({
+            where: { isAdmin: false },
+            select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true },
+        }),
+        prisma.notification.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
+        })
+    ]);
 
-    // 2. Get Equipes (Users/Teams)
-    const equipes = await prisma.equipe.findMany({
-        where: { isAdmin: false },
-        select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true },
-    });
-
-    // 3. Get Recent Notifications
-    const recentNotifications = await prisma.notification.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-        include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
-    });
-
-    // 4. Merge Data for the List
-    const osList = osRecords.map(os => {
-        const execution = os.execution;
+    // 4. Merge Data for the List (Use Excel as base for metadata like dataConclusao)
+    const executionMap = new Map(osRecords.map(r => [r.id, r]));
+    const osList = excelOSList.map(os => {
+        const dbRecord = executionMap.get(os.id);
+        const execution = dbRecord?.execution;
 
         let status = 'PENDING';
         let equipeName = '-';
-        let lastUpdate: Date | null = os.updatedAt;
 
-        const checklistTotal = os.caixas.length;
-        const checklistDone = os.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length;
+        // Determine the most recent update date (OS metadata vs App Execution)
+        let lastUpdate: Date | null = dbRecord?.updatedAt || null;
+        if (execution && execution.updatedAt) {
+            if (!lastUpdate || execution.updatedAt > lastUpdate) {
+                lastUpdate = execution.updatedAt;
+            }
+        }
+
+        const checklistTotal = dbRecord?.caixas.length || 0;
+        const checklistDone = dbRecord?.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length || 0;
 
         if (execution) {
             status = execution.status;
@@ -74,52 +83,104 @@ export async function getDashboardData() {
             lastUpdate: lastUpdate ? lastUpdate.toISOString() : null,
             checklistTotal,
             checklistDone,
+            rawStatus: os.status,
+            executionStatus: execution ? getOSStatusInfo({ osStatus: os.status, execution }).label : 'Pendente',
         };
     });
 
     // 5. Calculate Stats
-    const finishedStatuses = ['concluída', 'concluido', 'encerrada', 'cancelado'];
+    // Sync with OSListClient.tsx filters
+    const OPEN_EXCEL_STATUSES = ['INICIAR', 'EM EXECUÇÃO', 'EM EXECUCAO', 'PEND. CLIENTE'];
+    const FINISHED_EXCEL_STATUSES = ['CONCLUÍDO', 'CONCLUIDO', 'CONCLUÍDA', 'CANCELADO'];
 
-    // OS Ativas -> Exact number (not finished)
-    const total = osList.filter(os => !finishedStatuses.includes(os.status.toLowerCase())).length;
+    // OS Abertas -> Match OSListClient logic EXACTLY (uses raw Excel status)
+    const openOS = osList.filter(os => {
+        const s = (os.rawStatus || '').toUpperCase().trim();
+        return OPEN_EXCEL_STATUSES.includes(s);
+    });
+    const open = openOS.length;
 
-    const todayDate = new Date().toLocaleDateString('pt-BR'); // DD/MM/YYYY
+    // UF Breakdown for OPEN OS (requested by user)
+    const openUfMap: Record<string, number> = {};
+    openOS.forEach(os => {
+        const uf = os.uf || 'N/A';
+        openUfMap[uf] = (openUfMap[uf] || 0) + 1;
+    });
+    const openUfBreakdown = Object.entries(openUfMap)
+        .map(([uf, count]) => ({ uf, count }))
+        .sort((a, b) => b.count - a.count);
 
-    const completedToday = osList.filter(os => os.dataConclusao === todayDate).length;
+    const todayDate = getTodaySP();
 
-    // Completed This Month -> Using 'mes' field
-    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    const currentMonthName = months[new Date().getMonth()];
+    const completedToday = osList.filter(os => {
+        // Condition 1: Excel data says it was closed today (format DD/MM/YYYY)
+        const isExcelToday = os.dataConclusao === todayDate;
 
-    const completedMonth = osList.filter(os =>
-        os.mes === currentMonthName &&
-        finishedStatuses.includes(os.status.toLowerCase())
-    ).length;
+        // Condition 2: It was completed or updated to an "end state" in the app today in SP Time (0h to 23:59)
+        const s = (os.executionStatus || '').toUpperCase().trim();
+        const isAppToday = os.lastUpdate && isSameDaySP(os.lastUpdate, todayDate) &&
+            (s.includes('CONCLUÍDA') || s.includes('CONCLUIDA') || s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO') || s.includes('EM ANÁLISE') || s.includes('EM ANALISE') || s.includes('CANCELADA') || s.includes('CANCELADO'));
 
-    const completedTotal = osList.filter(os => finishedStatuses.includes(os.status.toLowerCase())).length;
+        return isExcelToday || isAppToday;
+    });
 
-    const pending = osList.filter(item =>
-        !finishedStatuses.includes(item.status.toLowerCase()) &&
-        item.status === 'PENDING'
-    ).length;
+    const completedTodayCount = completedToday.length;
 
-    const inProgress = osList.filter(item =>
-        !finishedStatuses.includes(item.status.toLowerCase()) &&
-        (item.status === 'IN_PROGRESS' || (item.checklistDone > 0 && item.status !== 'DONE'))
-    ).length;
+    const todayConcluidas = completedToday.filter(os => {
+        const s = (os.executionStatus || '').toUpperCase().trim();
+        // It's Concluída if it's Concluída OR Em Análise, AND NOT a cancellation
+        const isCancellation = s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO');
+        const isClosure = s.includes('CONCLUÍDA') || s.includes('CONCLUIDA') || s.includes('EM ANÁLISE') || s.includes('EM ANALISE');
 
-    const completionRate = (total + completedTotal) > 0
-        ? Math.round((completedTotal / (total + completedTotal)) * 100)
+        return isClosure && !isCancellation;
+    }).length;
+
+    const todayCanceladas = completedToday.filter(os => {
+        const s = (os.executionStatus || '').toUpperCase().trim();
+        const raw = (os.rawStatus || '').toUpperCase().trim();
+        // It's Cancelada if execution status contains SEM EXECUÇÃO OR raw excel status is CANCELADO
+        return s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO') || raw === 'CANCELADO';
+    }).length;
+
+    const completedMonth = osList.filter(os => {
+        const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        // Get month in SP
+        const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+        const nowSP = new Date(nowSPStr);
+        const currentMonthName = months[nowSP.getMonth()];
+        const s = (os.rawStatus || '').toUpperCase().trim();
+        return os.mes === currentMonthName && FINISHED_EXCEL_STATUSES.includes(s);
+    }).length;
+
+    const completedTotal = osList.filter(os => {
+        const s = (os.rawStatus || '').toUpperCase().trim();
+        return FINISHED_EXCEL_STATUSES.includes(s);
+    }).length;
+
+    const pending = osList.filter(item => {
+        const s = (item.rawStatus || '').toUpperCase().trim();
+        return item.status === 'PENDING' && OPEN_EXCEL_STATUSES.includes(s);
+    }).length;
+
+    const inProgress = osList.filter(item => {
+        const s = (item.rawStatus || '').toUpperCase().trim();
+        return (item.status === 'IN_PROGRESS' || (item.checklistDone > 0 && item.status !== 'DONE')) &&
+            OPEN_EXCEL_STATUSES.includes(s);
+    }).length;
+
+    const completionRate = (open + completedTotal) > 0
+        ? Math.round((completedTotal / (open + completedTotal)) * 100)
         : 0;
 
-    // 6. UF Breakdown
+    // 6. UF Breakdown (Total)
     const ufMap = new Map<string, { total: number; done: number }>();
     osList.forEach(os => {
         const uf = os.uf || 'N/A';
         if (!ufMap.has(uf)) ufMap.set(uf, { total: 0, done: 0 });
         const entry = ufMap.get(uf)!;
         entry.total++;
-        if (os.status === 'DONE' || finishedStatuses.includes(os.status.toLowerCase())) entry.done++;
+        const s = (os.rawStatus || '').toUpperCase().trim();
+        if (os.status === 'DONE' || FINISHED_EXCEL_STATUSES.includes(s)) entry.done++;
     });
     const ufBreakdown = Array.from(ufMap.entries())
         .map(([uf, data]) => ({ uf, ...data }))
@@ -162,8 +223,12 @@ export async function getDashboardData() {
 
     return {
         stats: {
-            total,
-            completedToday,
+            total: open,
+            open,
+            openUfBreakdown,
+            completedToday: completedTodayCount,
+            todayConcluidas,
+            todayCanceladas,
             completedTotal,
             completedMonth,
             pending,

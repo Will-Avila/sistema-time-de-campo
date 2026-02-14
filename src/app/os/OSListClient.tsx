@@ -6,7 +6,7 @@ import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench } from 'lucide-react';
+import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft } from 'lucide-react';
 import { updatePreferences } from '@/actions/equipe';
 import { getStatusVariantFromLabel } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
@@ -16,12 +16,13 @@ interface OSListClientProps {
     initialUf: string;
     initialSearch?: string;
     initialStatus?: string;
+    isTodayPage?: boolean;
 }
 
-export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus }: OSListClientProps) {
+export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus, isTodayPage }: OSListClientProps) {
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
     const [searchTerm, setSearchTerm] = useState(initialSearch || '');
-    const [statusFilter, setStatusFilter] = useState<string>(initialStatus || 'Abertas');
+    const [statusFilter, setStatusFilter] = useState<string>(initialStatus || (isTodayPage ? 'Todas' : 'Abertas'));
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 50;
     const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -49,26 +50,50 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
         updatePreferences('lastStatus', newStatus).then(() => router.refresh());
     }
 
-    const STATUS_GROUPS: Record<string, string[]> = {
-        'Abertas': ['iniciar', 'em execução', 'em execucao', 'pend. cliente', 'concluída - em análise', 'sem execução - em análise'],
-        'Concluídas': ['concluído', 'concluido', 'encerrada', 'concluída'],
-        'Canceladas': ['cancelado'],
-        'Todas': [], // Empty array or any key not in other groups
-    };
+    const STATUS_GROUPS: Record<string, string[]> = isTodayPage
+        ? {
+            'Todas': [],
+            'Concluídas': [],
+            'Canceladas': [],
+            'Em Análise': [],
+        }
+        : {
+            'Abertas': ['INICIAR', 'EM EXECUÇÃO', 'EM EXECUCAO', 'PEND. CLIENTE'],
+            'Concluídas': ['CONCLUÍDO', 'CONCLUIDO', 'CONCLUÍDA'],
+            'Canceladas': ['CANCELADO'],
+            'Todas': [],
+        };
 
     // Get unique UFs
     const ufs = ['Todos', ...Array.from(new Set(initialOSList.map(os => os.uf).filter(Boolean))).sort()];
 
     const filteredList = initialOSList.filter(os => {
         const matchesUF = selectedUF === 'Todos' || os.uf === selectedUF;
-        const matchesSearch = searchTerm === '' ||
-            os.protocolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            os.pop?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            os.condominio?.toLowerCase().includes(searchTerm.toLowerCase()); // Include condo in search
+        const searchUpper = searchTerm.toUpperCase().trim();
+        const matchesSearch = searchUpper === '' ||
+            (os.protocolo || '').toUpperCase().includes(searchUpper) ||
+            (os.pop || '').toUpperCase().includes(searchUpper) ||
+            (os.condominio || '').toUpperCase().includes(searchUpper);
 
         const allowedStatuses = STATUS_GROUPS[statusFilter];
-        // Match everything if filter is 'Todas' or if allowedStatuses is missing
-        const matchesStatus = statusFilter === 'Todas' || !allowedStatuses || allowedStatuses.includes(os.status.toLowerCase());
+        const rawStatus = (os.status || '').toUpperCase().trim();
+        const execStatus = (os.executionStatus || '').toUpperCase().trim();
+
+        let matchesStatus = statusFilter === 'Todas' || !allowedStatuses || allowedStatuses.includes(rawStatus);
+
+        // Special logic for Today's Page (Execution-based filtering)
+        if (isTodayPage) {
+            if (statusFilter === 'Em Análise') {
+                matchesStatus = execStatus.includes('EM ANÁLISE') || execStatus.includes('EM ANALISE');
+            } else if (statusFilter === 'Concluídas') {
+                matchesStatus = (execStatus.includes('CONCLUÍDA') || execStatus.includes('CONCLUIDA')) &&
+                    !(execStatus.includes('SEM EXECUÇÃO') || execStatus.includes('SEM EXECUCAO'));
+            } else if (statusFilter === 'Canceladas') {
+                matchesStatus = execStatus.includes('SEM EXECUÇÃO') || execStatus.includes('SEM EXECUCAO') || rawStatus === 'CANCELADO';
+            } else if (statusFilter === 'Todas') {
+                matchesStatus = true;
+            }
+        }
 
         return matchesUF && matchesSearch && matchesStatus;
     }).sort((a, b) => {
@@ -133,20 +158,33 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
 
     function getDisplayStatus(os: EnrichedOS) {
         if (os.executionStatus && os.executionStatus !== 'Pendente') return os.executionStatus;
-        const s = os.status.toLowerCase();
-        if (s === 'concluído' || s === 'concluido' || s === 'encerrada') return 'Concluída';
-        if (s === 'cancelado') return 'Cancelada';
+        const s = (os.status || '').toUpperCase().trim();
+        if (s === 'CONCLUÍDO' || s === 'CONCLUIDO') return 'Concluída';
+        if (s === 'CANCELADO') return 'Cancelada';
         return os.status || 'Pendente';
     }
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-6 md:pb-8 space-y-6 transition-colors">
-            <div className="pt-20 px-4 md:px-8 space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Ordens de Serviço</h1>
+            <div className="container pt-20 space-y-6">
+                {isTodayPage && (
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.push('/admin/dashboard')}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Voltar para Dashboard
+                        </button>
                     </div>
-                </div>
+                )}
+                {!isTodayPage && (
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Ordens de Serviço</h1>
+                        </div>
+                    </div>
+                )}
 
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center">
@@ -182,20 +220,22 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                         </div>
                                     </div>
 
-                                    <div className="relative w-full sm:w-auto">
-                                        <select
-                                            value={statusFilter}
-                                            onChange={(e) => handleStatusChange(e.target.value)}
-                                            className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                                        >
-                                            {Object.keys(STATUS_GROUPS).map(s => (
-                                                <option key={s} value={s}>{s}</option>
-                                            ))}
-                                        </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                                            <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                    {!isTodayPage && (
+                                        <div className="relative w-full sm:w-auto">
+                                            <select
+                                                value={statusFilter}
+                                                onChange={(e) => handleStatusChange(e.target.value)}
+                                                className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                            >
+                                                {Object.keys(STATUS_GROUPS).map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                                <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -213,7 +253,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                             onClick={() => { setLoadingId(os.id); router.push(`/os/${os.id}`); }}
                             className="block group h-full cursor-pointer"
                         >
-                            <Card className={`h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-900/50 dark:bg-slate-950 dark:border-slate-800 flex flex-col ${loadingId === os.id ? 'opacity-60 pointer-events-none' : ''}`}>
+                            <Card className={`h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50 dark:bg-slate-900/40 dark:border-slate-800/60 flex flex-col ${loadingId === os.id ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {loadingId === os.id && (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-slate-950/50 rounded-xl backdrop-blur-[1px]">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -276,12 +316,16 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                                 {os.dataEntrante}
                                             </div>
                                         </div>
-                                        {getDisplayStatus(os) === 'Concluída' ? (
+                                        {(getDisplayStatus(os).includes('Concluíd') || getDisplayStatus(os).includes('Sem Execuç') || getDisplayStatus(os).includes('Cancelad') || getDisplayStatus(os).includes('Análise')) ? (
                                             <div>
-                                                <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Conclusão</span>
+                                                <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">
+                                                    {getDisplayStatus(os).includes('Cancelad') || getDisplayStatus(os).includes('Sem Execuç') ? 'Finalização' : 'Conclusão'}
+                                                </span>
                                                 <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
                                                     <Calendar className="h-3 w-3 text-slate-400" />
-                                                    {os.closedAt ? (os.closedAt.includes('T') ? new Date(os.closedAt).toLocaleDateString('pt-BR') : os.closedAt) : (os.dataConclusao || '-')}
+                                                    {os.dataConclusao && os.dataConclusao !== '-'
+                                                        ? os.dataConclusao
+                                                        : (os.lastUpdate ? new Date(os.lastUpdate).toLocaleDateString('pt-BR') : '-')}
                                                 </div>
                                             </div>
                                         ) : (

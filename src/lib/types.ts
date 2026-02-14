@@ -18,6 +18,7 @@ export interface EnrichedOS extends OS {
     executionStatus: string;
     equipeName?: string;
     closedAt?: string;
+    lastUpdate?: string | null;
 }
 
 // ─── Caixa Item Data (typed Excel item) ────────────────

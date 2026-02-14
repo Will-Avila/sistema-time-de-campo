@@ -52,7 +52,7 @@ export default async function OSDetailPage({ params }: PageProps) {
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 transition-colors">
             <HeaderServer />
 
-            <div className="pt-24 px-4 md:px-8 max-w-4xl mx-auto space-y-6">
+            <div className="container pt-24 max-w-4xl space-y-6">
 
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

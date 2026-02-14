@@ -34,24 +34,26 @@ export default async function OSExecutionPage({ params }: PageProps) {
             {/* Global Header */}
             <HeaderServer />
 
-            {/* Sub-header: back + OS number + closure button */}
-            <div className="pt-20 px-4 pb-2 flex items-center gap-3">
-                <Link href={`/os/${os.id}`} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
-                    <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-                </Link>
-                <div className="flex-1">
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Execução OS {os.protocolo}</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">{os.pop}</p>
+            <div className="container">
+                {/* Sub-header: back + OS number + closure button */}
+                <div className="pt-20 pb-2 flex items-center gap-3">
+                    <Link href={`/os/${os.id}`} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                    </Link>
+                    <div className="flex-1">
+                        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Execução OS {os.protocolo}</h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">{os.pop}</p>
+                    </div>
                 </div>
-            </div>
 
-            <OSExecutionClient
-                osId={os.id}
-                protocolo={os.protocolo}
-                items={os.items}
-                equipeName={execution?.equipe?.fullName || execution?.equipe?.nomeEquipe || execution?.equipe?.name}
-                session={session}
-            />
+                <OSExecutionClient
+                    osId={os.id}
+                    protocolo={os.protocolo}
+                    items={os.items}
+                    equipeName={execution?.equipe?.fullName || execution?.equipe?.nomeEquipe || execution?.equipe?.name}
+                    session={session}
+                />
+            </div>
         </div>
     );
 }

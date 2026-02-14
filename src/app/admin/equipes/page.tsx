@@ -12,7 +12,7 @@ export default async function EquipesPage() {
         <div className="min-h-screen bg-muted/40 dark:bg-slate-950 transition-colors">
             <HeaderServer />
 
-            <div className="pt-20 px-6 md:px-8 pb-8">
+            <div className="container pt-20 pb-8">
                 <header className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Contas de Acesso</h1>

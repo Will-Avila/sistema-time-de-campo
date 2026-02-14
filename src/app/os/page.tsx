@@ -42,7 +42,8 @@ export default async function OSListPage() {
             executionStatus = statusInfo.label;
 
             // Only show closure date if it's actually finished (Concluída or Sem Execução)
-            if (executionStatus.includes('Concluída') || executionStatus.includes('Sem Execução')) {
+            const labelUpper = executionStatus.toUpperCase();
+            if (labelUpper.includes('CONCLUÍDA') || labelUpper.includes('CONCLUIDA') || labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) {
                 closedAt = exec.updatedAt.toISOString();
             }
         }

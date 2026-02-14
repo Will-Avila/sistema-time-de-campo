@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors">
             <HeaderServer />
 
-            <div className="pt-20 px-4 md:px-8 space-y-6 pb-8 max-w-[1400px] mx-auto">
+            <div className="container pt-20 space-y-6 pb-8">
 
                 {/* Header */}
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -63,26 +63,57 @@ export default async function DashboardPage() {
                 {/* Stats Grid - 6 cards */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     {/* Total OS */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                <LayoutDashboard className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    <Link href="/os" className="block group">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-blue-200 dark:hover:border-blue-900/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                                    <LayoutDashboard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                            </div>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.stats.open}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 font-semibold tracking-tight">OS Abertas</p>
+
+                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
+                                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                                    {(data.stats.openUfBreakdown || []).map((item: any) => (
+                                        <div key={item.uf} className="flex flex-col items-center min-w-[20px]">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">{item.uf}</span>
+                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-none">{String(item.count).padStart(2, '0')}</span>
+                                        </div>
+                                    ))}
+                                    {(!data.stats.openUfBreakdown || data.stats.openUfBreakdown.length === 0) && (
+                                        <span className="text-[10px] text-slate-400 italic">Nenhuma OS aberta</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.stats.total}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">OS Ativas</p>
-                    </div>
+                    </Link>
 
                     {/* Concluídas Hoje */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
-                                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <Link href="/admin/today" className="block group">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-emerald-200 dark:hover:border-emerald-900/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                            </div>
+                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.stats.completedToday}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 font-semibold tracking-tight">Encerradas Hoje</p>
+
+                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50 grid grid-cols-2 gap-2">
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Concluídas</span>
+                                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{data.stats.todayConcluidas}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Canceladas</span>
+                                    <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{data.stats.todayCanceladas}</span>
+                                </div>
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.stats.completedToday}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Encerradas Hoje</p>
-                    </div>
+                    </Link>
 
                     {/* Concluídas esse mês */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">

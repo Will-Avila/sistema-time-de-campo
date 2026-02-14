@@ -73,7 +73,7 @@ export default function OSExecutionClient({
     return (
         <div className="space-y-6">
             {/* Progress Section */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm mx-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Box className="h-5 w-5 text-blue-500" />
@@ -116,7 +116,7 @@ export default function OSExecutionClient({
             </div>
 
             {/* Search Bar */}
-            <div className="px-4">
+            <div>
                 <div className="relative group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                     <Input
@@ -137,7 +137,7 @@ export default function OSExecutionClient({
             </div>
 
             {/* Caixa List */}
-            <div className="px-4 pb-10 space-y-4">
+            <div className="pb-10 space-y-4">
                 {filteredItems.length === 0 ? (
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-10 text-center">
                         <div className="bg-slate-50 dark:bg-slate-800 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
