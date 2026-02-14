@@ -1,16 +1,17 @@
 'use server';
 
 import { prisma } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth'; // Ensure this exists or use requireAuth + check
+import { requireAdmin } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import path from 'path';
-import { randomUUID } from 'crypto';
+import { logger } from '@/lib/logger';
+import { PHOTOS_BASE_PATH, getUploadDir, resolvePhotoPath } from '@/lib/constants';
 
 export async function saveOSAdminInfo(formData: FormData) {
     try {
-        const session = await requireAdmin();
-    } catch (e) {
+        await requireAdmin();
+    } catch {
         return { success: false, message: 'Acesso negado. Apenas administradores.' };
     }
 
@@ -23,13 +24,12 @@ export async function saveOSAdminInfo(formData: FormData) {
     if (!osId) return { success: false, message: 'ID da OS inválido.' };
 
     try {
-        // 1. Update OrderOfService directly
         await prisma.orderOfService.update({
             where: { id: osId },
             data: { condominio, descricao }
         });
 
-        // 2. Handle Deletions
+        // Handle Deletions
         if (deletedFileIds.length > 0) {
             const filesToDelete = await prisma.oSAttachment.findMany({
                 where: { id: { in: deletedFileIds } }
@@ -37,16 +37,9 @@ export async function saveOSAdminInfo(formData: FormData) {
 
             for (const file of filesToDelete) {
                 try {
-                    let absolutePath = '';
-                    if (file.path.startsWith('/api/images/')) {
-                        const relativePath = file.path.replace('/api/images/', '');
-                        absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
-                    } else {
-                        absolutePath = path.join(process.cwd(), 'public', file.path);
-                    }
-                    await unlink(absolutePath);
+                    await unlink(resolvePhotoPath(file.path));
                 } catch (e) {
-                    console.error('Erro ao deletar arquivo do disco:', e);
+                    logger.warn('Error deleting file from disk', { error: String(e) });
                 }
             }
 
@@ -55,25 +48,19 @@ export async function saveOSAdminInfo(formData: FormData) {
             });
         }
 
-        // 3. Handle New Uploads
+        // Handle New Uploads
         if (newFiles.length > 0) {
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || osId;
+            const uploadDir = getUploadDir(protocol);
 
-            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
-            const uploadDir = path.join(baseUploadDir, protocol);
-
-            try {
-                await mkdir(uploadDir, { recursive: true });
-            } catch (e) { }
+            await mkdir(uploadDir, { recursive: true });
 
             for (const file of newFiles) {
                 if (file instanceof File && file.size > 0) {
-                    const ext = path.extname(file.name);
                     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-                    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
-                    const fileName = `${uniqueSuffix}-${safeName}`;
+                    const fileName = `${Date.now()}-${Math.round(Math.random() * 1000)}-${safeName}`;
                     const apiPath = `/api/images/${protocol}/${fileName}`;
                     const absolutePath = path.join(uploadDir, fileName);
 
@@ -82,10 +69,10 @@ export async function saveOSAdminInfo(formData: FormData) {
 
                     await prisma.oSAttachment.create({
                         data: {
-                            osId: osId,
+                            osId,
                             name: file.name,
                             path: apiPath,
-                            type: file.type || ext,
+                            type: file.type || path.extname(file.name),
                             size: file.size
                         }
                     });
@@ -98,7 +85,7 @@ export async function saveOSAdminInfo(formData: FormData) {
         return { success: true, message: 'Informações salvas com sucesso.' };
 
     } catch (error) {
-        console.error('Erro ao salvar info admin:', error);
+        logger.error('Error saving admin info', { error: String(error) });
         return { success: false, message: 'Erro interno ao salvar.' };
     }
 }

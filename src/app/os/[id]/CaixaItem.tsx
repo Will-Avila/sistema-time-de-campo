@@ -217,7 +217,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                         {/* Interactive Switch Replacement */}
                         <button
                             onClick={() => setIsOpen(true)}
-                            className={`group relative flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${status === 'DONE' ? 'bg-primary border-primary' : (status === 'PENDING' ? 'bg-destructive border-destructive' : 'bg-slate-200 border-transparent')}`}
+                            className={`group relative flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${status === 'DONE' ? 'bg-primary border-primary' : (status === 'PENDING' ? 'bg-destructive border-destructive' : 'bg-slate-200 dark:bg-slate-700 border-transparent')}`}
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${status === 'DONE' ? 'translate-x-5' : 'translate-x-0.5'}`} />
                         </button>
@@ -463,7 +463,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                                 name="certified"
                                                 checked={certified}
                                                 onChange={e => setCertified(e.target.checked)}
-                                                className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                                className="h-5 w-5 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-emerald-600 focus:ring-emerald-500"
                                             />
                                             <label htmlFor={`certified-${item.cto}`} className="text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                                 Certificada

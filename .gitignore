@@ -1,5 +1,21 @@
 node_modules
-# Keep environment variables out of version control
-.env
 
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Next.js build output
+.next/
+out/
+
+# Prisma database files
+prisma/dev.db
+prisma/dev.db-journal
+
+# Logs and build artifacts
+*.log
+build_log*.txt
+
+# Generated Prisma client
 /generated/prisma

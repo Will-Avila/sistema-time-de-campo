@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import path from 'path';
 import type { ActionResult } from '@/lib/types';
+import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -115,9 +116,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
-
-            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
-            const uploadDir = path.join(baseUploadDir, protocol);
+            const uploadDir = getUploadDir(protocol);
 
             await mkdir(uploadDir, { recursive: true });
 
@@ -194,15 +193,9 @@ export async function deleteChecklistPhoto(photoId: string, osId: string) {
             return { success: false, message: 'Não autorizado. Você só pode excluir fotos que você mesmo enviou.' };
         }
 
-        let absolutePath = '';
-        if (photo.path.startsWith('/api/images/')) {
-            const relativePath = photo.path.replace('/api/images/', '');
-            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
-        } else {
-            absolutePath = path.join(process.cwd(), 'public', photo.path);
-        }
-
-        await import('fs/promises').then(fs => fs.unlink(absolutePath).catch(() => { }));
+        try {
+            await unlink(resolvePhotoPath(photo.path)).catch(() => { });
+        } catch { }
         await prisma.photo.delete({ where: { id: photoId } });
 
         revalidatePath(`/os/${osId}`);
@@ -239,14 +232,7 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         // Delete associated photos (files + records)
         for (const photo of photos) {
             try {
-                let absolutePath = '';
-                if (photo.path.startsWith('/api/images/')) {
-                    const relativePath = photo.path.replace('/api/images/', '');
-                    absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
-                } else {
-                    absolutePath = path.join(process.cwd(), 'public', photo.path);
-                }
-                await import('fs/promises').then(fs => fs.unlink(absolutePath));
+                await unlink(resolvePhotoPath(photo.path));
             } catch (e) {
                 logger.warn('Error deleting photo file', { error: String(e) });
             }
@@ -320,9 +306,7 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
         const { getOSById } = await import('@/lib/excel');
         const osData = await getOSById(osId);
         const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
-
-        const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
-        const uploadDir = path.join(baseUploadDir, protocol);
+        const uploadDir = getUploadDir(protocol);
 
         await mkdir(uploadDir, { recursive: true });
 

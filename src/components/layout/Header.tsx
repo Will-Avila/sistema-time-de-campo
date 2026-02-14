@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Menu, LogOut, User, Sun, Moon, LayoutDashboard, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/actions/auth';
-import { updatePreferences } from '@/actions/equipe';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 
@@ -12,28 +11,29 @@ import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
     username: string;
-    initialTheme: string;
     isAdmin?: boolean;
 }
 
-export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
+export function Header({ username, isAdmin }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { theme, setTheme } = useTheme();
+    const { resolvedTheme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const firstName = username.split(' ')[0];
 
-    // Set theme based on server preference on mount
     useEffect(() => {
         setMounted(true);
-        if (initialTheme) {
-            setTheme(initialTheme);
-        }
-    }, [initialTheme, setTheme]);
+    }, []);
 
-    async function handleToggleTheme() {
-        const newTheme = theme === 'dark' ? 'light' : 'dark';
+    function handleToggleTheme() {
+        const newTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
         setTheme(newTheme);
-        await updatePreferences('theme', newTheme);
+
+        // Save to DB in background via fetch (NOT server action to avoid re-hydration)
+        fetch('/api/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'theme', value: newTheme }),
+        }).catch(() => { /* silent fail - localStorage is the primary store */ });
     }
 
     return (
@@ -79,12 +79,12 @@ export function Header({ username, initialTheme, isAdmin }: HeaderProps) {
                             >
                                 {!mounted ? (
                                     <div className="h-4 w-4 animate-pulse bg-slate-200 dark:bg-slate-700 rounded-full" />
-                                ) : theme === 'dark' ? (
+                                ) : resolvedTheme === 'dark' ? (
                                     <Sun className="h-4 w-4 text-amber-500" />
                                 ) : (
                                     <Moon className="h-4 w-4 text-indigo-500" />
                                 )}
-                                {!mounted ? 'Carregando...' : (theme === 'dark' ? 'Modo Claro' : 'Modo Escuro')}
+                                {!mounted ? 'Carregando...' : (resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro')}
                             </button>
 
                             <div className="border-t border-slate-100 dark:border-slate-700 my-1" />

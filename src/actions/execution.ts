@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import type { ActionResult } from '@/lib/types';
+import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -77,9 +78,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
             const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
-
-            const baseUploadDir = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos';
-            const uploadDir = path.join(baseUploadDir, protocol);
+            const uploadDir = getUploadDir(protocol);
 
             await mkdir(uploadDir, { recursive: true });
 
@@ -138,17 +137,10 @@ export async function deleteExecutionPhoto(photoId: string, osId: string) {
         const photo = await prisma.photo.findUnique({ where: { id: photoId } });
         if (!photo) return { success: false, message: 'Foto não encontrada.' };
 
-        // 1. Remove file
-        let absolutePath = '';
-        if (photo.path.startsWith('/api/images/')) {
-            const relativePath = photo.path.replace('/api/images/', '');
-            absolutePath = path.join(process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\anexos', relativePath);
-        } else {
-            absolutePath = path.join(process.cwd(), 'public', photo.path);
-        }
-
+        // Remove file
         try {
-            await import('fs/promises').then(fs => fs.unlink(absolutePath));
+            const { unlink } = await import('fs/promises');
+            await unlink(resolvePhotoPath(photo.path));
         } catch (e) {
             logger.warn('Error deleting file (might be missing)', { error: String(e) });
         }

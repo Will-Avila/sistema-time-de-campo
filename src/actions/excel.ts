@@ -1,7 +1,6 @@
 'use server';
 
 import { requireAdmin } from '@/lib/auth';
-import { invalidateExcelCache } from '@/lib/excel';
 import { syncExcelToDB } from '@/lib/sync';
 import { writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
@@ -14,11 +13,11 @@ export async function uploadExcel(formData: FormData) {
 
         const file = formData.get('file') as File;
         if (!file) {
-            return { message: 'Nenhum arquivo enviado.' };
+            return { success: false, message: 'Nenhum arquivo enviado.' };
         }
 
         if (!file.name.endsWith('.xlsx')) {
-            return { message: 'Apenas arquivos .xlsx são permitidos.' };
+            return { success: false, message: 'Apenas arquivos .xlsx são permitidos.' };
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
@@ -26,8 +25,7 @@ export async function uploadExcel(formData: FormData) {
 
         await writeFile(filePath, buffer);
 
-        // Invalidate cache and SYNC with DB
-        invalidateExcelCache();
+        // Sync with DB
         const syncResult = await syncExcelToDB();
 
         if (!syncResult.success) {
@@ -38,8 +36,14 @@ export async function uploadExcel(formData: FormData) {
         revalidatePath('/os');
 
         return { success: true, message: syncResult.message };
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Error uploading excel', { error: String(error) });
-        return { message: 'Erro ao atualizar base de dados.' };
+
+        if (error?.code === 'EBUSY') {
+            return { success: false, message: 'O arquivo Excel está aberto em outro programa. Feche-o e tente novamente.' };
+        }
+
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        return { success: false, message: `Erro ao atualizar base de dados: ${errorMsg}` };
     }
 }

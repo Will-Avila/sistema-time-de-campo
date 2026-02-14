@@ -12,6 +12,7 @@ export async function refreshData() {
     const result = await syncExcelToDB();
     revalidatePath('/admin/dashboard');
     revalidatePath('/os');
+    revalidatePath('/admin/today');
     return result;
 }
 
@@ -81,6 +82,7 @@ export async function getDashboardData() {
             status,
             equipeName,
             lastUpdate: lastUpdate ? lastUpdate.toISOString() : null,
+            executionUpdatedAt: execution?.updatedAt ? execution.updatedAt.toISOString() : null,
             checklistTotal,
             checklistDone,
             rawStatus: os.status,
@@ -111,36 +113,47 @@ export async function getDashboardData() {
         .sort((a, b) => b.count - a.count);
 
     const todayDate = getTodaySP();
+    const now = new Date();
+    const monthsBRShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+    const currentMonthPattern = `${monthsBRShort[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
 
     const completedToday = osList.filter(os => {
-        // Condition 1: Excel data says it was closed today (format DD/MM/YYYY)
+        // Condition 1: Explicit closure date in Excel for TODAY
         const isExcelToday = os.dataConclusao === todayDate;
 
-        // Condition 2: It was completed or updated to an "end state" in the app today in SP Time (0h to 23:59)
+        // If Excel says it was closed on a different day, it CANNOT be today's work
+        if (os.dataConclusao !== '-' && os.dataConclusao !== todayDate) return false;
+
+        // Condition 2: Technical work completed by the app TODAY
+        const dbRecord = executionMap.get(os.id);
+        const execUpdateToday = dbRecord?.execution?.updatedAt && isSameDaySP(dbRecord.execution.updatedAt, todayDate);
+
         const s = (os.executionStatus || '').toUpperCase().trim();
-        const isAppToday = os.lastUpdate && isSameDaySP(os.lastUpdate, todayDate) &&
-            (s.includes('CONCLUÍDA') || s.includes('CONCLUIDA') || s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO') || s.includes('EM ANÁLISE') || s.includes('EM ANALISE') || s.includes('CANCELADA') || s.includes('CANCELADO'));
+        const raw = (os.rawStatus || '').toUpperCase().trim();
+        const isFinished =
+            s.includes('CONCLUÍD') || s.includes('CONCLUID') ||
+            s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') ||
+            s.includes('EM ANÁLIS') || s.includes('EM ANALIS') ||
+            s.includes('CANCELAD') || raw === 'CANCELADO';
+
+        // Strict App Today check: Only count if it's finished AND (explicit tech work today OR explicit Excel date)
+        const isAppToday = os.lastUpdate && isSameDaySP(os.lastUpdate, todayDate) && isFinished &&
+            (execUpdateToday || isExcelToday);
 
         return isExcelToday || isAppToday;
     });
 
     const completedTodayCount = completedToday.length;
 
-    const todayConcluidas = completedToday.filter(os => {
-        const s = (os.executionStatus || '').toUpperCase().trim();
-        // It's Concluída if it's Concluída OR Em Análise, AND NOT a cancellation
-        const isCancellation = s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO');
-        const isClosure = s.includes('CONCLUÍDA') || s.includes('CONCLUIDA') || s.includes('EM ANÁLISE') || s.includes('EM ANALISE');
-
-        return isClosure && !isCancellation;
-    }).length;
-
     const todayCanceladas = completedToday.filter(os => {
         const s = (os.executionStatus || '').toUpperCase().trim();
         const raw = (os.rawStatus || '').toUpperCase().trim();
         // It's Cancelada if execution status contains SEM EXECUÇÃO OR raw excel status is CANCELADO
-        return s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO') || raw === 'CANCELADO';
+        const isCancellation = s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') || s.includes('CANCELAD') || raw === 'CANCELADO';
+        return isCancellation;
     }).length;
+
+    const todayConcluidas = completedTodayCount - todayCanceladas;
 
     const completedMonth = osList.filter(os => {
         const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];

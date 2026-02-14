@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download } from 'lucide-react';
-import { getOSStatusInfo } from '@/lib/utils';
+import { getOSStatusInfo, formatDateSP, formatDateTimeSP } from '@/lib/utils';
 import Image from 'next/image';
 import OSClosureForm from './OSClosureForm';
 import { OSPhotosGallery } from './OSPhotosGallery';
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getSession } from '@/lib/auth';
 import { StatusBadge } from '@/components/os/StatusBadge';
+import { OSClosureDate } from '@/components/os/OSClosureDate';
 
 interface PageProps {
     params: { id: string };
@@ -193,10 +194,11 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 {statusInfo.label === 'Concluída' ? (
                                     <div>
                                         <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Conclusão</span>
-                                        <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                            <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                                            {execution?.updatedAt ? execution.updatedAt.toLocaleDateString('pt-BR') : (os.dataConclusao || '-')}
-                                        </div>
+                                        <OSClosureDate
+                                            dataConclusaoExcel={os.dataConclusao}
+                                            executionUpdatedAt={execution?.updatedAt}
+                                            className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300"
+                                        />
                                     </div>
                                 ) : (
                                     <div>
@@ -281,7 +283,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     Detalhes do Encerramento (Responsável)
                                     {execution.updatedAt && (
                                         <span className="ml-auto text-xs font-normal text-muted-foreground">
-                                            {execution.updatedAt.toLocaleString('pt-BR')}
+                                            {formatDateTimeSP(execution.updatedAt)}
                                         </span>
                                     )}
                                 </CardTitle>

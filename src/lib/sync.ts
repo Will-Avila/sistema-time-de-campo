@@ -16,7 +16,14 @@ function excelDateToJS(serial: number): Date | null {
 function formatExcelDate(serial: any): string {
     if (typeof serial === 'number') {
         const date = excelDateToJS(serial);
-        return date ? date.toLocaleDateString('pt-BR') : '-';
+        if (!date) return '-';
+
+        // Use UTC values to avoid timezone shifts (e.g., BRT vs UTC)
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+
+        return `${day}/${month}/${year}`;
     }
     return String(serial || '-');
 }
@@ -42,46 +49,58 @@ export async function syncExcelToDB() {
             const osId = String(row.IdOs || row.ID || row.Pop || '');
             if (!osId) continue;
 
-            await prisma.orderOfService.upsert({
-                where: { id: osId },
-                update: {
-                    pop: String(row.POP || row.Pop || ''),
-                    status: String(row.StatusOperacao || '').trim(),
-                    uf: String(row.UF || ''),
-                    dataEntrante: formatExcelDate(row['Entrante']),
-                    dataPrevExec: formatExcelDate(row['Prev. Exec.']),
-                    dataConclusao: formatExcelDate(row['Conclusao']),
-                    cenario: String(row.Cenario || ''),
-                    protocolo: String(row.Protocolo || ''),
-                    mes: String(row.Mes || row.MES || ''),
-                    valorServico: typeof row.ValorServico === 'number' ? row.ValorServico : 0,
-                    statusMedicao: String(row.StatusMedicao || ''),
-                    statusFinal: String(row.StatusFinal || ''),
-                    tempo: String(row.Tempo || ''),
-                    facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 1, // Fix: default 1 to avoid possible issues, actually 0 is fine
-                    caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
-                    tipoOs: String(row.TipoOs || ''),
-                },
-                create: {
-                    id: osId,
-                    pop: String(row.POP || row.Pop || ''),
-                    status: String(row.StatusOperacao || '').trim(),
-                    uf: String(row.UF || ''),
-                    dataEntrante: formatExcelDate(row['Entrante']),
-                    dataPrevExec: formatExcelDate(row['Prev. Exec.']),
-                    dataConclusao: formatExcelDate(row['Conclusao']),
-                    cenario: String(row.Cenario || ''),
-                    protocolo: String(row.Protocolo || ''),
-                    mes: String(row.Mes || row.MES || ''),
-                    valorServico: typeof row.ValorServico === 'number' ? row.ValorServico : 0,
-                    statusMedicao: String(row.StatusMedicao || ''),
-                    statusFinal: String(row.StatusFinal || ''),
-                    tempo: String(row.Tempo || ''),
-                    facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 0,
-                    caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
-                    tipoOs: String(row.TipoOs || ''),
+            const newData = {
+                pop: String(row.POP || row.Pop || ''),
+                status: String(row.StatusOperacao || '').trim(),
+                uf: String(row.UF || ''),
+                dataEntrante: formatExcelDate(row['Entrante']),
+                dataPrevExec: formatExcelDate(row['Prev. Exec.']),
+                dataConclusao: formatExcelDate(row['Conclusao']),
+                cenario: String(row.Cenario || ''),
+                protocolo: String(row.Protocolo || ''),
+                mes: String(row.Mes || row.MES || ''),
+                valorServico: typeof row.ValorServico === 'number' ? row.ValorServico : 0,
+                statusMedicao: String(row.StatusMedicao || ''),
+                statusFinal: String(row.StatusFinal || ''),
+                tempo: String(row.Tempo || ''),
+                facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 0,
+                caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
+                tipoOs: String(row.TipoOs || ''),
+            };
+
+            const existing = await prisma.orderOfService.findUnique({ where: { id: osId } });
+
+            if (existing) {
+                // Check if anything actually changed to avoid updating updatedAt
+                const hasChanged =
+                    existing.pop !== newData.pop ||
+                    existing.status !== newData.status ||
+                    existing.uf !== newData.uf ||
+                    existing.dataEntrante !== newData.dataEntrante ||
+                    existing.dataPrevExec !== newData.dataPrevExec ||
+                    existing.dataConclusao !== newData.dataConclusao ||
+                    existing.cenario !== newData.cenario ||
+                    existing.protocolo !== newData.protocolo ||
+                    existing.mes !== newData.mes ||
+                    existing.valorServico !== newData.valorServico ||
+                    existing.statusMedicao !== newData.statusMedicao ||
+                    existing.statusFinal !== newData.statusFinal ||
+                    existing.tempo !== newData.tempo ||
+                    existing.facilidadesPlanejadas !== newData.facilidadesPlanejadas ||
+                    existing.caixasPlanejadas !== newData.caixasPlanejadas ||
+                    existing.tipoOs !== newData.tipoOs;
+
+                if (hasChanged) {
+                    await prisma.orderOfService.update({
+                        where: { id: osId },
+                        data: newData
+                    });
                 }
-            });
+            } else {
+                await prisma.orderOfService.create({
+                    data: { ...newData, id: osId }
+                });
+            }
             osCount++;
         }
 
@@ -111,60 +130,68 @@ export async function syncExcelToDB() {
             if (!osExists) continue;
 
             const excelId = String(row.IdCaixa || '');
+            const caixaId = excelId || `idx-${osId}-${currentIndex}`;
+            const newData = {
+                osId,
+                cto: String(row.Cto || ''),
+                pop: String(row.Pop || ''),
+                cidade: String(row.Cidade || ''),
+                uf: String(row.UF || ''),
+                chassi: String(row.Chassi || ''),
+                placa: String(row.Placa || ''),
+                olt: String(row.OLT || ''),
+                cenario: String(row.Cenario || ''),
+                bairro: String(row.Bairro || ''),
+                endereco: String(row.Endereco || ''),
+                lat: row.Lat ? parseFloat(String(row.Lat)) : null,
+                long: row.Long ? parseFloat(String(row.Long)) : null,
+                status: boxStatus,
+                valor: typeof row.Valor === 'number' ? row.Valor : 0,
+                equipe: String(row.Equipe || ''),
+                obs: String(row.OBS || ''),
+                data: formatExcelDate(row.Data),
+                nomeEquipe: String(row.NomeEquipe || ''),
+                potencia: String(row.Potência || ''),
+                excelId: excelId || null,
+            };
 
-            // If no excelId, we might need a composite key or just insert. 
-            // In the previous code, index was used as fallback ID.
+            const existing = await prisma.caixaAlare.findUnique({ where: { id: caixaId } });
 
-            await prisma.caixaAlare.upsert({
-                where: { id: excelId || `idx-${osId}-${currentIndex}` },
-                update: {
-                    osId,
-                    cto: String(row.Cto || ''),
-                    pop: String(row.Pop || ''),
-                    cidade: String(row.Cidade || ''),
-                    uf: String(row.UF || ''),
-                    chassi: String(row.Chassi || ''),
-                    placa: String(row.Placa || ''),
-                    olt: String(row.OLT || ''),
-                    cenario: String(row.Cenario || ''),
-                    bairro: String(row.Bairro || ''),
-                    endereco: String(row.Endereco || ''),
-                    lat: row.Lat ? parseFloat(String(row.Lat)) : null,
-                    long: row.Long ? parseFloat(String(row.Long)) : null,
-                    status: boxStatus,
-                    valor: typeof row.Valor === 'number' ? row.Valor : 0,
-                    equipe: String(row.Equipe || ''),
-                    obs: String(row.OBS || ''),
-                    data: formatExcelDate(row.Data),
-                    nomeEquipe: String(row.NomeEquipe || ''),
-                    potencia: String(row.Potência || ''),
-                    excelId: excelId || null,
-                },
-                create: {
-                    id: excelId || `idx-${osId}-${currentIndex}`,
-                    osId,
-                    cto: String(row.Cto || ''),
-                    pop: String(row.Pop || ''),
-                    cidade: String(row.Cidade || ''),
-                    uf: String(row.UF || ''),
-                    chassi: String(row.Chassi || ''),
-                    placa: String(row.Placa || ''),
-                    olt: String(row.OLT || ''),
-                    cenario: String(row.Cenario || ''),
-                    bairro: String(row.Bairro || ''),
-                    endereco: String(row.Endereco || ''),
-                    lat: row.Lat ? parseFloat(String(row.Lat)) : null,
-                    long: row.Long ? parseFloat(String(row.Long)) : null,
-                    status: boxStatus,
-                    valor: typeof row.Valor === 'number' ? row.Valor : 0,
-                    equipe: String(row.Equipe || ''),
-                    obs: String(row.OBS || ''),
-                    data: formatExcelDate(row.Data),
-                    nomeEquipe: String(row.NomeEquipe || ''),
-                    potencia: String(row.Potência || ''),
-                    excelId: excelId || null,
+            if (existing) {
+                const hasChanged =
+                    existing.osId !== newData.osId ||
+                    existing.cto !== newData.cto ||
+                    existing.pop !== newData.pop ||
+                    existing.cidade !== newData.cidade ||
+                    existing.uf !== newData.uf ||
+                    existing.chassi !== newData.chassi ||
+                    existing.placa !== newData.placa ||
+                    existing.olt !== newData.olt ||
+                    existing.cenario !== newData.cenario ||
+                    existing.bairro !== newData.bairro ||
+                    existing.endereco !== newData.endereco ||
+                    existing.lat !== newData.lat ||
+                    existing.long !== newData.long ||
+                    existing.status !== newData.status ||
+                    existing.valor !== newData.valor ||
+                    existing.equipe !== newData.equipe ||
+                    existing.obs !== newData.obs ||
+                    existing.data !== newData.data ||
+                    existing.nomeEquipe !== newData.nomeEquipe ||
+                    existing.potencia !== newData.potencia ||
+                    existing.excelId !== newData.excelId;
+
+                if (hasChanged) {
+                    await prisma.caixaAlare.update({
+                        where: { id: caixaId },
+                        data: newData
+                    });
                 }
-            });
+            } else {
+                await prisma.caixaAlare.create({
+                    data: { ...newData, id: caixaId }
+                });
+            }
             caixaCount++;
         }
 

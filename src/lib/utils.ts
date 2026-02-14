@@ -145,3 +145,36 @@ export function isSameDaySP(date: Date | string | null | undefined, targetDateBR
     const targetSP = targetDateBR.replace(/[^0-9/]/g, '').trim();
     return dateSP === targetSP;
 }
+
+/**
+ * Formats a date (Date or ISO string) to DD/MM/YYYY in America/Sao_Paulo timezone.
+ * Safe to use in both Client and Server components.
+ */
+export function formatDateSP(date: Date | string | null | undefined) {
+    return getDateSP(date);
+}
+
+/**
+ * Formats a date (Date or ISO string) to DD/MM/YYYY, HH:mm:ss in America/Sao_Paulo timezone.
+ */
+export function formatDateTimeSP(date: Date | string | null | undefined) {
+    if (!date) return '-';
+    let d: Date;
+    if (typeof date === 'string') {
+        d = new Date(date);
+    } else {
+        d = date;
+    }
+
+    if (isNaN(d.getTime())) return '-';
+
+    return new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    }).format(d);
+}

@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft } from 'lucide-react';
 import { updatePreferences } from '@/actions/equipe';
-import { getStatusVariantFromLabel } from '@/lib/utils';
+import { getStatusVariantFromLabel, formatDateSP, cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
+import { OSClosureDate } from '@/components/os/OSClosureDate';
 
 interface OSListClientProps {
     initialOSList: EnrichedOS[];
@@ -83,13 +84,14 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
 
         // Special logic for Today's Page (Execution-based filtering)
         if (isTodayPage) {
+            const isCancellation = execStatus.includes('SEM EXECUÇ') || execStatus.includes('SEM EXECUC') || execStatus.includes('CANCELAD') || rawStatus === 'CANCELADO';
+
             if (statusFilter === 'Em Análise') {
-                matchesStatus = execStatus.includes('EM ANÁLISE') || execStatus.includes('EM ANALISE');
+                matchesStatus = execStatus.includes('EM ANÁLIS') || execStatus.includes('EM ANALIS');
             } else if (statusFilter === 'Concluídas') {
-                matchesStatus = (execStatus.includes('CONCLUÍDA') || execStatus.includes('CONCLUIDA')) &&
-                    !(execStatus.includes('SEM EXECUÇÃO') || execStatus.includes('SEM EXECUCAO'));
+                matchesStatus = !isCancellation;
             } else if (statusFilter === 'Canceladas') {
-                matchesStatus = execStatus.includes('SEM EXECUÇÃO') || execStatus.includes('SEM EXECUCAO') || rawStatus === 'CANCELADO';
+                matchesStatus = isCancellation;
             } else if (statusFilter === 'Todas') {
                 matchesStatus = true;
             }
@@ -165,8 +167,8 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
     }
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-6 md:pb-8 space-y-6 transition-colors">
-            <div className="container pt-20 space-y-6">
+        <div className={cn("min-h-screen bg-slate-100 dark:bg-slate-950 pb-6 md:pb-8 space-y-6 transition-colors", isTodayPage && "min-h-0 bg-transparent")}>
+            <div className={cn("container space-y-6", isTodayPage ? "pt-2" : "pt-20")}>
                 {isTodayPage && (
                     <div className="flex items-center gap-4">
                         <button
@@ -253,12 +255,16 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                             onClick={() => { setLoadingId(os.id); router.push(`/os/${os.id}`); }}
                             className="block group h-full cursor-pointer"
                         >
-                            <Card className={`h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50 dark:bg-slate-900/40 dark:border-slate-800/60 flex flex-col ${loadingId === os.id ? 'opacity-60 pointer-events-none' : ''}`}>
+                            <Card className={cn(
+                                "h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50 dark:bg-slate-900/40 dark:border-slate-800/60 flex flex-col",
+                                loadingId === os.id && "opacity-60 pointer-events-none"
+                            )}>
                                 {loadingId === os.id && (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-slate-950/50 rounded-xl backdrop-blur-[1px]">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                 )}
+
                                 <CardHeader className="p-5 pb-3 space-y-0 relative">
                                     <StatusBadge label={getDisplayStatus(os)} className="absolute top-5 right-5 z-10" />
                                     <div className="flex justify-between items-start gap-4">
@@ -321,12 +327,11 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                                 <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">
                                                     {getDisplayStatus(os).includes('Cancelad') || getDisplayStatus(os).includes('Sem Execuç') ? 'Finalização' : 'Conclusão'}
                                                 </span>
-                                                <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                                    <Calendar className="h-3 w-3 text-slate-400" />
-                                                    {os.dataConclusao && os.dataConclusao !== '-'
-                                                        ? os.dataConclusao
-                                                        : (os.lastUpdate ? new Date(os.lastUpdate).toLocaleDateString('pt-BR') : '-')}
-                                                </div>
+                                                <OSClosureDate
+                                                    dataConclusaoExcel={os.dataConclusao}
+                                                    executionUpdatedAt={os.executionUpdatedAt}
+                                                    closedAt={os.closedAt}
+                                                />
                                             </div>
                                         ) : (
                                             <div>

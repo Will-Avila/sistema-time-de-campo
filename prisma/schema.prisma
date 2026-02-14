@@ -145,6 +145,9 @@ model Photo {
   execution   ServiceExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
   equipe      Equipe?           @relation("EquipePhotos", fields: [equipeId], references: [id], onDelete: SetNull)
   caixa       CaixaAlare?       @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+
+  @@index([caixaId])
+  @@index([executionId])
 }
 
 model Notification {
@@ -161,6 +164,7 @@ model Notification {
   equipe         Equipe?         @relation("EquipeNotifications", fields: [equipeId], references: [id])
 
   @@index([read, createdAt])
+  @@index([equipeId])
 }
 
 model OSAttachment {

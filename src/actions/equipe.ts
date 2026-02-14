@@ -22,7 +22,15 @@ export async function updatePreferences(key: 'theme' | 'lastUf' | 'lastSearch' |
         });
 
         logger.info('Preferences updated', { userId: session.id, key, value });
-        revalidatePath('/os');
+
+        // Only revalidate for non-theme preferences.
+        // Theme changes are handled client-side by next-themes;
+        // revalidating would re-render the layout and cause a race condition
+        // where the server sends back the OLD theme before the DB write completes.
+        if (key !== 'theme') {
+            revalidatePath('/os');
+        }
+
         return { success: true };
     } catch (error: any) {
         if (error.code === 'P2025') {

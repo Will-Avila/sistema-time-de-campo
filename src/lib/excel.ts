@@ -194,9 +194,4 @@ export async function getOSById(id: string) {
     };
 }
 
-/** 
- * Export placeholders or helpers needed by other modules
- */
-export function invalidateExcelCache() {
-    // No-op now that we use DB
-}
+

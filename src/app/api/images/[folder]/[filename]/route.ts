@@ -4,12 +4,13 @@ import path from 'path';
 import { existsSync } from 'fs';
 
 import { getSession } from '@/lib/auth';
+import { PHOTOS_BASE_PATH } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 
 export async function GET(
     request: NextRequest,
     { params }: { params: { folder: string; filename: string } }
 ) {
-    // Auth security: Only logged in users can view OS photos
     const session = await getSession();
     if (!session) {
         return new NextResponse('Unauthorized', { status: 401 });
@@ -17,26 +18,22 @@ export async function GET(
 
     const { folder, filename } = params;
 
-    // Security: Prevent directory traversal (basic check)
-    // In a real app, strict validation of 'folder' (protocol) to be alphanumeric is good.
-    if (folder.includes('..') || filename.includes('..') || folder.includes('/') || filename.includes('/')) {
+    // Security: Resolve and validate that the final path is within the allowed directory
+    const resolvedBase = path.resolve(PHOTOS_BASE_PATH);
+    const resolvedFile = path.resolve(PHOTOS_BASE_PATH, folder, filename);
+
+    if (!resolvedFile.startsWith(resolvedBase + path.sep)) {
         return new NextResponse('Invalid path', { status: 400 });
     }
 
-    const basePath = process.env.PHOTOS_PATH || 'C:\\Programas\\PROJETOS\\fotos';
-    const filePath = path.join(basePath, folder, filename);
-
-    if (!existsSync(filePath)) {
+    if (!existsSync(resolvedFile)) {
         return new NextResponse('File not found', { status: 404 });
     }
 
     try {
-        const fileBuffer = await readFile(filePath);
+        const fileBuffer = await readFile(resolvedFile);
 
-        // Determine content type based on extension
         const ext = path.extname(filename).toLowerCase();
-        let contentType = 'application/octet-stream';
-
         const mimeMap: Record<string, string> = {
             '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg',
@@ -52,18 +49,14 @@ export async function GET(
             '.zip': 'application/zip'
         };
 
-        if (mimeMap[ext]) {
-            contentType = mimeMap[ext];
-        }
-
         return new NextResponse(fileBuffer, {
             headers: {
-                'Content-Type': contentType,
+                'Content-Type': mimeMap[ext] || 'application/octet-stream',
                 'Cache-Control': 'public, max-age=31536000, immutable',
             },
         });
     } catch (error) {
-        console.error('Error serving file:', error);
+        logger.error('Error serving file', { error: String(error) });
         return new NextResponse('Internal Server Error', { status: 500 });
     }
 }

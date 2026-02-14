@@ -6,6 +6,8 @@ import { getSession } from '@/lib/auth';
 import { EnrichedOS } from '@/lib/types';
 import { getOSStatusInfo } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export default async function OSListPage() {
     const osList = await getAllOS();
 
@@ -48,7 +50,13 @@ export default async function OSListPage() {
             }
         }
 
-        return { ...os, executionStatus, equipeName, closedAt };
+        return {
+            ...os,
+            executionStatus,
+            equipeName,
+            closedAt,
+            executionUpdatedAt: exec?.updatedAt ? exec.updatedAt.toISOString() : null
+        };
     });
 
     // Get Session & Preferences (centralized)

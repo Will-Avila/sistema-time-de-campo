@@ -14,32 +14,25 @@ export default async function TodayOSPage() {
     const osList = await getAllOS();
     const todayDate = getTodaySP();
 
-    // Fetch all executions
-    const executions = await prisma.serviceExecution.findMany({
-        select: {
-            osId: true,
-            status: true,
-            obs: true,
-            updatedAt: true,
-            equipe: { select: { name: true, nomeEquipe: true, fullName: true } }
+    // 1. Get Base OS Data from Prisma (to get updatedAt)
+    const osRecords = await prisma.orderOfService.findMany({
+        include: {
+            execution: {
+                include: {
+                    equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
+                }
+            }
         }
     });
 
-    const executionMap = new Map<string, { status: string; obs: string | null; equipeName: string; updatedAt: Date }>();
-    for (const exec of executions) {
-        executionMap.set(exec.osId, {
-            status: exec.status,
-            obs: exec.obs,
-            equipeName: exec.equipe?.fullName || exec.equipe?.nomeEquipe || exec.equipe?.name || '-',
-            updatedAt: exec.updatedAt
-        });
-    }
+    const dbMap = new Map(osRecords.map(r => [r.id, r]));
 
     // Enrich and Filter for Today
     const todayList: EnrichedOS[] = [];
 
     for (const os of osList) {
-        const exec = executionMap.get(os.id);
+        const dbRecord = dbMap.get(os.id);
+        const exec = dbRecord?.execution;
         const todayDateStr = todayDate;
 
         // Conditions for "Today" (same as dashboard)
@@ -48,24 +41,49 @@ export default async function TodayOSPage() {
         let executionStatus = 'Pendente';
         let equipeName: string | undefined;
         let closedAt: string | undefined;
+        let lastUpdateDate: Date | null = dbRecord?.updatedAt || null;
         let isAppToday = false;
 
-        if (exec) {
-            equipeName = exec.equipeName;
-            const statusInfo = getOSStatusInfo({ osStatus: os.status, execution: exec });
-            executionStatus = statusInfo.label;
-
-            const s = (executionStatus || '').toUpperCase().trim();
-            isAppToday = isSameDaySP(exec.updatedAt, todayDateStr) &&
-                (s.includes('CONCLUÍDA') || s.includes('CONCLUIDA') || s.includes('SEM EXECUÇÃO') || s.includes('SEM EXECUCAO') || s.includes('EM ANÁLISE') || s.includes('EM ANALISE') || s.includes('CANCELADA') || s.includes('CANCELADO'));
-
-            if (isAppToday || isExcelToday) {
-                closedAt = exec.updatedAt.toISOString();
+        // Determine the most recent update date (OS metadata vs App Execution)
+        if (exec && exec.updatedAt) {
+            equipeName = exec.equipe?.fullName || exec.equipe?.nomeEquipe || exec.equipe?.name || '-';
+            if (!lastUpdateDate || exec.updatedAt > lastUpdateDate) {
+                lastUpdateDate = exec.updatedAt;
             }
         }
 
-        if (isExcelToday || isAppToday) {
-            todayList.push({ ...os, executionStatus, equipeName, closedAt, lastUpdate: exec?.updatedAt?.toISOString() });
+        const statusInfo = getOSStatusInfo({ osStatus: os.status, execution: exec });
+        executionStatus = statusInfo.label;
+
+        const s = (executionStatus || '').toUpperCase().trim();
+        const raw = (os.status || '').toUpperCase().trim();
+
+        const now = new Date();
+        const monthsBRShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+        const currentMonthPattern = `${monthsBRShort[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
+
+        const isFinished =
+            s.includes('CONCLUÍD') || s.includes('CONCLUID') ||
+            s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') ||
+            s.includes('EM ANÁLIS') || s.includes('EM ANALIS') ||
+            s.includes('CANCELAD') || raw === 'CANCELADO';
+
+        const execUpdateToday = exec?.updatedAt && isSameDaySP(exec.updatedAt, todayDateStr);
+        const isCurrentMonth = os.mes === currentMonthPattern;
+
+        isAppToday = lastUpdateDate && isSameDaySP(lastUpdateDate, todayDateStr) && isFinished &&
+            (execUpdateToday || isExcelToday);
+
+        if (isAppToday || isExcelToday) {
+            closedAt = lastUpdateDate?.toISOString();
+            todayList.push({
+                ...os,
+                executionStatus,
+                equipeName,
+                closedAt,
+                lastUpdate: lastUpdateDate?.toISOString(),
+                executionUpdatedAt: exec?.updatedAt ? exec.updatedAt.toISOString() : null
+            });
         }
     }
 

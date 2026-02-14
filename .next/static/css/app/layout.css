@@ -942,6 +942,9 @@ video {
 .max-h-\[90vh\] {
   max-height: 90vh;
 }
+.min-h-0 {
+  min-height: 0px;
+}
 .min-h-\[80px\] {
   min-height: 80px;
 }
@@ -1303,9 +1306,6 @@ video {
 .border-emerald-500\/30 {
   border-color: rgb(16 185 129 / 0.3);
 }
-.border-emerald-500\/50 {
-  border-color: rgb(16 185 129 / 0.5);
-}
 .border-green-200 {
   --tw-border-opacity: 1;
   border-color: rgb(187 247 208 / var(--tw-border-opacity, 1));
@@ -1655,6 +1655,10 @@ video {
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
 }
+.py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
 .py-16 {
   padding-top: 4rem;
   padding-bottom: 4rem;
@@ -1682,10 +1686,6 @@ video {
 .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
-}
-.py-1\.5 {
-  padding-top: 0.375rem;
-  padding-bottom: 0.375rem;
 }
 .pb-10 {
   padding-bottom: 2.5rem;
@@ -2272,6 +2272,10 @@ video {
   background-color: hsl(var(--destructive) / 0.9);
 }
 
+.hover\:bg-emerald-600\/80:hover {
+  background-color: rgb(5 150 105 / 0.8);
+}
+
 .hover\:bg-emerald-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(4 120 87 / var(--tw-bg-opacity, 1));
@@ -2708,10 +2712,6 @@ video {
 
 .dark\:border-emerald-500\/20:is(.dark *) {
   border-color: rgb(16 185 129 / 0.2);
-}
-
-.dark\:border-emerald-500\/30:is(.dark *) {
-  border-color: rgb(16 185 129 / 0.3);
 }
 
 .dark\:border-emerald-800:is(.dark *) {
