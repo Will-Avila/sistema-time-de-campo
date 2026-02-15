@@ -502,7 +502,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                             </Button>
                                         </div>
 
-                                        {canUnmark && status !== 'PENDING' && (
+                                        {canUnmark && status !== 'UNTOUCHED' && (
                                             <Button
                                                 type="button"
                                                 variant="outline"

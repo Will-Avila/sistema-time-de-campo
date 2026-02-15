@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import {
     LayoutDashboard, CheckCircle, Clock, Users, TrendingUp,
     Activity, ArrowRight, AlertTriangle, Bell, Wrench, MapPin,
-    Camera, Trash2
+    Camera, Trash2, DollarSign
 } from 'lucide-react';
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
@@ -50,11 +50,11 @@ export default async function DashboardPage() {
                     <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
                         <SyncDataButton />
                         <ExcelUploadButton />
-                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-9 px-4 transition-colors shadow-sm whitespace-nowrap">
-                            <Wrench className="h-4 w-4 shrink-0" />
+                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-11 px-6 transition-colors shadow-md whitespace-nowrap">
+                            <Wrench className="h-4 w-4 shrink-0 text-slate-500" />
                             Ordens de Serviço
                         </Link>
-                        <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 transition-colors shadow-sm whitespace-nowrap">
+                        <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-6 transition-colors shadow-md whitespace-nowrap">
                             <Users className="h-4 w-4 shrink-0" />
                             Usuários
                         </Link>
@@ -144,16 +144,32 @@ export default async function DashboardPage() {
                         </div>
                     </Link>
 
-                    {/* Em Progresso */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-violet-50 dark:bg-violet-950/50 flex items-center justify-center">
-                                <Activity className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                    {/* Orçamento Mensal */}
+                    <Link href="/admin/reports/monthly" className="block group">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-emerald-200 dark:hover:border-emerald-900/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                                    <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                            </div>
+                            <div className="space-y-1">
+                                <div>
+                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Total Previsto</p>
+                                    <p className="text-xl font-bold text-slate-900 dark:text-white">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetTotal)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Valor Concluído</p>
+                                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetDone)}
+                                    </p>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground font-bold tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/50">MES: {data.stats.budgetMonth}</p>
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{data.stats.inProgress}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Em Progresso</p>
-                    </div>
+                    </Link>
 
                     {/* Pendentes */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">

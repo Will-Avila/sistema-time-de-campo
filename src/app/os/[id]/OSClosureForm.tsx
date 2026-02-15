@@ -32,10 +32,25 @@ interface OSClosureFormProps {
     osId: string;
     triggerClassName?: string;
     triggerSize?: "default" | "sm" | "lg" | "icon" | null | undefined;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export default function OSClosureForm({ osId, triggerClassName, triggerSize = "sm" }: OSClosureFormProps) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function OSClosureForm({
+    osId,
+    triggerClassName,
+    triggerSize = "sm",
+    open: controlledOpen,
+    onOpenChange
+}: OSClosureFormProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+    const setIsOpen = (value: boolean) => {
+        if (onOpenChange) onOpenChange(value);
+        setInternalOpen(value);
+    };
+
     const router = useRouter();
     const ref = useRef<HTMLFormElement>(null);
 
@@ -54,8 +69,9 @@ export default function OSClosureForm({ osId, triggerClassName, triggerSize = "s
             <Button
                 onClick={() => setIsOpen(true)}
                 size={triggerSize}
-                className={triggerClassName || "shrink-0 text-sm font-semibold shadow-sm"}
+                className={triggerClassName || "shrink-0 text-sm font-semibold shadow-sm gap-2 h-11"}
             >
+                <CheckCircle2 className="h-4 w-4" />
                 Encerrar OS
             </Button>
 

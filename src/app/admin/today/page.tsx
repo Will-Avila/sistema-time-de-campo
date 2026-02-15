@@ -6,13 +6,19 @@ import { getOSStatusInfo, getTodaySP, isSameDaySP } from '@/lib/utils';
 import { EnrichedOS } from '@/lib/types';
 import { requireAdmin } from '@/lib/auth';
 
+import { DateSelector } from './DateSelector';
+
 export const dynamic = 'force-dynamic';
 
-export default async function TodayOSPage() {
+interface PageProps {
+    searchParams: { date?: string };
+}
+
+export default async function TodayOSPage({ searchParams }: PageProps) {
     await requireAdmin();
 
+    const selectedDate = searchParams.date || getTodaySP();
     const osList = await getAllOS();
-    const todayDate = getTodaySP();
 
     // 1. Get Base OS Data from Prisma (to get updatedAt, caixas, execution)
     const osRecords = await prisma.orderOfService.findMany({
@@ -35,17 +41,17 @@ export default async function TodayOSPage() {
         return enrichOS(os, dbRecord as any);
     });
 
-    // 3. Filter for Today (Sync with dashboard.ts logic)
-    const todayList = enrichedList.filter(os => {
-        // Condition 1: Explicit closure date in Excel for TODAY
-        const isExcelToday = os.dataConclusao === todayDate;
+    // 3. Filter for Selected Date
+    const filteredList = enrichedList.filter(os => {
+        // Condition 1: Explicit closure date in Excel for SELECTED DATE
+        const isExcelTargetDate = os.dataConclusao === selectedDate;
 
-        // If Excel says it was closed on a different day, it CANNOT be today's work
-        if (os.dataConclusao !== '-' && os.dataConclusao !== todayDate) return false;
+        // If Excel says it was closed on a different day, it CANNOT be this day's work
+        if (os.dataConclusao !== '-' && os.dataConclusao !== selectedDate) return false;
 
-        // Condition 2: Technical work completed by the app TODAY
+        // Condition 2: Technical work completed by the app on SELECTED DATE
         const dbRecord = dbMap.get(os.id);
-        const execUpdateToday = dbRecord?.execution?.updatedAt && isSameDaySP(dbRecord.execution.updatedAt, todayDate);
+        const execUpdateTargetDate = dbRecord?.execution?.updatedAt && isSameDaySP(dbRecord.execution.updatedAt, selectedDate);
 
         const s = (os.executionStatus || '').toUpperCase().trim();
         const raw = (os.status || '').toUpperCase().trim();
@@ -55,11 +61,11 @@ export default async function TodayOSPage() {
             s.includes('EM ANÁLIS') || s.includes('EM ANALIS') ||
             s.includes('CANCELAD') || raw === 'CANCELADO';
 
-        // Strict App Today check: Only count if it's finished AND (explicit tech work today OR explicit Excel date)
-        const isAppToday = os.lastUpdate && isSameDaySP(new Date(os.lastUpdate), todayDate) && isFinished &&
-            (execUpdateToday || isExcelToday);
+        // Strict App check: Only count if it's finished AND (explicit tech work on date OR explicit Excel date)
+        const isAppTargetDate = os.lastUpdate && isSameDaySP(new Date(os.lastUpdate), selectedDate) && isFinished &&
+            (execUpdateTargetDate || isExcelTargetDate);
 
-        return isExcelToday || isAppToday;
+        return isExcelTargetDate || isAppTargetDate;
     });
 
     return (
@@ -67,16 +73,19 @@ export default async function TodayOSPage() {
             <HeaderServer />
             <div className="container pt-24 pb-6">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Encerradas Hoje</h1>
-                    <p className="text-sm text-muted-foreground">Exibindo todas as ordens de serviço finalizadas em {todayDate}</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Relatório de Produção</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Análise de produtividade e ordens de serviço finalizadas em <span className="font-bold text-primary">{selectedDate}</span>
+                    </p>
                 </div>
 
                 <OSListClient
-                    initialOSList={todayList}
+                    initialOSList={filteredList}
                     initialUf="Todos"
                     initialSearch=""
                     initialStatus="Todas"
                     isTodayPage={true}
+                    extraFilters={<DateSelector currentDate={selectedDate} />}
                 />
             </div>
         </div>

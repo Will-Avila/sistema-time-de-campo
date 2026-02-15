@@ -112,8 +112,8 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                         {isAdmin && (
-                            <Link href={`/os/${os.id}/admin`}>
-                                <Button variant="outline" size="lg" className="w-full gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
+                            <Link href={`/os/${os.id}/admin`} className="w-full sm:w-auto">
+                                <Button variant="outline" size="lg" className="w-full gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 h-11 shadow-sm">
                                     <FileText className="h-4 w-4" />
                                     Add Detalhes
                                 </Button>
@@ -121,15 +121,15 @@ export default async function OSDetailPage({ params }: PageProps) {
                         )}
 
                         <Link href={`/os/${os.id}/execution`} className="w-full sm:w-auto">
-                            <Button size="lg" className="w-full gap-2 shadow-lg bg-blue-600 hover:bg-blue-700">
+                            <Button size="lg" className="w-full gap-2 shadow-lg bg-blue-600 hover:bg-blue-700 h-11">
                                 <Wrench className="h-4 w-4" />
-                                CAIXAS
+                                Caixas
                             </Button>
                         </Link>
                         {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && (
                             <OSClosureForm
                                 osId={os.id}
-                                triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                                triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                                 triggerSize="lg"
                             />
                         )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, Camera, AlertTriangle, Trash2 } from 'lucide-react';
 import { getUnreadNotifications, markAsRead, archiveAllNotifications } from '@/actions/notification';
@@ -33,15 +33,49 @@ export function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const lastShownIdRef = useRef<string | null>(null);
     const router = useRouter();
 
     const fetchNotifications = async () => {
         const data = await getUnreadNotifications();
+
+        // Browser notification logic
+        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
+            const unreadNotifs = data.filter(n => !n.read);
+            if (unreadNotifs.length > 0) {
+                const newest = unreadNotifs[0];
+                if (newest.id !== lastShownIdRef.current) {
+                    const notification = new Notification(newest.title, {
+                        body: newest.message,
+                        icon: '/favicon.ico',
+                        badge: '/favicon.ico',
+                    });
+
+                    notification.onclick = () => {
+                        window.focus();
+                        if (newest.osId) {
+                            const targetPath = newest.type === 'CHECKLIST'
+                                ? `/os/${newest.osId}/execution`
+                                : `/os/${newest.osId}`;
+                            router.push(targetPath);
+                            setIsOpen(false);
+                        }
+                    };
+                    lastShownIdRef.current = newest.id;
+                }
+            }
+        }
+
         setNotifications(data);
         setIsLoading(false);
     };
 
     useEffect(() => {
+        // Request permission on mount
+        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
         return () => clearInterval(interval);

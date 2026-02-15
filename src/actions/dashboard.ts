@@ -165,7 +165,27 @@ export async function getDashboardData() {
         ? Math.round((completedTotal / (open + completedTotal)) * 100)
         : 0;
 
-    // 6. UF Breakdown (Total)
+    // 6. Calculate Monthly Budget (MMM-YY format)
+    const monthsShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+    const nowSP = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const currentBudgetMonth = `${monthsShort[nowSP.getMonth()]}-${nowSP.getFullYear().toString().slice(-2)}`;
+
+    let budgetTotal = 0;
+    let budgetDone = 0;
+
+    osList.forEach(os => {
+        if (os.mes === currentBudgetMonth) {
+            const val = (os.valorServico || 0);
+            budgetTotal += val;
+
+            const s = (os.rawStatus || '').toUpperCase().trim();
+            if (s === 'CONCLUÍDO' || s === 'CONCLUIDO') {
+                budgetDone += val;
+            }
+        }
+    });
+
+    // 7. UF Breakdown (Total)
     const ufMap = new Map<string, { total: number; done: number }>();
     osList.forEach(os => {
         const uf = os.uf || 'N/A';
@@ -228,6 +248,9 @@ export async function getDashboardData() {
             emExecucao: emExecucaoCount,
             emExecucaoUfBreakdown,
             completionRate,
+            budgetTotal,
+            budgetDone,
+            budgetMonth: currentBudgetMonth,
             equipeCount: equipes.length,
         },
         ufBreakdown,

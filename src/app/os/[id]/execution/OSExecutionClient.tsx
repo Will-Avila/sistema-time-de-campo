@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Box, CheckCircle2, AlertCircle, Circle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import CaixaItem from '../CaixaItem';
 import { CaixaItemData } from '@/lib/types';
 import { Session } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import OSClosureForm from '../OSClosureForm';
 
 interface OSExecutionClientProps {
     osId: string;
@@ -70,8 +73,44 @@ export default function OSExecutionClient({
         );
     }, [enrichedItems, searchTerm]);
 
+    const [isClosureModalOpen, setIsClosureModalOpen] = useState(false);
+    const [isPromptOpen, setIsPromptOpen] = useState(false);
+    const totalMarked = stats.done + stats.pending;
+    const prevMarkedRef = useRef(totalMarked);
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        // Trigger if total of marked items (DONE or PENDING) reached total items
+        if (!isInitialMount.current && prevMarkedRef.current < stats.total && totalMarked === stats.total) {
+            setIsPromptOpen(true);
+        }
+
+        prevMarkedRef.current = totalMarked;
+        isInitialMount.current = false;
+    }, [totalMarked, stats.total]);
+
     return (
         <div className="space-y-6">
+            <ConfirmModal
+                open={isPromptOpen}
+                title="Checklist Finalizado!"
+                message="Todas as caixas foram marcadas. Gostaria de realizar o encerramento da OS agora?"
+                confirmLabel="Sim, encerrar OS"
+                cancelLabel="Agora não"
+                onConfirm={() => {
+                    setIsPromptOpen(false);
+                    setIsClosureModalOpen(true);
+                }}
+                onCancel={() => setIsPromptOpen(false)}
+            />
+
+            <OSClosureForm
+                osId={osId}
+                open={isClosureModalOpen}
+                onOpenChange={setIsClosureModalOpen}
+                triggerClassName="hidden"
+            />
+
             {/* Progress Section */}
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
@@ -79,9 +118,20 @@ export default function OSExecutionClient({
                         <Box className="h-5 w-5 text-blue-500" />
                         <h2 className="font-bold text-slate-800 dark:text-slate-100">Progresso da Execução</h2>
                     </div>
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                        {stats.done} / {stats.total} concluídas
-                    </span>
+                    <div className="flex items-center gap-4">
+                        <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                            {totalMarked} / {stats.total} marcadas
+                        </span>
+                        {totalMarked === stats.total && (
+                            <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 animate-in fade-in"
+                                onClick={() => setIsClosureModalOpen(true)}
+                            >
+                                Encerrar OS
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Progress Bar */}
