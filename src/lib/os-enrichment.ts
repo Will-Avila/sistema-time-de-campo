@@ -8,6 +8,7 @@ interface DbRecord {
     execution?: {
         status: string;
         updatedAt: Date;
+        obs?: string | null;
         equipe?: {
             name: string;
             fullName: string | null;
@@ -27,6 +28,13 @@ export function enrichOS(os: OS, dbRecord?: DbRecord): EnrichedOS {
     let lastUpdateDate: Date | null = dbRecord?.updatedAt || null;
     let checklistTotal = 0;
     let checklistDone = 0;
+
+    // 0. Initial determination of status via centralized logic
+    const statusInfo = getOSStatusInfo({
+        osStatus: os.status,
+        execution: dbRecord?.execution || null
+    });
+    executionStatus = statusInfo.label;
 
     if (dbRecord) {
         const { execution, caixas } = dbRecord;
@@ -53,19 +61,22 @@ export function enrichOS(os: OS, dbRecord?: DbRecord): EnrichedOS {
             equipeName = execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name || '-';
         }
 
-        // 4. Determine status and updates
+        // 4. Update dates
         if (execution) {
             if (!lastUpdateDate || execution.updatedAt > lastUpdateDate) {
                 lastUpdateDate = execution.updatedAt;
             }
-            const statusInfo = getOSStatusInfo({ osStatus: os.status, execution });
-            executionStatus = statusInfo.label;
+        }
+    }
 
-            // Handle closure date
-            const labelUpper = executionStatus.toUpperCase();
-            if (labelUpper.includes('CONCLUÍDA') || labelUpper.includes('CONCLUIDA') || labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) {
-                closedAt = execution.updatedAt.toISOString();
-            }
+    // Handle closure date from the final label
+    const labelUpper = executionStatus.toUpperCase();
+    if (labelUpper.includes('CONCLUÍDA') || labelUpper.includes('CONCLUIDA') || labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) {
+        if (dbRecord?.execution?.updatedAt) {
+            closedAt = dbRecord.execution.updatedAt.toISOString();
+        } else if (os.dataConclusao && os.dataConclusao !== '-') {
+            // Optional fallback if Excel has a date but DB doesn't have an execution
+            // For now we trust execution.updatedAt
         }
     }
 
@@ -77,6 +88,8 @@ export function enrichOS(os: OS, dbRecord?: DbRecord): EnrichedOS {
         lastUpdate: lastUpdateDate?.toISOString(),
         executionUpdatedAt: dbRecord?.execution?.updatedAt ? dbRecord.execution.updatedAt.toISOString() : null,
         checklistTotal,
-        checklistDone
+        checklistDone,
+        executionObs: dbRecord?.execution?.obs || null,
+        observacoes: os.observacoes || null
     };
 }

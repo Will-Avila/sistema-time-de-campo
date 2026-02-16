@@ -6,7 +6,7 @@ import { syncExcelToDB } from '@/lib/sync';
 import { syncProgressStore } from '@/lib/sync-progress';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
-import { getOSStatusInfo, getTodaySP, isSameDaySP } from '@/lib/utils';
+import { getOSStatusInfo, getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
 
 export async function getSyncProgress() {
     await requireAdmin();
@@ -27,12 +27,13 @@ export async function refreshData() {
     return result;
 }
 
-export async function getDashboardData() {
+export async function getDashboardData(targetDate?: string) {
     // 1. Get Base OS Data
+    const todayDate = targetDate || getTodaySP();
     const [osRecords, excelOSList, equipes, recentNotifications] = await Promise.all([
         prisma.orderOfService.findMany({
             include: {
-                caixas: { select: { status: true, nomeEquipe: true } },
+                caixas: { select: { status: true, nomeEquipe: true, data: true } },
                 execution: {
                     include: {
                         equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
@@ -67,6 +68,13 @@ export async function getDashboardData() {
                 enriched.executionStatus === 'Em execução' ? 'IN_PROGRESS' : 'PENDING',
             rawStatus: os.status,
         };
+    }).sort((a, b) => {
+        const parseDate = (d?: string) => {
+            if (!d || d === '-') return new Date(0);
+            const [day, month, year] = d.split('/').map(Number);
+            return new Date(year, month - 1, day);
+        };
+        return parseDate(b.dataEntrante).getTime() - parseDate(a.dataEntrante).getTime();
     });
 
     // 5. Calculate Stats
@@ -91,7 +99,6 @@ export async function getDashboardData() {
         .map(([uf, count]) => ({ uf, count }))
         .sort((a, b) => b.count - a.count);
 
-    const todayDate = getTodaySP();
 
     const completedToday = osList.filter(os => {
         // Condition 1: Explicit closure date in Excel for TODAY
@@ -212,7 +219,48 @@ export async function getDashboardData() {
         }
     });
 
-    // 7. UF Breakdown (Total)
+    // 7. UF Deadline Breakdown (for open OSs)
+    const deadlineUfMap = new Map<string, { vencido: number; hoje: number; em5dias: number; acima5dias: number; total: number }>();
+    osList.forEach(os => {
+        const s = (os.rawStatus || '').toUpperCase().trim();
+        const isOpen = OPEN_EXCEL_STATUSES.includes(s);
+
+        if (isOpen) {
+            const uf = os.uf || 'N/A';
+            if (!deadlineUfMap.has(uf)) {
+                deadlineUfMap.set(uf, { vencido: 0, hoje: 0, em5dias: 0, acima5dias: 0, total: 0 });
+            }
+            const entry = deadlineUfMap.get(uf)!;
+            const days = getDaysRemaining(os.dataPrevExec);
+
+            if (days !== null) {
+                if (days < 0) entry.vencido++;
+                else if (days === 0) entry.hoje++;
+                else if (days <= 5) entry.em5dias++;
+                else entry.acima5dias++;
+            } else {
+                // If no deadline, count as > 5 or maybe a separate category? 
+                // Image doesn't show "No Deadline", so I'll count as > 5 or ignore total?
+                // Let's count in total anyway.
+                entry.acima5dias++;
+            }
+            entry.total++;
+        }
+    });
+
+    const deadlineUfBreakdown = Array.from(deadlineUfMap.entries())
+        .map(([uf, data]) => ({ uf, ...data }))
+        .sort((a, b) => b.total - a.total);
+
+    const deadlineGrandTotal = deadlineUfBreakdown.reduce((acc, curr) => ({
+        vencido: acc.vencido + curr.vencido,
+        hoje: acc.hoje + curr.hoje,
+        em5dias: acc.em5dias + curr.em5dias,
+        acima5dias: acc.acima5dias + curr.acima5dias,
+        total: acc.total + curr.total
+    }), { vencido: 0, hoje: 0, em5dias: 0, acima5dias: 0, total: 0 });
+
+    // Keep old ufBreakdown for other possible components or compatibility
     const ufMap = new Map<string, { total: number; done: number }>();
     osList.forEach(os => {
         const uf = os.uf || 'N/A';
@@ -226,8 +274,10 @@ export async function getDashboardData() {
         .map(([uf, data]) => ({ uf, ...data }))
         .sort((a, b) => b.total - a.total);
 
-    // 7. Technician Performance
+    // 7. Technician Performance & Daily OS Execution
     const techMap = new Map<string, { name: string; phone: string | null; completed: number; pending: number; checklistItems: number }>();
+    const osPerformanceMap = new Map<string, { protocolo: string; pop: string; condominio: string | null; teams: Record<string, number> }>();
+
     equipes.forEach(t => {
         techMap.set(t.id, { name: t.fullName || t.nomeEquipe || t.name, phone: t.phone, completed: 0, pending: 0, checklistItems: 0 });
     });
@@ -239,10 +289,37 @@ export async function getDashboardData() {
             if (entry) {
                 if (exec.status === 'DONE') entry.completed++;
                 else entry.pending++;
+
+                // General count
                 entry.checklistItems += os.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length;
             }
         }
+
+        // Aggregate Today's productivity by OS and Team
+        os.caixas.forEach(caixa => {
+            const isDoneToday = (caixa.status === 'OK' || caixa.status === 'Concluído') && caixa.data === todayDate;
+            if (isDoneToday) {
+                const teamName = caixa.nomeEquipe || 'Sem Equipe';
+                if (!osPerformanceMap.has(os.id)) {
+                    osPerformanceMap.set(os.id, {
+                        protocolo: os.protocolo,
+                        pop: os.pop,
+                        condominio: os.condominio,
+                        teams: {}
+                    });
+                }
+                const osEntry = osPerformanceMap.get(os.id)!;
+                osEntry.teams[teamName] = (osEntry.teams[teamName] || 0) + 1;
+            }
+        });
     });
+
+    const performanceByOS = Array.from(osPerformanceMap.values())
+        .map(os => ({
+            title: os.condominio ? `${os.condominio.toUpperCase()} - ${os.protocolo}` : os.protocolo,
+            pop: os.pop,
+            teams: Object.entries(os.teams).map(([name, count]) => ({ name, count }))
+        }));
 
     const techPerformance = Array.from(techMap.values())
         .filter(t => t.completed > 0 || t.pending > 0)
@@ -285,7 +362,10 @@ export async function getDashboardData() {
             equipeCount: equipes.length,
         },
         ufBreakdown,
+        deadlineUfBreakdown,
+        deadlineGrandTotal,
         techPerformance,
+        performanceByOS,
         activityFeed,
         osList
     };

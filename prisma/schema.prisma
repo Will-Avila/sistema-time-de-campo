@@ -29,6 +29,7 @@ model OrderOfService {
   updatedAt             DateTime          @updatedAt
   condominio            String?
   descricao             String?
+  observacoes           String?
   attachments           OSAttachment[]
   caixas                CaixaAlare[]
   notifications         Notification[]

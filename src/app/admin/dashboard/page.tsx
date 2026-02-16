@@ -11,6 +11,9 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
 import { SyncDataButton } from '@/components/SyncDataButton';
 import { StatusBadge } from '@/components/os/StatusBadge';
+import { DateSelector } from '@/components/dashboard/DateSelector';
+import { getOSStatusInfo, getDaysRemaining } from '@/lib/utils';
+import { EnrichedOS } from '@/lib/types';
 
 function timeAgo(dateStr: string): string {
     const now = new Date();
@@ -28,8 +31,13 @@ function timeAgo(dateStr: string): string {
 
 export const dynamic = 'force-dynamic';
 
-export default async function DashboardPage() {
-    const data = await getDashboardData();
+export default async function DashboardPage({
+    searchParams
+}: {
+    searchParams: { date?: string }
+}) {
+    const data = await getDashboardData(searchParams.date);
+    const displayDate = searchParams.date || new Date().toLocaleDateString('pt-BR');
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors">
@@ -247,6 +255,109 @@ export default async function DashboardPage() {
                 {/* Middle Row: Activity Feed + UF Breakdown + Tech Performance */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
+                    {/* Prazo OS Abertas */}
+                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <CardHeader className="pb-3 border-b dark:border-slate-800 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-800/80 dark:to-slate-900/80">
+                            <CardTitle className="text-sm font-bold flex items-center justify-between text-white">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-6 w-6 rounded-md bg-white/10 flex items-center justify-center">
+                                        <Clock className="h-3.5 w-3.5 text-sky-400" />
+                                    </div>
+                                    Prazo OS Abertas
+                                </div>
+                                <Badge variant="outline" className="font-bold text-[10px] uppercase border-white/20 text-white/70">
+                                    {data.deadlineGrandTotal.total} OS
+                                </Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {data.deadlineUfBreakdown.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <Clock className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                    <p className="text-sm italic">Nenhuma OS aberta</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-[9px] font-bold uppercase tracking-wider text-center border-b border-slate-100 dark:border-slate-800">
+                                                <th className="py-2.5 px-3 text-left font-extrabold text-slate-500 dark:text-slate-400">UF</th>
+                                                <th className="py-2.5 px-2 font-extrabold text-rose-400">Vencido</th>
+                                                <th className="py-2.5 px-2 font-extrabold text-amber-400">Hoje</th>
+                                                <th className="py-2.5 px-2 font-extrabold text-sky-400">5 dias</th>
+                                                <th className="py-2.5 px-2 font-extrabold text-slate-400">{'>'}5 dias</th>
+                                                <th className="py-2.5 px-2 font-extrabold text-slate-500 dark:text-slate-400">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.deadlineUfBreakdown.map((item: any, i: number) => (
+                                                <tr
+                                                    key={item.uf}
+                                                    className={`text-center text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}
+                                                >
+                                                    <td className="py-2.5 px-3 text-left">
+                                                        <span className="font-black text-slate-800 dark:text-slate-100 text-[11px] tracking-wide">{item.uf}</span>
+                                                    </td>
+                                                    <td className="py-2 px-2">
+                                                        {item.vencido > 0 ? (
+                                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 font-black text-[11px] px-1.5">{item.vencido}</span>
+                                                        ) : (
+                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 px-2">
+                                                        {item.hoje > 0 ? (
+                                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-black text-[11px] px-1.5">{item.hoje}</span>
+                                                        ) : (
+                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 px-2">
+                                                        {item.em5dias > 0 ? (
+                                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 font-bold text-[11px] px-1.5">{item.em5dias}</span>
+                                                        ) : (
+                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 px-2">
+                                                        {item.acima5dias > 0 ? (
+                                                            <span className="text-slate-500 dark:text-slate-400 font-semibold text-[11px]">{item.acima5dias}</span>
+                                                        ) : (
+                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 px-2">
+                                                        <span className="font-black text-slate-800 dark:text-white text-xs">{item.total}</span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-center text-xs">
+                                                <td className="py-3 px-3 text-left text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Total</td>
+                                                <td className="py-3 px-2">
+                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-rose-500 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.vencido}</span>
+                                                </td>
+                                                <td className="py-3 px-2">
+                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-amber-500 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.hoje}</span>
+                                                </td>
+                                                <td className="py-3 px-2">
+                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-sky-500 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.em5dias}</span>
+                                                </td>
+                                                <td className="py-3 px-2">
+                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-slate-400 dark:bg-slate-600 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.acima5dias}</span>
+                                                </td>
+                                                <td className="py-3 px-2">
+                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-slate-800 dark:bg-white text-white dark:text-slate-900 font-black text-sm px-2 shadow-sm">{data.deadlineGrandTotal.total}</span>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Activity Feed */}
                     <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
                         <CardHeader className="pb-3">
@@ -308,84 +419,51 @@ export default async function DashboardPage() {
                         </CardContent>
                     </Card>
 
-                    {/* UF Breakdown */}
-                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
-                                <MapPin className="h-4 w-4 text-violet-500" />
-                                Distribuição por UF
+                    {/* Daily Execution Performance (Grouped by OS) */}
+                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <CardHeader className="pb-3 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                            <CardTitle className="text-sm font-bold flex items-center justify-between dark:text-white">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4 text-emerald-500" />
+                                    Execução {displayDate}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <DateSelector initialDate={displayDate} />
+                                    <Badge variant="outline" className="font-bold text-[10px] uppercase">{data.performanceByOS.length} OS</Badge>
+                                </div>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                            {data.ufBreakdown.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <MapPin className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                                    <p className="text-sm">Nenhuma OS registrada</p>
+                        <CardContent className="p-0">
+                            {data.performanceByOS.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground border-b dark:border-slate-800">
+                                    <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                    <p className="text-sm italic">Nenhuma produtividade hoje</p>
                                 </div>
                             ) : (
-                                <div className="space-y-3 max-h-[320px] overflow-y-auto">
-                                    {data.ufBreakdown.map((uf: any) => {
-                                        const pct = Math.round((uf.total / data.stats.total) * 100);
-                                        return (
-                                            <div key={uf.uf} className="space-y-1.5">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-8">{uf.uf}</span>
-                                                        <span className="text-xs text-muted-foreground">{uf.total} OS</span>
+                                <div className="divide-y dark:divide-slate-800 max-h-[350px] overflow-y-auto">
+                                    {data.performanceByOS.map((os: any, i: number) => (
+                                        <div key={i} className="p-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <div className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                                <div className="min-w-0">
+                                                    <p className="text-[11px] font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-tight">
+                                                        {os.title}
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{os.pop}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1 ml-4 border-l border-slate-200 dark:border-slate-800 pl-3">
+                                                {os.teams.map((team: any, j: number) => (
+                                                    <div key={j} className="flex items-center justify-between text-xs py-0.5">
+                                                        <span className="text-slate-600 dark:text-slate-400 font-medium truncate pr-2">
+                                                            {team.name}
+                                                        </span>
+                                                        <span className="text-emerald-600 dark:text-emerald-400 font-black whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded text-[10px]">
+                                                            {team.count} {team.count === 1 ? 'caixa' : 'caixas'}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs font-medium text-slate-500">{pct}%</span>
-                                                </div>
-                                                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all"
-                                                        style={{ width: `${pct}%` }}
-                                                    />
-                                                </div>
+                                                ))}
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Technician Performance */}
-                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
-                                <Users className="h-4 w-4 text-blue-500" />
-                                Desempenho das Equipes
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            {data.techPerformance.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                                    <p className="text-sm">Nenhuma atividade registrada</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3 max-h-[320px] overflow-y-auto">
-                                    {data.techPerformance.map((tech: any, i: number) => (
-                                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                            <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0 shadow-sm">
-                                                {tech.name.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{tech.name}</p>
-                                                <div className="flex gap-3 mt-0.5">
-                                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                                                        {tech.completed} encerradas
-                                                    </span>
-                                                    <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
-                                                        {tech.checklistItems} caixas
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            {i === 0 && data.techPerformance.length > 1 && (
-                                                <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
-                                                    Top
-                                                </span>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -415,49 +493,87 @@ export default async function DashboardPage() {
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b dark:border-slate-700">
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Protocolo</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">POP</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden sm:table-cell">UF</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">UF</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">OS</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Condomínio / POP</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Entrada</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Prazo</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Caixas</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Responsável</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Observações</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {data.osList.slice(0, 25).map((os: any) => {
-                                                const progressPct = os.totalCaixas > 0 ? Math.round((os.checklistDone / os.totalCaixas) * 100) : 0;
+                                            {data.osList.slice(0, 25).map((os: EnrichedOS) => {
+                                                const progressPct = os.totalCaixas > 0 ? Math.round((os.checklistDone! / os.totalCaixas) * 100) : 0;
+
                                                 return (
-                                                    <tr key={os.id} className="border-b dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <tr
+                                                        key={os.id}
+                                                        className="border-b dark:border-slate-800 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                                                    >
                                                         <td className="py-3 px-3">
-                                                            <Link href={`/os/${os.id}`} className="font-mono text-xs text-primary hover:underline">
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                                <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">{os.uf}</span>
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                            <Link href={`/os/${os.id}`} className="font-mono text-[11px] text-primary group-hover:underline">
                                                                 {os.protocolo || '-'}
                                                             </Link>
                                                         </td>
-                                                        <td className="py-3 px-3 text-sm dark:text-slate-300">{os.pop}</td>
-                                                        <td className="py-3 px-3 dark:text-slate-300 hidden sm:table-cell">
-                                                            <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{os.uf}</span>
-                                                        </td>
-                                                        <td className="py-3 px-3 text-xs text-muted-foreground hidden md:table-cell">{os.dataPrevExec}</td>
-                                                        <td className="py-3 px-3 hidden md:table-cell">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[60px]">
-                                                                    <div
-                                                                        className={`h-full rounded-full transition-all ${progressPct === 100 ? 'bg-emerald-500' : progressPct > 0 ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-                                                                        style={{ width: `${progressPct}%` }}
-                                                                    />
-                                                                </div>
-                                                                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                                                                    {os.checklistDone}/{os.totalCaixas}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="py-3 px-3 text-xs dark:text-slate-300 hidden lg:table-cell">{os.technicianName}</td>
                                                         <td className="py-3 px-3">
-                                                            <StatusBadge
-                                                                label={os.status === 'DONE' ? 'Concluída' : (os.checklistDone > 0 ? 'Em execução' : 'Pendente')}
-                                                                showIcon={false}
-                                                            />
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full space-y-0.5">
+                                                                {os.condominio && (
+                                                                    <div className="text-[10px] font-bold text-slate-700 dark:text-slate-200 uppercase truncate max-w-[180px]">
+                                                                        {os.condominio}
+                                                                    </div>
+                                                                )}
+                                                                <div className="text-xs text-muted-foreground truncate max-w-[180px]">
+                                                                    {os.pop}
+                                                                </div>
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                                {os.dataEntrante}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                                {os.dataPrevExec}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3 hidden md:table-cell">
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[60px]">
+                                                                        <div
+                                                                            className={`h-full rounded-full transition-all ${progressPct === 100 ? 'bg-emerald-500' : progressPct > 0 ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                                                            style={{ width: `${progressPct}%` }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                                        {os.checklistDone}/{os.totalCaixas}
+                                                                    </span>
+                                                                </div>
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3">
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                                <StatusBadge
+                                                                    label={os.executionStatus}
+                                                                    showIcon={true}
+                                                                    className="scale-90 origin-left"
+                                                                />
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3 hidden lg:table-cell max-w-[200px]">
+                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                                <p className="text-[10px] text-slate-600 dark:text-slate-400 line-clamp-2 italic" title={os.executionObs || os.observacoes || os.descricao || undefined}>
+                                                                    {os.executionObs || os.observacoes || os.descricao || '-'}
+                                                                </p>
+                                                            </Link>
                                                         </td>
                                                     </tr>
                                                 );

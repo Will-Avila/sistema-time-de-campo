@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/lib/auth';
+import { getTodaySP } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import path from 'path';
@@ -96,6 +97,10 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
         if (currentBox?.status !== 'OK') {
             boxUpdateData.equipe = equipeId;
             boxUpdateData.nomeEquipe = techName;
+            // Record today's date if it's being marked as OK for the first time or re-verified
+            if (boxStatus === 'OK') {
+                boxUpdateData.data = getTodaySP();
+            }
         }
 
         await prisma.caixaAlare.update({

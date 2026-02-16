@@ -93,6 +93,8 @@ export async function syncExcelToDB() {
                 facilidadesPlanejadas: typeof row.FacilidadesPlanejadas === 'number' ? row.FacilidadesPlanejadas : 0,
                 caixasPlanejadas: typeof row.CaixasPlanejadas === 'number' ? row.CaixasPlanejadas : 0,
                 tipoOs: String(row.TipoOs || ''),
+                descricao: String(row['Descrição'] || row['Descricao'] || ''),
+                observacoes: String(row['Observacoes'] || row['Observações'] || row['Observação'] || row['OBS'] || row['Obs'] || ''),
             };
 
             const existing = await prisma.orderOfService.findUnique({ where: { id: osId } });
@@ -115,7 +117,9 @@ export async function syncExcelToDB() {
                     existing.tempo !== newData.tempo ||
                     existing.facilidadesPlanejadas !== newData.facilidadesPlanejadas ||
                     existing.caixasPlanejadas !== newData.caixasPlanejadas ||
-                    existing.tipoOs !== newData.tipoOs;
+                    existing.tipoOs !== newData.tipoOs ||
+                    existing.descricao !== newData.descricao ||
+                    existing.observacoes !== newData.observacoes;
 
                 if (hasChanged) {
                     await prisma.orderOfService.update({

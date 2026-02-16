@@ -22,6 +22,7 @@ export interface OS {
     // Extra Info
     condominio?: string;
     descricao?: string;
+    observacoes?: string;
     anexos?: { id: string; name: string; path: string; size: number; type: string }[];
 }
 
@@ -91,6 +92,7 @@ export async function getAllOS(): Promise<OS[]> {
         totalCaixas: rec.caixas.length,
         condominio: rec.condominio || undefined,
         descricao: rec.descricao || undefined,
+        observacoes: rec.observacoes || undefined,
         anexos: rec.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
     }));
 }
@@ -190,6 +192,7 @@ export async function getOSById(id: string) {
         items,
         condominio: os.condominio || undefined,
         descricao: os.descricao || undefined,
+        observacoes: os.observacoes || undefined,
         anexos: os.attachments.map(a => ({ id: a.id, name: a.name, path: a.path, size: a.size, type: a.type }))
     };
 }
