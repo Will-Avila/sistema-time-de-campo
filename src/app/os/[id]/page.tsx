@@ -199,7 +199,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     </div>
                                 </div>
 
-                                {statusInfo.label === 'Concluída' ? (
+                                {statusInfo.label.includes('Concluída') || statusInfo.label.includes('Encerrada') || statusInfo.label.includes('Cancelada') || statusInfo.label.includes('Análise') ? (
                                     <div>
                                         <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Conclusão</span>
                                         <OSClosureDate

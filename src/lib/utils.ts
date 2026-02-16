@@ -182,25 +182,33 @@ export function formatDateTimeSP(date: Date | string | null | undefined) {
  * Calculates the number of days remaining until a deadline.
  * Returns negative numbers for overdue dates.
  */
-export function getDaysRemaining(deadlineDateBR: string | null | undefined): number | null {
-    if (!deadlineDateBR || deadlineDateBR === '-') return null;
+export function getDaysRemaining(deadlineDate: string | null | undefined): number | null {
+    if (!deadlineDate || deadlineDate === '-' || deadlineDate.trim() === '') return null;
 
     try {
-        const parts = deadlineDateBR.split('/');
-        if (parts.length !== 3) return null;
+        let deadline: Date;
 
-        const [day, month, year] = parts.map(Number);
-        // Date in SP timezone (noon to avoid DST issues)
-        const deadline = new Date(year, month - 1, day, 12, 0, 0);
+        if (deadlineDate.includes('/')) {
+            // Handle DD/MM/YYYY
+            const parts = deadlineDate.split('/');
+            if (parts.length !== 3) return null;
+            const [day, month, year] = parts.map(Number);
+            deadline = new Date(year, month - 1, day, 12, 0, 0);
+        } else {
+            // Handle ISO (YYYY-MM-DD)
+            deadline = new Date(deadlineDate);
+            deadline.setHours(12, 0, 0, 0);
+        }
 
-        const now = new Date();
+        if (isNaN(deadline.getTime())) return null;
+
         // Today in SP (noon)
         const todayStr = getTodaySP();
         const [tDay, tMonth, tYear] = todayStr.split('/').map(Number);
         const today = new Date(tYear, tMonth - 1, tDay, 12, 0, 0);
 
         const diffTime = deadline.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         return diffDays;
     } catch (e) {

@@ -131,7 +131,7 @@ export default function OSExecutionClient({
                         <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                             {totalMarked} / {stats.total} marcadas
                         </span>
-                        {totalMarked === stats.total && !isClosed && (
+                        {!isClosed && (
                             <Button
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 animate-in fade-in"
