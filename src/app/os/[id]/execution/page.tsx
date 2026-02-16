@@ -52,6 +52,8 @@ export default async function OSExecutionPage({ params }: PageProps) {
                     items={os.items}
                     equipeName={execution?.equipe?.fullName || execution?.equipe?.nomeEquipe || execution?.equipe?.name}
                     session={session}
+                    osStatus={os.status}
+                    execution={execution}
                 />
             </div>
         </div>

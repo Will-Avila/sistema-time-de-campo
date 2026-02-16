@@ -9,6 +9,7 @@ import { Session } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import OSClosureForm from '../OSClosureForm';
+import { getOSStatusInfo } from '@/lib/utils';
 
 interface OSExecutionClientProps {
     osId: string;
@@ -16,6 +17,8 @@ interface OSExecutionClientProps {
     items: CaixaItemData[];
     equipeName?: string;
     session: Session | null;
+    osStatus: string;
+    execution: any;
 }
 
 export default function OSExecutionClient({
@@ -23,7 +26,9 @@ export default function OSExecutionClient({
     protocolo,
     items,
     equipeName,
-    session
+    session,
+    osStatus,
+    execution
 }: OSExecutionClientProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -79,9 +84,13 @@ export default function OSExecutionClient({
     const prevMarkedRef = useRef(totalMarked);
     const isInitialMount = useRef(true);
 
+    const { label: displayStatus } = getOSStatusInfo({ osStatus, execution });
+    const isClosed = displayStatus.includes('Concluída') || displayStatus.includes('Encerrada') || displayStatus.includes('Cancelada');
+
     useEffect(() => {
         // Trigger if total of marked items (DONE or PENDING) reached total items
-        if (!isInitialMount.current && prevMarkedRef.current < stats.total && totalMarked === stats.total) {
+        // AND if it's not already closed
+        if (!isInitialMount.current && prevMarkedRef.current < stats.total && totalMarked === stats.total && !isClosed) {
             setIsPromptOpen(true);
         }
 
@@ -122,7 +131,7 @@ export default function OSExecutionClient({
                         <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                             {totalMarked} / {stats.total} marcadas
                         </span>
-                        {totalMarked === stats.total && (
+                        {totalMarked === stats.total && !isClosed && (
                             <Button
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 animate-in fade-in"

@@ -183,15 +183,31 @@ export async function getDashboardData() {
 
     let budgetTotal = 0;
     let budgetDone = 0;
+    let boxesTotal = 0;
+    let boxesDone = 0;
+    let facilitiesTotal = 0;
+    let facilitiesDone = 0;
 
     osList.forEach(os => {
         if (os.mes === currentBudgetMonth) {
             const val = (os.valorServico || 0);
             budgetTotal += val;
 
+            const boxesPlanned = (os.caixasPlanejadas || 0);
+            boxesTotal += boxesPlanned;
+            boxesDone += (os.checklistDone || 0);
+
             const s = (os.rawStatus || '').toUpperCase().trim();
-            if (s === 'CONCLUÍDO' || s === 'CONCLUIDO') {
+            const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+
+            if (isFinished) {
                 budgetDone += val;
+            }
+
+            const facPlanned = (os.facilidadesPlanejadas || 0);
+            facilitiesTotal += facPlanned;
+            if (isFinished) {
+                facilitiesDone += facPlanned;
             }
         }
     });
@@ -262,6 +278,10 @@ export async function getDashboardData() {
             budgetTotal,
             budgetDone,
             budgetMonth: currentBudgetMonth,
+            boxesTotal,
+            boxesDone,
+            facilitiesTotal,
+            facilitiesDone,
             equipeCount: equipes.length,
         },
         ufBreakdown,

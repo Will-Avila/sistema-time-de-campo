@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download } from 'lucide-react';
-import { getOSStatusInfo, formatDateSP, formatDateTimeSP } from '@/lib/utils';
+import { getOSStatusInfo, formatDateSP, formatDateTimeSP, getDeadlineInfo, cn } from '@/lib/utils';
 import Image from 'next/image';
 import OSClosureForm from './OSClosureForm';
 import { OSPhotosGallery } from './OSPhotosGallery';
@@ -54,17 +54,6 @@ export default async function OSDetailPage({ params }: PageProps) {
     });
 
     // Date color logic from OSListClient
-    const getDateColor = (dateStr?: string) => {
-        if (!dateStr || dateStr === '-') return 'text-slate-700 dark:text-slate-300';
-        const [day, month, year] = dateStr.split('/').map(Number);
-        const date = new Date(year, month - 1, day);
-        const today = new Date();
-        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
-        if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
-        return 'text-slate-700 dark:text-slate-300';
-    };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 transition-colors">
@@ -222,9 +211,16 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 ) : (
                                     <div>
                                         <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
-                                        <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.dataPrevExec)}`}>
-                                            <Calendar className="h-3.5 w-3.5 text-slate-400 opacity-70" />
-                                            {os.dataPrevExec}
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                                                <Calendar className="h-3.5 w-3.5 text-slate-400 opacity-70" />
+                                                {os.dataPrevExec || '-'}
+                                            </div>
+                                            {getDeadlineInfo(os.dataPrevExec) && (
+                                                <Badge variant="outline" className={cn("text-[10px] font-bold uppercase py-0.5", getDeadlineInfo(os.dataPrevExec)?.color)}>
+                                                    {getDeadlineInfo(os.dataPrevExec)?.label}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 )}

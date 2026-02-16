@@ -36,69 +36,123 @@ export async function createNotification(data: {
     }
 }
 
-async function syncNewOSNotifications() {
-    const now = Date.now();
-    if (now - lastSyncTime < SYNC_INTERVAL) {
-        return;
-    }
-    lastSyncTime = now;
+export async function cleanupOldNotifications() {
+    try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+        const result = await prisma.notification.deleteMany({
+            where: {
+                OR: [
+                    { read: true },
+                    { archived: true }
+                ],
+                createdAt: { lt: sevenDaysAgo }
+            }
+        });
+
+        logger.info(`Cleaned up ${result.count} old notifications.`);
+        return { success: true, count: result.count };
+    } catch (error) {
+        logger.error('Error cleaning up notifications', { error: String(error) });
+        return { success: false };
+    }
+}
+
+export async function syncNewOSNotifications() {
     try {
         // 1. Get all OS from Excel
         const allOS = await getAllOS();
         if (allOS.length === 0) return;
 
-        // 2. Get all OS IDs that we already notified about (global check)
-        // We look for 'NEW_OS' type notifications. 
-        // We use distinct osId to get the list of OSs we already know about.
+        // 2. Identify new OSs by checking NEW_OS notifications
         const notifiedDir = await prisma.notification.findMany({
             where: { type: 'NEW_OS', osId: { not: null } },
             select: { osId: true },
             distinct: ['osId']
         });
         const notifiedOSIds = new Set(notifiedDir.map(n => n.osId));
-
-        // 3. Identify new OSs
         const newOSs = allOS.filter(os => !notifiedOSIds.has(os.id));
 
         if (newOSs.length === 0) return;
 
         logger.info(`Found ${newOSs.length} new OSs to notify.`);
 
-        // 4. Get all active equipes (inc. admins) to broadcast to
+        // 3. Get all active equipes
         const equipes = await prisma.equipe.findMany({
-            select: { id: true }
+            select: { id: true, isAdmin: true }
         });
 
-        // 5. Create notifications in bulk
-        // For each New OS, create a notification for EACH technician
-        // This might be heavy if many new OS + many techs, but typically it's incremental.
+        const admins = equipes.filter(e => e.isAdmin);
+        const techs = equipes.filter(e => !e.isAdmin);
 
-        // Limit to preventing explosion:
-        // If > 50 new OSs, maybe just notify generic "X novas OSs"?
-        // But user asked for specific "OS [Num] added...".
-        // Let's limit to processing top 10 newest to avoid timeouts if first run?
-        // Or just let it run.
+        // 4. Logic for Creating Notifications
+        if (newOSs.length <= 5) {
+            // Few OSs: Individual notifications for everyone
+            for (const os of newOSs) {
+                const osDisplay = os.protocolo || os.id;
+                const message = `A OS ${osDisplay} foi adicionada em ${os.uf}, prazo ${os.dataPrevExec}`;
 
-        for (const os of newOSs) {
-            // Use Protocol as requested (fallback to ID if empty)
-            const osDisplay = os.protocolo || os.id;
-            const message = `A OS ${osDisplay} foi adicionada em ${os.uf}, prazo ${os.dataPrevExec}`;
+                await prisma.notification.createMany({
+                    data: equipes.map(eq => ({
+                        type: 'NEW_OS',
+                        title: 'Nova Ordem de Serviço',
+                        message: message,
+                        read: false,
+                        osId: os.id,
+                        equipeId: eq.id
+                    }))
+                });
+            }
+        } else {
+            // Many OSs: Individual for Admins (first 10), Aggregated for Techs
+            // Create individual for admins (limit to 10 to avoid noise)
+            const limitedNewOSs = newOSs.slice(0, 10);
+            for (const os of limitedNewOSs) {
+                await prisma.notification.createMany({
+                    data: admins.map(admin => ({
+                        type: 'NEW_OS',
+                        title: 'Nova Ordem de Serviço',
+                        message: `A OS ${os.protocolo || os.id} foi adicionada.`,
+                        read: false,
+                        osId: os.id,
+                        equipeId: admin.id
+                    }))
+                });
+            }
 
-            // We use createMany for efficiency if possible, but Prisma w/ SQLite createMany is supported.
-            const notificationsData = equipes.map(eq => ({
-                type: 'NEW_OS',
-                title: 'Nova Ordem de Serviço',
-                message: message,
-                read: false,
-                osId: os.id,
-                equipeId: eq.id,
-                createdAt: new Date()
-            }));
-
+            // Aggregated notification for Techs
+            const summaryMessage = `Existem ${newOSs.length} novas Ordens de Serviço disponíveis no sistema.`;
             await prisma.notification.createMany({
-                data: notificationsData
+                data: techs.map(tech => ({
+                    type: 'NEW_OS',
+                    title: 'Novas OS Disponíveis',
+                    message: summaryMessage,
+                    read: false,
+                    equipeId: tech.id
+                }))
             });
+
+            // Mark the remaining OSs as "notified" even if they didn't get individual notifications
+            // We do this by creating a ghost notification or just knowing the limit.
+            // Actually, to keep tracking correct, we should create a record that these OSs are 'processed'.
+            // Let's create a single entry for the first Admin for each un-notified OS just to block them in notifiedOSIds.
+            if (admins.length > 0) {
+                const restOSs = newOSs.slice(10);
+                for (const os of restOSs) {
+                    await prisma.notification.create({
+                        data: {
+                            type: 'NEW_OS',
+                            title: 'Nova OS (Processada)',
+                            message: `OS ${os.protocolo || os.id} processada em lote.`,
+                            read: true,
+                            archived: true,
+                            osId: os.id,
+                            equipeId: admins[0].id
+                        }
+                    });
+                }
+            }
         }
 
     } catch (error) {
@@ -110,8 +164,8 @@ export async function getUnreadNotifications() {
     const session = await getSession();
     if (!session) return [];
 
-    // Trigger sync (debounced)
-    await syncNewOSNotifications();
+    // Trigger sync removed from polling to avoid overhead.
+    // Sync will now happen on explicit Data Sync/Upload.
 
     try {
         let whereClause: any = { archived: false };

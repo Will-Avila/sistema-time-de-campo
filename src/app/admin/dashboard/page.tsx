@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import {
     LayoutDashboard, CheckCircle, Clock, Users, TrendingUp,
     Activity, ArrowRight, AlertTriangle, Bell, Wrench, MapPin,
-    Camera, Trash2, DollarSign
+    Camera, Trash2, DollarSign, Package
 } from 'lucide-react';
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
@@ -171,27 +171,59 @@ export default async function DashboardPage() {
                         </div>
                     </Link>
 
-                    {/* Pendentes */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
-                                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    {/* Caixas do Mês */}
+                    <Link href="/admin/reports/boxes" className="block group">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-blue-200 dark:hover:border-blue-900/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
+                                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                            </div>
+                            <div className="space-y-1">
+                                <div>
+                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Caixas Planejadas</p>
+                                    <p className="text-xl font-bold text-slate-900 dark:text-white">
+                                        {data.stats.boxesTotal}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Caixas Realizadas</p>
+                                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                                        {data.stats.boxesDone}
+                                    </p>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground font-bold tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/50">PRODUTIVIDADE {data.stats.budgetMonth}</p>
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{data.stats.pending}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Pendentes</p>
-                    </div>
+                    </Link>
 
-                    {/* Taxa de Conclusão */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-8 w-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
-                                <TrendingUp className="h-4 w-4 text-primary" />
+                    {/* Facilidades do Mês */}
+                    <Link href="/admin/reports/facilities" className="block group">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-amber-200 dark:hover:border-amber-900/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
+                                    <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
+                            </div>
+                            <div className="space-y-1">
+                                <div>
+                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Facilidades Planejadas</p>
+                                    <p className="text-xl font-bold text-slate-900 dark:text-white">
+                                        {data.stats.facilitiesTotal}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Facilidades Realizadas</p>
+                                    <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                                        {data.stats.facilitiesDone}
+                                    </p>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground font-bold tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/50">PRODUTIVIDADE {data.stats.budgetMonth}</p>
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.stats.completionRate}%</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Conclusão</p>
-                    </div>
+                    </Link>
                 </div>
 
                 {/* Completion Progress Bar */}

@@ -2,8 +2,10 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 import { getMonthlyReportData, getAvailableMonths } from '@/actions/reports';
 import { BudgetChartsClient } from './BudgetChartsClient';
 import { MonthSelector } from './MonthSelector';
-import { TrendingUp, TrendingDown, Target, Landmark } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Landmark, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +44,16 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
                     </div>
                     <MonthSelector availableMonths={availableMonths} currentMonth={currentMonth} />
                 </header>
+
+                <div>
+                    <Link
+                        href="/admin/dashboard"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Voltar para Dashboard
+                    </Link>
+                </div>
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

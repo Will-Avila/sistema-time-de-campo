@@ -138,16 +138,16 @@ export default function OSClosureForm({
                                     </div>
                                 )}
 
-                                <div className="flex gap-4 pt-2">
+                                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => setIsOpen(false)}
-                                        className="flex-1 h-11 dark:border-slate-600 dark:text-slate-300"
+                                        className="w-full sm:flex-1 h-11 dark:border-slate-600 dark:text-slate-300"
                                     >
                                         Cancelar
                                     </Button>
-                                    <div className="flex-1">
+                                    <div className="w-full sm:flex-1">
                                         <SubmitButton />
                                     </div>
                                 </div>

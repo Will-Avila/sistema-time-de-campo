@@ -178,3 +178,45 @@ export function formatDateTimeSP(date: Date | string | null | undefined) {
         second: '2-digit'
     }).format(d);
 }
+/**
+ * Calculates the number of days remaining until a deadline.
+ * Returns negative numbers for overdue dates.
+ */
+export function getDaysRemaining(deadlineDateBR: string | null | undefined): number | null {
+    if (!deadlineDateBR || deadlineDateBR === '-') return null;
+
+    try {
+        const parts = deadlineDateBR.split('/');
+        if (parts.length !== 3) return null;
+
+        const [day, month, year] = parts.map(Number);
+        // Date in SP timezone (noon to avoid DST issues)
+        const deadline = new Date(year, month - 1, day, 12, 0, 0);
+
+        const now = new Date();
+        // Today in SP (noon)
+        const todayStr = getTodaySP();
+        const [tDay, tMonth, tYear] = todayStr.split('/').map(Number);
+        const today = new Date(tYear, tMonth - 1, tDay, 12, 0, 0);
+
+        const diffTime = deadline.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        return diffDays;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Returns a formatted message and color class for deadline info.
+ */
+export function getDeadlineInfo(deadlineDateBR: string | null | undefined) {
+    const days = getDaysRemaining(deadlineDateBR);
+    if (days === null) return null;
+
+    if (days < 0) return { label: `Vencida há ${Math.abs(days)}d`, color: 'text-rose-600 dark:text-rose-400', isOverdue: true };
+    if (days === 0) return { label: 'Vence hoje', color: 'text-amber-600 dark:text-amber-500', isOverdue: false };
+    if (days === 1) return { label: 'Vence amanhã', color: 'text-blue-600 dark:text-blue-400', isOverdue: false };
+    return { label: `Vence em ${days}d`, color: 'text-slate-500 dark:text-slate-400', isOverdue: false };
+}

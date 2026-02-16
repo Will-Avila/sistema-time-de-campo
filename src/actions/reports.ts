@@ -160,3 +160,218 @@ export async function getMonthlyReportData(month: string) {
         teamData
     };
 }
+
+export async function getBoxesReportData(month: string) {
+    await requireAdmin();
+
+    const targetMonth = (month || '').toUpperCase().trim();
+
+    const [osRecords, excelOSList] = await Promise.all([
+        prisma.orderOfService.findMany({
+            include: {
+                caixas: { select: { status: true, nomeEquipe: true } },
+                execution: true
+            }
+        }),
+        getAllOS()
+    ]);
+
+    const dbFiltered = osRecords.filter(r => (r.mes || '').toUpperCase().trim() === targetMonth);
+    const excelFiltered = excelOSList.filter(os => (os.mes || '').toUpperCase().trim() === targetMonth);
+
+    const dbMap = new Map(dbFiltered.map(r => [r.id, r]));
+
+    const reportItems = excelFiltered.map(os => {
+        const db = dbMap.get(os.id);
+        const boxesDone = db?.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length || 0;
+        return {
+            ...os,
+            caixasPlanejadas: os.caixasPlanejadas || 0,
+            caixasRealizadas: boxesDone,
+            dataConclusao: os.dataConclusao || '-',
+            equipe: db?.execution?.technicianName || '-'
+        };
+    });
+
+    // 1. Daily Evolution (Boxes Done)
+    const dailyMap: Record<string, number> = {};
+    dbFiltered.forEach(os => {
+        const finishedBoxes = os.caixas.filter(c => (c.status === 'OK' || c.status === 'Concluído'));
+
+        // Use os.updatedAt as proxy for execution date if not explicit?
+        // Actually, we should probably look at when the box was marked. 
+        // For simplicity and consistency with monthly report, we use OS completion date from Excel if available,
+        // or just the OS updatedAt if it's currently DONE.
+        const s = (os.status || '').toUpperCase().trim();
+        const dateStr = (os.dataConclusao || '-');
+
+        if (dateStr !== '-' && (s === 'CONCLUÍDO' || s === 'CONCLUIDO' || s === 'DONE')) {
+            const day = dateStr;
+            dailyMap[day] = (dailyMap[day] || 0) + finishedBoxes.length;
+        }
+    });
+
+    const dailyEvolution = Object.entries(dailyMap)
+        .map(([date, value]) => {
+            const parts = date.split('/');
+            if (parts.length < 3) return null;
+            const [d, m, y] = parts;
+            return {
+                date,
+                sortDate: `${y}${m}${d}`,
+                value
+            };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .sort((a, b) => a.sortDate.localeCompare(b.sortDate))
+        .map(({ date, value }) => ({ date: date.slice(0, 5), fullDate: date, value }));
+
+    // 2. Boxes by UF
+    const ufMap: Record<string, { uf: string; previsto: number; realizado: number }> = {};
+    reportItems.forEach(item => {
+        const uf = item.uf || 'N/A';
+        if (!ufMap[uf]) ufMap[uf] = { uf, previsto: 0, realizado: 0 };
+        ufMap[uf].previsto += item.caixasPlanejadas;
+        ufMap[uf].realizado += item.caixasRealizadas;
+    });
+
+    const ufData = Object.values(ufMap).sort((a, b) => b.previsto - a.previsto);
+
+    // 3. Performance by Team
+    const teamMap: Record<string, number> = {};
+    dbFiltered.forEach(os => {
+        os.caixas.forEach(c => {
+            if (c.status === 'OK' || c.status === 'Concluído') {
+                const name = c.nomeEquipe?.trim() || 'Sem Equipe';
+                if (name !== '-') {
+                    teamMap[name] = (teamMap[name] || 0) + 1;
+                }
+            }
+        });
+    });
+
+    const teamData = Object.entries(teamMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+
+    // Summary
+    const totalPlanejado = reportItems.reduce((acc, curr) => acc + curr.caixasPlanejadas, 0);
+    const totalRealizado = reportItems.reduce((acc, curr) => acc + curr.caixasRealizadas, 0);
+
+    return {
+        month: targetMonth,
+        summary: {
+            totalPlanejado,
+            totalRealizado,
+            performance: totalPlanejado > 0 ? Math.round((totalRealizado / totalPlanejado) * 100) : 0
+        },
+        dailyEvolution,
+        ufData,
+        teamData
+    };
+}
+export async function getFacilitiesReportData(month: string) {
+    await requireAdmin();
+
+    const targetMonth = (month || '').toUpperCase().trim();
+
+    const [osRecords, excelOSList] = await Promise.all([
+        prisma.orderOfService.findMany({
+            include: {
+                caixas: { select: { status: true, nomeEquipe: true } },
+                execution: true
+            }
+        }),
+        getAllOS()
+    ]);
+
+    const dbFiltered = osRecords.filter(r => (r.mes || '').toUpperCase().trim() === targetMonth);
+    const excelFiltered = excelOSList.filter(os => (os.mes || '').toUpperCase().trim() === targetMonth);
+
+    const dbMap = new Map(dbFiltered.map(r => [r.id, r]));
+
+    const reportItems = excelFiltered.map(os => {
+        const db = dbMap.get(os.id);
+        const s = (os.status || '').toUpperCase().trim();
+        const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+
+        const facPlanned = os.facilidadesPlanejadas || 0;
+        const facDone = isFinished ? facPlanned : 0;
+
+        return {
+            ...os,
+            facilidadesPlanejadas: facPlanned,
+            facilidadesRealizadas: facDone,
+            dataConclusao: os.dataConclusao || '-',
+            equipe: db?.execution?.technicianName || '-'
+        };
+    });
+
+    // 1. Daily Evolution (Facilities Done)
+    const dailyMap: Record<string, number> = {};
+    reportItems.forEach(item => {
+        const s = (item.status || '').toUpperCase().trim();
+        const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+        const dateStr = item.dataConclusao;
+
+        if (isFinished && dateStr !== '-') {
+            const day = dateStr;
+            dailyMap[day] = (dailyMap[day] || 0) + item.facilidadesPlanejadas;
+        }
+    });
+
+    const dailyEvolution = Object.entries(dailyMap)
+        .map(([date, value]) => {
+            const parts = date.split('/');
+            if (parts.length < 3) return null;
+            const [d, m, y] = parts;
+            return {
+                date,
+                sortDate: `${y}${m}${d}`,
+                value
+            };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .sort((a, b) => a.sortDate.localeCompare(b.sortDate))
+        .map(({ date, value }) => ({ date: date.slice(0, 5), fullDate: date, value }));
+
+    // 2. Facilities by UF
+    const ufMap: Record<string, { uf: string; previsto: number; realizado: number }> = {};
+    reportItems.forEach(item => {
+        const uf = item.uf || 'N/A';
+        if (!ufMap[uf]) ufMap[uf] = { uf, previsto: 0, realizado: 0 };
+        ufMap[uf].previsto += item.facilidadesPlanejadas;
+        ufMap[uf].realizado += item.facilidadesRealizadas;
+    });
+
+    const ufData = Object.values(ufMap).sort((a, b) => b.previsto - a.previsto);
+
+    // 3. Performance by Team
+    const teamMap: Record<string, number> = {};
+    reportItems.forEach(item => {
+        if (item.facilidadesRealizadas > 0) {
+            const name = item.equipe || 'Sem Equipe';
+            teamMap[name] = (teamMap[name] || 0) + item.facilidadesRealizadas;
+        }
+    });
+
+    const teamData = Object.entries(teamMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+
+    // Summary
+    const totalPlanejado = reportItems.reduce((acc, curr) => acc + curr.facilidadesPlanejadas, 0);
+    const totalRealizado = reportItems.reduce((acc, curr) => acc + curr.facilidadesRealizadas, 0);
+
+    return {
+        month: targetMonth,
+        summary: {
+            totalPlanejado,
+            totalRealizado,
+            performance: totalPlanejado > 0 ? Math.round((totalRealizado / totalPlanejado) * 100) : 0
+        },
+        dailyEvolution,
+        ufData,
+        teamData
+    };
+}

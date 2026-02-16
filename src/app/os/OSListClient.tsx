@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft } from 'lucide-react';
 import { updatePreferences } from '@/actions/equipe';
-import { getStatusVariantFromLabel, formatDateSP, cn } from '@/lib/utils';
+import { getStatusVariantFromLabel, formatDateSP, cn, getDeadlineInfo } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
 import { OSClosureDate } from '@/components/os/OSClosureDate';
 
@@ -145,19 +145,6 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
         currentPage * ITEMS_PER_PAGE
     );
 
-    function getDateColor(dateStr?: string): string {
-        if (!dateStr || dateStr === '-') return 'text-slate-700 dark:text-slate-300';
-
-        const [day, month, year] = dateStr.split('/').map(Number);
-        const date = new Date(year, month - 1, day);
-        const today = new Date();
-        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-        if (d.getTime() < t.getTime()) return 'text-rose-600 dark:text-rose-400';
-        if (d.getTime() === t.getTime()) return 'text-amber-600 dark:text-amber-400';
-        return 'text-slate-700 dark:text-slate-300';
-    }
 
     function getDisplayStatus(os: EnrichedOS) {
         if (os.executionStatus && os.executionStatus !== 'Pendente') return os.executionStatus;
@@ -339,9 +326,19 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                         ) : (
                                             <div>
                                                 <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
-                                                <div className={`flex items-center gap-1.5 font-medium ${getDateColor(os.dataPrevExec)}`}>
-                                                    <Calendar className="h-3 w-3 text-slate-400" />
-                                                    {os.dataPrevExec}
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                                                        <Calendar className="h-3 w-3 text-slate-400" />
+                                                        {os.dataPrevExec || '-'}
+                                                    </div>
+                                                    {getDeadlineInfo(os.dataPrevExec) && (
+                                                        <span className={cn(
+                                                            "text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 w-fit leading-none border border-slate-200 dark:border-slate-700 shadow-sm",
+                                                            getDeadlineInfo(os.dataPrevExec)?.color
+                                                        )}>
+                                                            {getDeadlineInfo(os.dataPrevExec)?.label}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}

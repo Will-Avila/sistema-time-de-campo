@@ -1,6 +1,8 @@
 {
+  "/profile/page": "app/profile/page.js",
   "/api/sync-progress/route": "app/api/sync-progress/route.js",
-  "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/not-found": "app/not-found.js",
-  "/os/page": "app/os/page.js"
+  "/os/page": "app/os/page.js",
+  "/os/[id]/page": "app/os/[id]/page.js",
+  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js"
 }

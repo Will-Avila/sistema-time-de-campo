@@ -4,6 +4,7 @@ import { prisma } from './db';
 import { logger } from './logger';
 import bcrypt from 'bcryptjs';
 import { syncProgressStore } from '@/lib/sync-progress';
+import { syncNewOSNotifications, cleanupOldNotifications } from '@/actions/notification';
 
 const EXCEL_PATH = process.env.EXCEL_PATH || 'C:\\Programas\\PROJETOS\\planilha\\Os.xlsx';
 
@@ -378,6 +379,15 @@ export async function syncExcelToDB() {
         });
 
         logger.info('Synchronization completed successfully.');
+
+        // Trigger notifications and cleanup AFTER successful sync
+        try {
+            await syncNewOSNotifications();
+            await cleanupOldNotifications();
+        } catch (notifError) {
+            logger.error('Error in post-sync notifications/cleanup', { error: String(notifError) });
+        }
+
         return {
             success: true,
             message: `Sincronizado: ${osCount} OS, ${caixaCount} Caixas, ${lancaCount} Lançamentos e ${equipeCount} Equipes.`,
