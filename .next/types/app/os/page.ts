@@ -1,4 +1,4 @@
-// File: C:\projetos\sistema-time-de-campo\src\app\os\page.tsx
+// File: C:\Programas\PROJETOS\sistema-time-de-campo\src\app\os\page.tsx
 import * as entry from '../../../../src/app/os/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

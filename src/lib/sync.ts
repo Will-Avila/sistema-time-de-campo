@@ -3,6 +3,7 @@ import { readFile } from 'fs/promises';
 import { prisma } from './db';
 import { logger } from './logger';
 import bcrypt from 'bcryptjs';
+import { syncProgressStore } from '@/lib/sync-progress';
 
 const EXCEL_PATH = process.env.EXCEL_PATH || 'C:\\Programas\\PROJETOS\\planilha\\Os.xlsx';
 
@@ -42,10 +43,35 @@ export async function syncExcelToDB() {
         // 1. Sync OS Sheet
         const osSheet = workbook.Sheets['Os'];
         const osRows: any[] = osSheet ? XLSX.utils.sheet_to_json(osSheet) : [];
-        logger.info(`Found ${osRows.length} OS rows in Excel.`);
+
+        const caixaSheet = workbook.Sheets['CaixaAlares'];
+        const caixaRows: any[] = caixaSheet ? XLSX.utils.sheet_to_json(caixaSheet) : [];
+
+        const lancaSheet = workbook.Sheets['LancaAlares'];
+        const lancaRows: any[] = lancaSheet ? XLSX.utils.sheet_to_json(lancaSheet) : [];
+
+        const equipeSheet = workbook.Sheets['Equipes'];
+        const equipeRows: any[] = equipeSheet ? XLSX.utils.sheet_to_json(equipeSheet) : [];
+
+        const totalRows = osRows.length + caixaRows.length + lancaRows.length + equipeRows.length;
+        let currentStep = 0;
+
+        syncProgressStore.update({
+            status: 'RUNNING',
+            total: totalRows,
+            current: 0,
+            message: 'Iniciando sincronização...'
+        });
+
+        logger.info(`Found ${totalRows} total rows to sync.`);
         let osCount = 0;
 
         for (const row of osRows) {
+            syncProgressStore.update({
+                current: currentStep,
+                message: `Processando OS: ${osCount + 1} de ${osRows.length}`
+            });
+
             const osId = String(row.IdOs || row.ID || row.Pop || '');
             if (!osId) continue;
 
@@ -102,11 +128,10 @@ export async function syncExcelToDB() {
                 });
             }
             osCount++;
+            currentStep++;
         }
 
         // 2. Sync CaixaAlares Sheet
-        const caixaSheet = workbook.Sheets['CaixaAlares'];
-        const caixaRows: any[] = caixaSheet ? XLSX.utils.sheet_to_json(caixaSheet) : [];
         logger.info(`Found ${caixaRows.length} Caixa rows in Excel.`);
         let caixaCount = 0;
 
@@ -116,6 +141,11 @@ export async function syncExcelToDB() {
         const osWithMarkedBoxes = new Set<string>();
 
         for (const row of caixaRows) {
+            syncProgressStore.update({
+                current: currentStep,
+                message: `Processando Caixas: ${caixaCount + 1} de ${caixaRows.length}`
+            });
+
             const currentIndex = rowIndex++;
             const osId = String(row.OS || '');
             if (!osId) continue;
@@ -193,6 +223,7 @@ export async function syncExcelToDB() {
                 });
             }
             caixaCount++;
+            currentStep++;
         }
 
         // Update OS status for those that have marked boxes
@@ -211,14 +242,17 @@ export async function syncExcelToDB() {
         }
 
         // 3. Sync LancaAlare
-        const lancaSheet = workbook.Sheets['LancaAlares'];
         let lancaCount = 0;
-        if (lancaSheet) {
-            const lancaRows: any[] = XLSX.utils.sheet_to_json(lancaSheet);
+        if (lancaRows.length > 0) {
             logger.info(`Found ${lancaRows.length} Lanca rows in Excel.`);
 
             let lancaIndex = 0;
             for (const row of lancaRows) {
+                syncProgressStore.update({
+                    current: currentStep,
+                    message: `Processando Lançamentos: ${lancaCount + 1} de ${lancaRows.length}`
+                });
+
                 const currentIndex = lancaIndex++;
                 const osId = String(row.Os || '');
                 const excelId = String(row.IdLancamento || '');
@@ -264,14 +298,13 @@ export async function syncExcelToDB() {
                     }
                 });
                 lancaCount++;
+                currentStep++;
             }
         }
 
         // 4. Sync Equipes
-        const equipeSheet = workbook.Sheets['Equipes'];
         let equipeCount = 0;
-        if (equipeSheet) {
-            const equipeRows: any[] = XLSX.utils.sheet_to_json(equipeSheet);
+        if (equipeRows.length > 0) {
             logger.info(`Found ${equipeRows.length} Equipe rows in Excel.`);
 
             const defaultPassword = await bcrypt.hash('12345678', 10);
@@ -330,8 +363,19 @@ export async function syncExcelToDB() {
                     });
                 }
                 equipeCount++;
+                currentStep++;
+                syncProgressStore.update({
+                    current: currentStep,
+                    message: `Processando Equipes: ${equipeCount} de ${equipeRows.length}`
+                });
             }
         }
+
+        syncProgressStore.update({
+            status: 'COMPLETED',
+            current: totalRows,
+            message: 'Sincronização concluída com sucesso!'
+        });
 
         logger.info('Synchronization completed successfully.');
         return {
@@ -342,6 +386,10 @@ export async function syncExcelToDB() {
 
     } catch (error) {
         logger.error('Error during synchronization', { error: String(error) });
+        syncProgressStore.update({
+            status: 'ERROR',
+            message: 'Erro ao sincronizar dados.'
+        });
         return { success: false, message: 'Erro ao sincronizar dados. Verifique o arquivo Excel.' };
     }
 }

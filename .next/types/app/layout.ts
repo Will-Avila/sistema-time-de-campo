@@ -1,4 +1,4 @@
-// File: C:\projetos\sistema-time-de-campo\src\app\layout.tsx
+// File: C:\Programas\PROJETOS\sistema-time-de-campo\src\app\layout.tsx
 import * as entry from '../../../src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

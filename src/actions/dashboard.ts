@@ -3,9 +3,20 @@
 import { prisma } from '@/lib/db';
 import { getAllOS } from '@/lib/excel';
 import { syncExcelToDB } from '@/lib/sync';
+import { syncProgressStore } from '@/lib/sync-progress';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { getOSStatusInfo, getTodaySP, isSameDaySP } from '@/lib/utils';
+
+export async function getSyncProgress() {
+    await requireAdmin();
+    return syncProgressStore.get();
+}
+
+export async function resetSyncProgress() {
+    await requireAdmin();
+    syncProgressStore.reset();
+}
 
 export async function refreshData() {
     await requireAdmin();

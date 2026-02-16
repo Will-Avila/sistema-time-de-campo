@@ -749,6 +749,9 @@ video {
 .right-5 {
   right: 1.25rem;
 }
+.right-6 {
+  right: 1.5rem;
+}
 .right-\[-10\%\] {
   right: -10%;
 }
@@ -1036,9 +1039,6 @@ video {
 }
 .w-9 {
   width: 2.25rem;
-}
-.w-\[180px\] {
-  width: 180px;
 }
 .w-\[40\%\] {
   width: 40%;
@@ -2294,6 +2294,9 @@ video {
 .zoom-in-95 {
   --tw-enter-scale: .95;
 }
+.slide-in-from-bottom-4 {
+  --tw-enter-translate-y: 1rem;
+}
 .slide-in-from-top-2 {
   --tw-enter-translate-y: -0.5rem;
 }
@@ -2311,6 +2314,9 @@ video {
 }
 .ease-out {
   animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+.running {
+  animation-play-state: running;
 }
 .\[background-size\:16px_16px\] {
   background-size: 16px 16px;

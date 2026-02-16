@@ -2,6 +2,7 @@
 
 import { requireAdmin } from '@/lib/auth';
 import { syncExcelToDB } from '@/lib/sync';
+import { syncProgressStore } from '@/lib/sync-progress';
 import { writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { logger } from '@/lib/logger';
@@ -10,6 +11,13 @@ import path from 'path';
 export async function uploadExcel(formData: FormData) {
     try {
         await requireAdmin();
+
+        syncProgressStore.update({
+            status: 'RUNNING',
+            total: 100,
+            current: 0,
+            message: 'Iniciando upload e processamento...'
+        });
 
         const file = formData.get('file') as File;
         if (!file) {
@@ -38,6 +46,13 @@ export async function uploadExcel(formData: FormData) {
         return { success: true, message: syncResult.message };
     } catch (error: any) {
         logger.error('Error uploading excel', { error: String(error) });
+
+        syncProgressStore.update({
+            status: 'ERROR',
+            message: error?.code === 'EBUSY'
+                ? 'O arquivo está aberto em outro programa.'
+                : 'Erro ao processar arquivo.'
+        });
 
         if (error?.code === 'EBUSY') {
             return { success: false, message: 'O arquivo Excel está aberto em outro programa. Feche-o e tente novamente.' };
