@@ -10,3 +10,4 @@
  ✓ Ready in 4.6s
  ✓ Compiled /src/middleware in 343ms (131 modules)
  ✓ Compiled in 444ms (131 modules)
+^C
