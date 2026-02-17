@@ -56,24 +56,24 @@ export default async function OSDetailPage({ params }: PageProps) {
     // Date color logic from OSListClient
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 transition-colors">
+        <div className="min-h-screen bg-muted/30 pb-20 transition-colors">
             <HeaderServer />
 
-            <div className="container pt-24 max-w-4xl space-y-6">
+            <div className="container pt-6 max-w-4xl space-y-6">
 
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-3">
-                        <Link href="/os" className="p-2 -ml-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
-                            <ArrowLeft className="h-6 w-6 text-slate-700 dark:text-slate-300" />
+                        <Link href="/os" className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
+                            <ArrowLeft className="h-6 w-6" />
                         </Link>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="font-mono text-xs text-muted-foreground border-slate-200 dark:border-slate-700">
+                                <Badge variant="outline" className="font-mono text-xs text-muted-foreground border-border bg-muted/50">
                                     {os.protocolo}
                                 </Badge>
                                 {os.uf && (
-                                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-bold bg-muted text-muted-foreground">
                                         {os.uf}
                                     </Badge>
                                 )}
@@ -82,17 +82,17 @@ export default async function OSDetailPage({ params }: PageProps) {
                             {/* Condo Name above POP */}
                             {os.condominio && (
                                 <div className="flex items-center gap-2 mb-0.5 mt-1">
-                                    <Building className="h-4 w-4 text-slate-500" />
-                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+                                    <Building className="h-4 w-4 text-muted-foreground/70" />
+                                    <span className="text-sm font-bold text-foreground/80 uppercase tracking-wide">
                                         {os.condominio}
                                     </span>
                                 </div>
                             )}
 
-                            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">{os.pop}</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{os.pop}</h1>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                                 <StatusBadge osStatus={os.status} execution={execution} />
-                                <Badge variant="outline" className="text-slate-500 bg-white/50 dark:bg-slate-900/50">
+                                <Badge variant="outline" className="text-muted-foreground bg-background/50 border-dashed">
                                     {os.items.length} caixas
                                 </Badge>
                             </div>
@@ -102,7 +102,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                         {isAdmin && (
                             <Link href={`/os/${os.id}/admin`} className="w-full sm:w-auto">
-                                <Button variant="outline" size="lg" className="w-full gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 h-11 shadow-sm">
+                                <Button variant="outline" size="lg" className="w-full gap-2 border-border hover:bg-muted h-11 shadow-sm">
                                     <FileText className="h-4 w-4" />
                                     Add Detalhes
                                 </Button>
@@ -110,7 +110,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                         )}
 
                         <Link href={`/os/${os.id}/execution`} className="w-full sm:w-auto">
-                            <Button size="lg" className="w-full gap-2 shadow-lg bg-blue-600 hover:bg-blue-700 h-11">
+                            <Button size="lg" className="w-full gap-2 shadow-sm h-11">
                                 <Wrench className="h-4 w-4" />
                                 Caixas
                             </Button>
@@ -118,7 +118,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                         {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && (
                             <OSClosureForm
                                 osId={os.id}
-                                triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                                triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                                 triggerSize="lg"
                             />
                         )}
@@ -129,10 +129,10 @@ export default async function OSDetailPage({ params }: PageProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     {/* Main Info Card */}
-                    <Card className="shadow-sm">
-                        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                <FileText className="h-4 w-4 text-blue-500" />
+                    <Card className="shadow-sm border-border bg-card">
+                        <CardHeader className="pb-3 border-b border-border/50">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
+                                <FileText className="h-4 w-4 text-primary" />
                                 Informações Principais
                             </CardTitle>
                         </CardHeader>
@@ -140,19 +140,19 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">POP</span>
-                                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mt-0.5">{os.pop}</p>
+                                    <p className="text-sm font-medium text-foreground mt-0.5">{os.pop}</p>
                                 </div>
                                 <div>
                                     <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Protocolo</span>
-                                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mt-0.5 font-mono">{os.protocolo}</p>
+                                    <p className="text-sm font-medium text-foreground mt-0.5 font-mono">{os.protocolo}</p>
                                 </div>
                             </div>
 
                             <div>
                                 <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Cenário</span>
                                 <div className="flex items-start gap-2 mt-1">
-                                    <Wrench className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                                    <p className="text-sm text-slate-700 dark:text-slate-300">{os.tipoOs || 'Não especificado'}</p>
+                                    <Wrench className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                                    <p className="text-sm text-foreground/80">{os.tipoOs || 'Não especificado'}</p>
                                 </div>
                             </div>
 
@@ -160,18 +160,18 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 <div>
                                     <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Condomínio</span>
                                     <div className="flex items-start gap-2 mt-1">
-                                        <Building className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{os.condominio}</p>
+                                        <Building className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                                        <p className="text-sm font-medium text-foreground/80">{os.condominio}</p>
                                     </div>
                                 </div>
                             )}
 
                             {(aggregatedTeams || execution?.equipe) && (
-                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
+                                <div className="pt-2 border-t border-border/50 mt-2">
                                     <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Equipe(s) em Campo</span>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <User className="h-4 w-4 text-slate-400" />
-                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <p className="text-sm font-medium text-foreground">
                                             {aggregatedTeams || (execution?.equipe ? (execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name) : '-')}
                                         </p>
                                     </div>
@@ -182,9 +182,9 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                     {/* Dates Card + Extra Info */}
                     {/* Dates Card */}
-                    <Card className="shadow-sm">
-                        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                    <Card className="shadow-sm border-border bg-card">
+                        <CardHeader className="pb-3 border-b border-border/50">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
                                 <Calendar className="h-4 w-4 text-violet-500" />
                                 Prazos e Datas
                             </CardTitle>
@@ -193,8 +193,8 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <div className="grid grid-cols-2 gap-y-5 gap-x-4">
                                 <div>
                                     <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Entrada</span>
-                                    <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                                    <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
                                         {os.dataEntrante}
                                     </div>
                                 </div>
@@ -205,15 +205,15 @@ export default async function OSDetailPage({ params }: PageProps) {
                                         <OSClosureDate
                                             dataConclusaoExcel={os.dataConclusao}
                                             executionUpdatedAt={execution?.updatedAt}
-                                            className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300"
+                                            className="flex items-center gap-1.5 font-medium text-foreground/80"
                                         />
                                     </div>
                                 ) : (
                                     <div>
                                         <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
                                         <div className="space-y-1.5">
-                                            <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                                <Calendar className="h-3.5 w-3.5 text-slate-400 opacity-70" />
+                                            <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                                                <Calendar className="h-3.5 w-3.5 text-muted-foreground/70 opacity-70" />
                                                 {os.dataPrevExec || '-'}
                                             </div>
                                             {getDeadlineInfo(os.dataPrevExec) && (
@@ -227,16 +227,16 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                                 <div>
                                     <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">Total Caixas</span>
-                                    <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                        <Wrench className="h-3.5 w-3.5 text-slate-400" />
+                                    <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                                        <Wrench className="h-3.5 w-3.5 text-muted-foreground/70" />
                                         {os.items.length} CTOs
                                     </div>
                                 </div>
 
                                 <div>
                                     <span className="block text-muted-foreground/60 mb-1 text-[10px] uppercase font-bold tracking-wider">UF</span>
-                                    <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                                    <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                                        <MapPin className="h-3.5 w-3.5 text-muted-foreground/70" />
                                         {os.uf || '-'}
                                     </div>
                                 </div>
@@ -246,9 +246,9 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                     {/* Extra Info: Description & Attachments */}
                     {(os.descricao || (os.anexos && os.anexos.length > 0)) && (
-                        <Card className="shadow-sm border-l-4 border-l-violet-500 md:col-span-2">
-                            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <Card className="shadow-sm border-l-4 border-l-violet-500 md:col-span-2 border-y border-r border-border bg-card">
+                            <CardHeader className="pb-3 border-b border-border/50">
+                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
                                     <FileText className="h-4 w-4 text-violet-500" />
                                     Informações Adicionais
                                 </CardTitle>
@@ -257,12 +257,12 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 {os.descricao && (
                                     <div>
                                         <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Descrição</span>
-                                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{os.descricao}</p>
+                                        <p className="mt-1 text-sm text-foreground/80 whitespace-pre-wrap">{os.descricao}</p>
                                     </div>
                                 )}
 
                                 {os.anexos && os.anexos.length > 0 && (
-                                    <div className={os.descricao ? "pt-4 border-t border-slate-100 dark:border-slate-800" : ""}>
+                                    <div className={os.descricao ? "pt-4 border-t border-border/50" : ""}>
                                         <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider text-[10px]">Anexos</span>
                                         <div className="mt-2 grid grid-cols-1 gap-2">
                                             {os.anexos.map((file) => (
@@ -272,14 +272,14 @@ export default async function OSDetailPage({ params }: PageProps) {
                                                     download
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                                                    className="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg border border-border hover:bg-muted transition-colors group"
                                                 >
                                                     <div className="flex items-center gap-2 overflow-hidden">
-                                                        <Paperclip className="h-4 w-4 text-slate-400 group-hover:text-violet-500 transition-colors" />
-                                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{file.name}</span>
+                                                        <Paperclip className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                        <span className="text-sm font-medium text-foreground truncate">{file.name}</span>
                                                         <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>
                                                     </div>
-                                                    <Download className="h-4 w-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
+                                                    <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
                                                 </a>
                                             ))}
                                         </div>
@@ -291,10 +291,10 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                     {/* Closure Details (Moved from Execution Page) */}
                     {execution && execution.status === 'DONE' && (
-                        <Card className="shadow-sm md:col-span-2 border-l-4 border-l-slate-300 dark:border-l-slate-700">
-                            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <CheckCircle className="h-4 w-4 text-slate-400" />
+                        <Card className="shadow-sm md:col-span-2 border-l-4 border-l-emerald-500 border-y border-r border-border bg-card">
+                            <CardHeader className="pb-3 border-b border-border/50">
+                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
+                                    <CheckCircle className="h-4 w-4 text-emerald-500" />
                                     Detalhes do Encerramento (Responsável)
                                     {execution.updatedAt && (
                                         <span className="ml-auto text-xs font-normal text-muted-foreground">
@@ -306,7 +306,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                             <CardContent className="pt-4 space-y-4">
                                 <div>
                                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Observação</span>
-                                    <div className="mt-1 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap border border-slate-100 dark:border-slate-800">
+                                    <div className="mt-1 p-3 bg-muted/30 rounded-lg text-sm text-foreground/90 whitespace-pre-wrap border border-border">
                                         {execution.obs || 'Nenhuma observação.'}
                                     </div>
                                 </div>

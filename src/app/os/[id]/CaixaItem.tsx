@@ -13,6 +13,7 @@ import { CaixaItemData } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Session } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 
 interface CaixaItemProps {
     item: CaixaItemData;
@@ -186,23 +187,26 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
 
     // Styles based on status
     const getStatusColor = () => {
-        if (status === 'DONE') return 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800';
-        if (status === 'PENDING') return 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800';
-        return 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700';
+        if (status === 'DONE') return 'bg-emerald-500/10 border-emerald-500/20';
+        if (status === 'PENDING') return 'bg-destructive/10 border-destructive/20';
+        return 'bg-card border-border';
     };
 
     return (
-        <Card className={`rounded-xl shadow-sm border transition-all ${getStatusColor()}`}>
+        <Card className={cn("rounded-xl shadow-sm border transition-all", getStatusColor())}>
             <div className="p-6">
                 {/* Header: Cto + Status Trigger */}
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">{item.cto}</h3>
+                    <h3 className="font-bold text-foreground text-lg">{item.cto}</h3>
 
                     <div className="flex items-center gap-2">
                         <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-9 w-9 rounded-full transition-all ${isUploading ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600' : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 shadow-sm'}`}
+                            className={cn(
+                                "h-9 w-9 rounded-full transition-all",
+                                isUploading ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-primary hover:bg-primary/10 shadow-sm"
+                            )}
                             onClick={() => document.getElementById(`file-upload-${item.cto}`)?.click()}
                             disabled={isLoading || isUploading}
                             title="Anexar Fotos da Galeria"
@@ -225,9 +229,16 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                         {/* Interactive Switch Replacement */}
                         <button
                             onClick={() => setIsOpen(true)}
-                            className={`group relative flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${status === 'DONE' ? 'bg-primary border-primary' : (status === 'PENDING' ? 'bg-destructive border-destructive' : 'bg-slate-200 dark:bg-slate-700 border-transparent')}`}
+                            className={cn(
+                                "group relative flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                status === 'DONE' ? 'bg-primary border-primary' : (status === 'PENDING' ? 'bg-destructive border-destructive' : 'bg-primary/10 border-primary/20')
+                            )}
                         >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${status === 'DONE' ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            <span className={cn(
+                                "inline-block h-4 w-4 transform rounded-full shadow-sm ring-0 transition duration-200 ease-in-out",
+                                status === 'DONE' || status === 'PENDING' ? 'bg-background' : 'bg-primary',
+                                status === 'DONE' ? 'translate-x-5' : 'translate-x-0.5'
+                            )} />
                         </button>
                     </div>
                 </div>
@@ -258,14 +269,14 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
 
                 {/* Result Data & Photos Toggle */}
                 {(status === 'DONE' || (item.photos && item.photos.length > 0)) && (
-                    <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700 space-y-2 text-sm">
+                    <div className="mt-4 pt-3 border-t border-border/60 space-y-2 text-sm">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+                            <div className="flex items-center gap-2 font-medium text-foreground">
                                 {status === 'DONE' && item.potencia && (
-                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Potência: {String(item.potencia).replace('.', ',')} dBm</span>
+                                    <span className="bg-muted px-2 py-1 rounded">Potência: {String(item.potencia).replace('.', ',')} dBm</span>
                                 )}
                                 {status === 'DONE' && certified && (
-                                    <span className="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                                    <span className="px-2 py-1 rounded text-xs bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                                         Certificada
                                     </span>
                                 )}
@@ -275,7 +286,10 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setShowPhotos(!showPhotos)}
-                                    className={`h-7 text-xs gap-1 ${showPhotos ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-primary'}`}
+                                    className={cn(
+                                        "h-7 text-xs gap-1",
+                                        showPhotos ? "text-primary bg-primary/10" : "text-primary hover:bg-primary/5"
+                                    )}
                                 >
                                     <Eye className="h-3 w-3" /> {showPhotos ? 'Esconder' : `Ver ${item.photos.length}`} Fotos
                                 </Button>
@@ -283,13 +297,13 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                         </div>
 
                         {status === 'DONE' && item.obs && (
-                            <div className="bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-900/30 text-xs text-amber-800 dark:text-amber-400 italic">
+                            <div className="bg-amber-500/10 p-2 rounded border border-amber-500/20 text-xs text-amber-600 italic">
                                 &quot;{item.obs}&quot;
                             </div>
                         )}
                         {status === 'DONE' && (item.nomeEquipe || equipeName) && (
                             <div className="flex items-center justify-between">
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Responsável: <span className="font-medium text-slate-700 dark:text-slate-300">{item.nomeEquipe || equipeName}</span></p>
+                                <p className="text-xs text-muted-foreground">Responsável: <span className="font-medium text-foreground">{item.nomeEquipe || equipeName}</span></p>
                             </div>
                         )}
                     </div>
@@ -299,7 +313,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                 {showPhotos && item.photos && item.photos.length > 0 && (
                     <div className="mt-3 grid grid-cols-5 sm:grid-cols-6 gap-2 animate-in fade-in duration-300">
                         {item.photos.map((p, idx) => (
-                            <div key={p.id} className="relative aspect-square overflow-hidden rounded-md border border-slate-100 dark:border-slate-700 shadow-sm group/photo">
+                            <div key={p.id} className="relative aspect-square overflow-hidden rounded-md border border-border shadow-sm group/photo">
                                 <Image
                                     src={p.path}
                                     alt="Foto"
@@ -318,8 +332,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                 {/* Map Link */}
                 {item.lat && item.long && (
                     <Button
-                        variant="default"
-                        className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                        className="mt-4 w-full shadow-sm"
                         onClick={() => setMapDialogOpen(true)}
                     >
                         Abrir no Mapa
@@ -344,19 +357,19 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
 
             {/* Map Selector Dialog */}
             <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
-                <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <DialogContent className="sm:max-w-md bg-card border-border">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold text-center pb-2">Escolha o aplicativo</DialogTitle>
+                        <DialogTitle className="text-xl font-bold text-center pb-2 text-foreground">Escolha o aplicativo</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-3 py-4 pt-0">
                         <a
                             href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.long}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm group"
+                            className="flex items-center gap-4 rounded-xl border border-border p-4 hover:bg-muted transition-colors shadow-sm group"
                             onClick={() => setMapDialogOpen(false)}
                         >
-                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-border">
                                 <Image
                                     src="/assets/icons/google-maps.jpg"
                                     alt="Google Maps"
@@ -365,7 +378,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                 />
                             </div>
                             <div className="flex-1">
-                                <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Google Maps</div>
+                                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Google Maps</div>
                                 <div className="text-xs text-muted-foreground mt-0.5">Recomendado</div>
                             </div>
                         </a>
@@ -374,10 +387,10 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                             href={`https://waze.com/ul?ll=${item.lat},${item.long}&navigate=yes`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm group"
+                            className="flex items-center gap-4 rounded-xl border border-border p-4 hover:bg-muted transition-colors shadow-sm group"
                             onClick={() => setMapDialogOpen(false)}
                         >
-                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-border">
                                 <Image
                                     src="/assets/icons/waze.png"
                                     alt="Waze"
@@ -386,7 +399,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                 />
                             </div>
                             <div className="flex-1">
-                                <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-cyan-500 transition-colors">Waze</div>
+                                <div className="font-semibold text-foreground group-hover:text-cyan-500 transition-colors">Waze</div>
                                 <div className="text-xs text-muted-foreground mt-0.5">Trânsito em tempo real</div>
                             </div>
                         </a>
@@ -395,10 +408,10 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                             href={`http://maps.apple.com/?daddr=${item.lat},${item.long}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm sm:hidden group"
+                            className="flex items-center gap-4 rounded-xl border border-border p-4 hover:bg-muted transition-colors shadow-sm sm:hidden group"
                             onClick={() => setMapDialogOpen(false)}
                         >
-                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden shadow-sm border border-border">
                                 <Image
                                     src="/assets/icons/apple-maps.jpg"
                                     alt="Apple Maps"
@@ -407,7 +420,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                 />
                             </div>
                             <div className="flex-1">
-                                <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">Apple Maps</div>
+                                <div className="font-semibold text-foreground group-hover:text-muted-foreground transition-colors">Apple Maps</div>
                                 <div className="text-xs text-muted-foreground mt-0.5">Nativo iOS</div>
                             </div>
                         </a>
@@ -416,14 +429,14 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                             href={`geo:${item.lat},${item.long}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm group"
+                            className="flex items-center gap-4 rounded-xl border border-border p-4 hover:bg-muted transition-colors shadow-sm group"
                             onClick={() => setMapDialogOpen(false)}
                         >
-                            <div className="w-12 h-12 shrink-0 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                                <Globe className="h-6 w-6 text-slate-600 dark:text-slate-400 group-hover:scale-110 transition-transform" />
+                            <div className="w-12 h-12 shrink-0 bg-muted rounded-xl flex items-center justify-center border border-border">
+                                <Globe className="h-6 w-6 text-muted-foreground group-hover:scale-110 transition-transform" />
                             </div>
                             <div className="flex-1">
-                                <div className="font-semibold text-slate-900 dark:text-slate-100">Outro App</div>
+                                <div className="font-semibold text-foreground">Outro App</div>
                                 <div className="text-xs text-muted-foreground mt-0.5">Escolher app instalado</div>
                             </div>
                         </a>
@@ -434,12 +447,12 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
             {/* MODAL (Existing Edit/Finish Modal) */}
             {
                 isOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                        <Card className="w-full max-w-md overflow-hidden relative shadow-2xl dark:bg-slate-900 dark:border-slate-700">
-                            <CardHeader className="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 pb-4">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                        <Card className="w-full max-w-md overflow-hidden relative shadow-2xl border-border bg-card">
+                            <CardHeader className="bg-muted/40 border-b border-border pb-4">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">Atualizar Caixa {item.cto}</h3>
-                                    <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+                                    <h3 className="font-bold text-lg text-foreground">Atualizar Caixa {item.cto}</h3>
+                                    <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
                                 </div>
                             </CardHeader>
 
@@ -450,7 +463,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
 
                                     <div className="grid grid-cols-2 gap-4 items-end">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Potência (dBm)</label>
+                                            <label className="text-sm font-medium leading-none text-foreground">Potência (dBm)</label>
                                             <Input
                                                 type="number"
                                                 name="power"
@@ -463,23 +476,23 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                             />
                                         </div>
 
-                                        <div className="flex items-center space-x-2 h-10 bg-slate-100 dark:bg-slate-800 rounded-md px-3 border border-slate-200 dark:border-slate-700">
+                                        <div className="flex items-center space-x-2 h-10 bg-muted/40 rounded-md px-3 border border-border">
                                             <input
                                                 type="checkbox"
                                                 id={`certified-${item.cto}`}
                                                 name="certified"
                                                 checked={certified}
                                                 onChange={e => setCertified(e.target.checked)}
-                                                className="h-5 w-5 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-emerald-600 focus:ring-emerald-500"
+                                                className="h-5 w-5 rounded border-input bg-background text-primary focus:ring-primary"
                                             />
-                                            <label htmlFor={`certified-${item.cto}`} className="text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                                            <label htmlFor={`certified-${item.cto}`} className="text-sm font-medium text-foreground cursor-pointer select-none">
                                                 Certificada
                                             </label>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Observação <span className="text-xs font-normal text-slate-400">(Opcional)</span></label>
+                                        <label className="text-sm font-medium leading-none text-foreground">Observação <span className="text-xs font-normal text-muted-foreground">(Opcional)</span></label>
                                         <Textarea
                                             name="obs"
                                             value={obs}
@@ -502,7 +515,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                             </Button>
                                             <Button
                                                 type="submit"
-                                                className="w-full shadow-lg bg-emerald-600 hover:bg-emerald-700 h-10"
+                                                className="w-full shadow-lg bg-emerald-600 hover:bg-emerald-700 h-10 text-white"
                                                 disabled={isLoading}
                                             >
                                                 {isLoading ? 'Salvando...' : (status === 'DONE' ? 'Atualizar' : 'Concluir')}
@@ -515,7 +528,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                                 variant="outline"
                                                 onClick={requestReset}
                                                 disabled={isLoading}
-                                                className="w-full gap-2 text-rose-500 border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                                                className="w-full gap-2 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
                                             >
                                                 <Undo2 className="h-4 w-4" />
                                                 Desmarcar

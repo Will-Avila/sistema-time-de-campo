@@ -70,12 +70,12 @@ export function DateSelector({ initialDate }: { initialDate: string }) {
 
                 <button
                     onClick={openCalendar}
-                    className={`flex items-center gap-2 px-2 py-1 rounded-md transition-all group ${isFiltered
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all group border ${isFiltered
+                        ? 'bg-primary/10 text-primary border-primary/20 shadow-sm'
+                        : 'bg-background border-border hover:bg-muted text-muted-foreground hover:text-foreground'
                         }`}
                 >
-                    <CalendarDays className={`h-4 w-4 ${isFiltered ? 'text-emerald-500' : 'group-hover:scale-110 transition-transform'}`} />
+                    <CalendarDays className={`h-4 w-4 ${isFiltered ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground group-hover:scale-105 transition-transform'}`} />
                     <span className="text-[11px] font-bold uppercase tracking-tight">
                         {initialDate}
                     </span>
@@ -85,7 +85,7 @@ export function DateSelector({ initialDate }: { initialDate: string }) {
             {isFiltered && (
                 <button
                     onClick={clearDate}
-                    className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500 rounded-md transition-colors"
+                    className="p-1.5 hover:bg-destructive/10 text-destructive/70 hover:text-destructive rounded-md transition-colors"
                     title="Limpar filtro"
                 >
                     <X className="h-3.5 w-3.5" />

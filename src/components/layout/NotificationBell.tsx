@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, Camera, AlertTriangle, Trash2 } from 'lucide-react';
@@ -103,12 +105,12 @@ export function NotificationBell() {
             <Button
                 variant="ghost"
                 size="icon"
-                className="relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="relative text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-1 ring-white dark:ring-slate-950 animate-pulse">
+                    <span className="absolute top-1.5 right-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground ring-2 ring-background animate-pulse">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -117,32 +119,32 @@ export function NotificationBell() {
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between p-4 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                            <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Notificações</h4>
+                    <div className="absolute right-0 top-12 w-80 bg-popover border border-border/50 shadow-xl rounded-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between p-4 border-b border-border/50 bg-muted/30">
+                            <h4 className="font-semibold text-sm text-foreground">Notificações</h4>
                             {notifications.length > 0 && (
                                 <button
-                                    className="text-xs text-primary hover:opacity-80 font-medium transition-colors"
+                                    className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                                     onClick={handleClearNotifications}
                                 >
-                                    Limpar notificações
+                                    Limpar todas
                                 </button>
                             )}
                         </div>
 
-                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <div className="max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20">
                             {isLoading && notifications.length === 0 ? (
                                 <div className="p-8 text-center">
-                                    <div className="animate-spin h-5 w-5 border-2 border-slate-300 border-t-primary rounded-full mx-auto mb-2" />
-                                    <p className="text-xs text-slate-500">Carregando...</p>
+                                    <div className="animate-spin h-5 w-5 border-2 border-muted-foreground/30 border-t-primary rounded-full mx-auto mb-2" />
+                                    <p className="text-xs text-muted-foreground">Carregando...</p>
                                 </div>
                             ) : notifications.length === 0 ? (
-                                <div className="p-12 text-center text-slate-500">
+                                <div className="p-12 text-center text-muted-foreground/50">
                                     <Bell className="h-8 w-8 mx-auto mb-3 opacity-20" />
                                     <p className="text-sm">Nenhuma notificação nova</p>
                                 </div>
                             ) : (
-                                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                <div className="divide-y divide-border/30">
                                     {notifications.map((notification) => (
                                         <div
                                             key={notification.id}
@@ -159,7 +161,7 @@ export function NotificationBell() {
                                                     setIsOpen(false);
                                                 }
                                             }}
-                                            className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative group ${notification.osId ? 'cursor-pointer' : ''} ${notification.read ? 'opacity-50 grayscale-[0.5]' : ''}`}
+                                            className={`p-4 hover:bg-muted/50 transition-colors relative group ${notification.osId ? 'cursor-pointer' : ''} ${notification.read ? 'opacity-60 grayscale-[0.3]' : 'bg-primary/5'}`}
                                         >
                                             <div className="flex gap-3">
                                                 {!notification.read && (
@@ -167,13 +169,13 @@ export function NotificationBell() {
                                                         {notification.title.toLowerCase().includes('foto') ? (
                                                             <Camera className="h-3.5 w-3.5 text-emerald-500" />
                                                         ) : (notification.title.toLowerCase().includes('não concluída') || notification.title.toLowerCase().includes('nao concluida') || notification.title.toLowerCase().includes('não verificada') || notification.title.toLowerCase().includes('nao verificada')) ? (
-                                                            <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                                                            <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
                                                         ) : (notification.title.toLowerCase().includes('certificada') || notification.message.toLowerCase().includes('certificada')) ? (
                                                             <Check className="h-3.5 w-3.5 text-emerald-500" />
                                                         ) : (notification.title.toLowerCase().includes('concluída') || notification.title.toLowerCase().includes('concluida') || notification.message.toLowerCase().includes('concluiu')) ? (
                                                             <Check className="h-3.5 w-3.5 text-blue-500" />
                                                         ) : notification.title.toLowerCase().includes('desmarcada') ? (
-                                                            <Trash2 className="h-3.5 w-3.5 text-slate-500" />
+                                                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                                                         ) : (
                                                             <div className={`h-2 w-2 rounded-full ${notification.type === 'OS_CLOSE' ? 'bg-blue-500' : notification.type === 'NEW_OS' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                                         )}
@@ -181,22 +183,22 @@ export function NotificationBell() {
                                                 )}
                                                 {notification.read && (
                                                     <div className="mt-1.5 shrink-0">
-                                                        <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                                        <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
                                                     </div>
                                                 )}
                                                 <div className="flex-1 space-y-1">
-                                                    <p className="text-sm font-medium leading-none text-slate-900 dark:text-slate-100">
+                                                    <p className={`text-sm leading-none ${notification.read ? 'font-medium text-foreground' : 'font-bold text-foreground'}`}>
                                                         {notification.title}
                                                     </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                                                         {notification.message}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                    <p className="text-[10px] text-muted-foreground/70 font-medium">
                                                         {timeAgo(notification.createdAt)}
                                                     </p>
                                                 </div>
                                                 <button
-                                                    className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                                                    className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-background text-muted-foreground hover:text-primary transition-all opacity-0 group-hover:opacity-100 shadow-sm border border-transparent hover:border-border"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleMarkAsReadLocal(notification.id);

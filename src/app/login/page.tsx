@@ -17,7 +17,7 @@ function SubmitButton() {
     return (
         <Button
             type="submit"
-            className="w-full h-12 text-base font-bold transition-all text-white bg-primary hover:bg-primary/90"
+            className="w-full h-12 text-base font-bold transition-all shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
             disabled={pending}
         >
             {pending ? (
@@ -39,37 +39,37 @@ export default function LoginPage() {
     const [state, formAction] = useFormState(login, initialState);
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 font-sans p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 font-sans p-4 transition-colors">
 
             <div className="w-full max-w-sm mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
+                <div className="inline-flex items-center justify-center p-3 bg-card rounded-2xl shadow-sm border border-border mb-6">
                     <ShieldCheck className="h-12 w-12 text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">
                     X-ON Serviços
                 </h1>
-                <p className="text-slate-500 text-sm">
+                <p className="text-muted-foreground text-sm">
                     Gestão de Equipes e Ordens de Serviço
                 </p>
             </div>
 
-            <Card className="w-full max-w-sm shadow-xl shadow-slate-200/50 border-0 rounded-xl bg-white animate-in fade-in zoom-in-95 duration-500 delay-100 overflow-hidden">
+            <Card className="w-full max-w-sm shadow-xl shadow-black/5 border-border rounded-xl bg-card animate-in fade-in zoom-in-95 duration-500 delay-100 overflow-hidden">
                 <div className="h-1 w-full bg-primary/80" />
                 <CardHeader className="pb-2 text-center pt-8">
-                    <CardTitle className="text-lg font-semibold text-slate-800">
+                    <CardTitle className="text-lg font-semibold text-foreground">
                         Bem-vindo(a)
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 pt-6">
                     <form action={formAction} className="space-y-5">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700" htmlFor="username">
+                            <label className="text-sm font-medium text-foreground" htmlFor="username">
                                 Usuário
                             </label>
                             <Input
                                 id="username"
                                 name="username"
-                                className="h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all rounded-lg"
+                                className="h-12 bg-background border-input text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all rounded-lg"
                                 placeholder="Digite seu usuário"
                                 required
                             />
@@ -81,7 +81,7 @@ export default function LoginPage() {
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <label className="text-sm font-medium text-slate-700" htmlFor="password">
+                                <label className="text-sm font-medium text-foreground" htmlFor="password">
                                     Senha
                                 </label>
                             </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                                 id="password"
                                 name="password"
                                 type="password"
-                                className="h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all rounded-lg"
+                                className="h-12 bg-background border-input text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all rounded-lg"
                                 placeholder="Digite sua senha"
                                 required
                             />
@@ -101,7 +101,7 @@ export default function LoginPage() {
                         </div>
 
                         {state?.message && (
-                            <div className="bg-red-50 text-red-600 text-sm p-4 rounded-lg font-medium border border-red-100 flex items-center justify-center">
+                            <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-lg font-medium border border-destructive/20 flex items-center justify-center">
                                 {state.message}
                             </div>
                         )}
@@ -114,7 +114,7 @@ export default function LoginPage() {
             </Card>
 
             <div className="mt-8 text-center animate-in fade-in duration-700 delay-300">
-                <p className="text-xs text-slate-400 font-medium">
+                <p className="text-xs text-muted-foreground font-medium">
                     © 2026 X-ON Serviços
                 </p>
             </div>

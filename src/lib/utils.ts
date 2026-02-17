@@ -48,7 +48,7 @@ export function getOSStatusInfo(params: {
         // Priority 2: If App says it's DONE but Excel isn't updated yet, show "In Analysis"
         else if (execution.status === 'DONE') {
             label = `${closureResult} - Em análise`;
-            variant = (labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) ? 'orange' : 'light-green';
+            variant = (labelUpper.includes('SEM EXECUÇÃO') || labelUpper.includes('SEM EXECUCAO')) ? 'orange' : 'success';
             icon = Clock;
         }
         // Priority 3: Ongoing execution
@@ -91,7 +91,7 @@ export function getStatusVariantFromLabel(label: string): "default" | "secondary
         return 'destructive';
     }
 
-    if (s.includes('EM ANÁLISE') || s.includes('EM ANALISE')) return 'light-green';
+    if (s.includes('EM ANÁLISE') || s.includes('EM ANALISE')) return 'success';
 
     return 'secondary';
 }

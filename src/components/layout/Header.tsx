@@ -37,73 +37,76 @@ export function Header({ username, isAdmin }: HeaderProps) {
     }
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm z-50 transition-colors">
+        <header className="sticky top-0 left-0 right-0 h-16 bg-card border-b border-border shadow-md z-50 transition-colors">
             <div className="container h-full flex items-center justify-between">
                 {/* Left: Brand */}
                 <div className="flex-1">
-                    <Link href={isAdmin ? "/admin/dashboard" : "/os"} className="text-xl font-bold tracking-tighter text-primary">
-                        X-ON
+                    <Link href={isAdmin ? "/admin/dashboard" : "/os"} className="text-xl font-bold tracking-tighter text-primary hover:text-primary/80 transition-colors flex items-center gap-2">
+                        X-ON <span className="font-light text-foreground/80">Serviços</span>
                     </Link>
                 </div>
 
                 {/* Center: User Info */}
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-                    <span className="font-medium text-sm hidden md:inline-block">Olá, {firstName}</span>
-                    <span className="font-medium text-sm md:hidden">{firstName}</span>
-                    <div className="bg-primary/10 dark:bg-primary/20 p-1.5 rounded-full text-primary">
+                <div className="flex items-center gap-3 text-foreground/90">
+                    <div className="text-right hidden md:block">
+                        <p className="text-sm font-semibold leading-none">Olá, {firstName}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+                            {isAdmin ? 'Administrador' : 'Colaborador'}
+                        </p>
+                    </div>
+                    <div className="bg-primary/10 dark:bg-primary/20 p-2 rounded-full text-primary ring-2 ring-primary/5">
                         <User className="h-4 w-4" />
                     </div>
                 </div>
 
                 {/* Right: Menu */}
-                <div className="flex-1 flex justify-end items-center gap-2 relative">
+                <div className="flex-1 flex justify-end items-center gap-3 relative">
                     <NotificationBell />
 
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10"
+                        className="text-muted-foreground hover:text-primary hover:bg-primary/10"
                     >
                         <Menu className="h-6 w-6" />
                     </Button>
 
                     {/* Dropdown Menu */}
                     {isMenuOpen && (
-                        <div className="absolute top-12 right-0 w-52 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-lg rounded-lg overflow-hidden animate-in fade-in slide-in-from-top-2 p-1">
+                        <div className="absolute top-14 right-0 w-56 bg-card border border-border shadow-xl rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 p-1.5 z-50">
                             {/* Theme Toggle */}
                             <button
                                 type="button"
                                 onClick={handleToggleTheme}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent rounded-lg transition-colors text-left"
                             >
                                 {!mounted ? (
-                                    <div className="h-4 w-4 animate-pulse bg-slate-200 dark:bg-slate-700 rounded-full" />
+                                    <div className="h-4 w-4 animate-pulse bg-muted rounded-full" />
                                 ) : resolvedTheme === 'dark' ? (
                                     <Sun className="h-4 w-4 text-amber-500" />
                                 ) : (
-                                    <Moon className="h-4 w-4 text-indigo-500" />
+                                    <Moon className="h-4 w-4 text-primary" />
                                 )}
                                 {!mounted ? 'Carregando...' : (resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro')}
                             </button>
 
-                            <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                            <div className="h-px bg-border my-1.5" />
 
                             <Link
                                 href="/os"
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors"
+                                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-lg transition-colors"
                                 onClick={() => setIsMenuOpen(false)}
                             >
-                                <ClipboardList className="h-4 w-4 text-blue-600" />
+                                <ClipboardList className="h-4 w-4 text-primary" />
                                 Ordens de Serviço
                             </Link>
 
                             {isAdmin && (
                                 <>
-                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
                                     <Link
                                         href="/admin/dashboard"
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors"
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-lg transition-colors"
                                         onClick={() => setIsMenuOpen(false)}
                                     >
                                         <LayoutDashboard className="h-4 w-4 text-primary" />
@@ -112,24 +115,22 @@ export function Header({ username, isAdmin }: HeaderProps) {
                                 </>
                             )}
 
-                            <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-
                             <Link
                                 href="/profile"
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-md transition-colors"
+                                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-lg transition-colors"
                                 onClick={() => setIsMenuOpen(false)}
                             >
-                                <User className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                <User className="h-4 w-4 text-muted-foreground" />
                                 Editar Perfil
                             </Link>
 
-                            <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                            <div className="h-px bg-border my-1.5" />
 
                             {/* Logout */}
                             <form action={async () => { await logout(); }}>
                                 <button
                                     type="submit"
-                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors text-left"
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-left"
                                 >
                                     <LogOut className="h-4 w-4" />
                                     Sair
@@ -143,7 +144,7 @@ export function Header({ username, isAdmin }: HeaderProps) {
             {/* Backdrop to close menu */}
             {isMenuOpen && (
                 <div
-                    className="fixed inset-0 z-[-1]"
+                    className="fixed inset-0 z-[40]"
                     onClick={() => setIsMenuOpen(false)}
                 />
             )}

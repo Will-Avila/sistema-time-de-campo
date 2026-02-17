@@ -8,6 +8,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Trash2 } from 'lucide-react';
 import { deleteExecutionPhoto } from '@/actions/execution';
 import { toast } from '@/components/ui/toast';
+import { cn } from '@/lib/utils';
 
 interface Photo {
     id: string;
@@ -35,7 +36,7 @@ export function OSPhotosGallery({ photos, osId, allowDelete = false }: OSPhotosG
     function requestDeletePhoto(photoId: string) {
         setConfirmAction({
             title: 'Excluir Foto',
-            message: 'Tem certeza que deseja apagar esta foto permanently? Esta ação não pode ser desfeita.',
+            message: 'Tem certeza que deseja apagar esta foto permanentemente? Esta ação não pode ser desfeita.',
             action: () => executeDeletePhoto(photoId),
         });
     }
@@ -67,7 +68,7 @@ export function OSPhotosGallery({ photos, osId, allowDelete = false }: OSPhotosG
                     {photos.map((photo, idx) => (
                         <div
                             key={photo.id}
-                            className="relative aspect-square group rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 cursor-pointer"
+                            className="relative aspect-square group rounded-lg overflow-hidden border border-border cursor-pointer shadow-sm hover:shadow-md transition-all"
                             onClick={() => {
                                 setInitialIndex(idx);
                                 setViewerOpen(true);

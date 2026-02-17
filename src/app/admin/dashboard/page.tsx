@@ -1,3 +1,4 @@
+
 import { getDashboardData } from '@/actions/dashboard';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,59 +42,55 @@ export default async function DashboardPage({
     const displayDate = searchParams.date || new Date().toLocaleDateString('pt-BR');
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors">
+        <div className="min-h-screen bg-muted/30 transition-colors">
             <HeaderServer />
 
-            <div className="container pt-20 space-y-6 pb-8">
+            <div className="container mx-auto p-4 md:p-8 space-y-8 pt-6">
 
-                {/* Header */}
-                <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                {/* Header Section */}
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             Dashboard
                         </h1>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Visão geral das operações • Atualizado em tempo real
+                            Visão geral das operações e indicadores em tempo real.
                         </p>
                     </div>
-                    <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                         <SyncDataButton />
                         <ExcelUploadButton />
-                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 h-11 px-6 transition-colors shadow-md whitespace-nowrap">
-                            <Wrench className="h-4 w-4 shrink-0 text-slate-500" />
+                        <div className="h-8 w-px bg-border mx-1 hidden md:block" />
+                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
+                            <Wrench className="h-4 w-4 text-muted-foreground" />
                             Ordens de Serviço
                         </Link>
-                        <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-6 transition-colors shadow-md whitespace-nowrap">
-                            <Users className="h-4 w-4 shrink-0" />
+                        <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
+                            <Users className="h-4 w-4" />
                             Equipes
                         </Link>
                     </div>
                 </header>
 
                 {/* Stats Grid - 6 cards */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                     {/* Total OS */}
                     <Link href="/os" className="block group">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-blue-200 dark:hover:border-blue-900/50">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                                    <LayoutDashboard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-primary/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <LayoutDashboard className="h-16 w-16 text-primary" />
                             </div>
-                            <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.stats.open}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 font-semibold tracking-tight">OS Abertas</p>
-
-                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
-                                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                            <div className="relative z-10">
+                                <p className="text-sm font-medium text-muted-foreground">OS Abertas</p>
+                                <div className="flex items-baseline gap-2 mt-2">
+                                    <p className="text-3xl font-bold text-foreground">{data.stats.open}</p>
+                                </div>
+                                <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-medium text-muted-foreground">
                                     {(data.stats.openUfBreakdown || []).map((item: any) => (
-                                        <div key={item.uf} className="flex flex-col items-center min-w-[20px]">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">{item.uf}</span>
-                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-none">{String(item.count).padStart(2, '0')}</span>
-                                        </div>
+                                        <span key={item.uf} className="bg-muted px-1.5 py-0.5 rounded text-foreground">{item.uf}: {item.count}</span>
                                     ))}
                                     {(!data.stats.openUfBreakdown || data.stats.openUfBreakdown.length === 0) && (
-                                        <span className="text-[10px] text-slate-400 italic">Nenhuma OS aberta</span>
+                                        <span className="italic">Sem OS abertas</span>
                                     )}
                                 </div>
                             </div>
@@ -102,51 +99,46 @@ export default async function DashboardPage({
 
                     {/* Concluídas Hoje */}
                     <Link href="/admin/today" className="block group">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-emerald-200 dark:hover:border-emerald-900/50">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
-                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-emerald-500/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <CheckCircle className="h-16 w-16 text-emerald-500" />
                             </div>
-                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.stats.completedToday}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 font-semibold tracking-tight">Encerradas Hoje</p>
-
-                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50 grid grid-cols-2 gap-2">
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Concluídas</span>
-                                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{data.stats.todayConcluidas}</span>
+                            <div className="relative z-10">
+                                <p className="text-sm font-medium text-muted-foreground">Encerradas Hoje</p>
+                                <div className="flex items-baseline gap-2 mt-2">
+                                    <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{data.stats.completedToday}</p>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Canceladas</span>
-                                    <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{data.stats.todayCanceladas}</span>
+                                <div className="mt-4 flex gap-4 text-xs">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase text-muted-foreground font-semibold">Concluídas</span>
+                                        <span className="font-bold text-emerald-600">{data.stats.todayConcluidas}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase text-muted-foreground font-semibold">Canceladas</span>
+                                        <span className="font-bold text-rose-600">{data.stats.todayCanceladas}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </Link>
 
-                    {/* Em Execução (Excel) */}
+                    {/* Em Execução */}
                     <Link href="/admin/executing" className="block group">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-orange-200 dark:hover:border-orange-900/50">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-orange-50 dark:bg-orange-950/50 flex items-center justify-center">
-                                    <Activity className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-orange-500 transition-colors" />
+                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-amber-500/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Activity className="h-16 w-16 text-amber-500" />
                             </div>
-                            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{data.stats.emExecucao}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 font-semibold tracking-tight">Em Execução</p>
-
-                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
-                                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                            <div className="relative z-10">
+                                <p className="text-sm font-medium text-muted-foreground">Em Execução</p>
+                                <div className="flex items-baseline gap-2 mt-2">
+                                    <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{data.stats.emExecucao}</p>
+                                </div>
+                                <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-medium text-muted-foreground">
                                     {(data.stats.emExecucaoUfBreakdown || []).map((item: any) => (
-                                        <div key={item.uf} className="flex flex-col items-center min-w-[20px]">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">{item.uf}</span>
-                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-none">{String(item.count).padStart(2, '0')}</span>
-                                        </div>
+                                        <span key={item.uf} className="bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded text-amber-700 dark:text-amber-400">{item.uf}: {item.count}</span>
                                     ))}
                                     {(!data.stats.emExecucaoUfBreakdown || data.stats.emExecucaoUfBreakdown.length === 0) && (
-                                        <span className="text-[10px] text-slate-400 italic">Nenhuma OS em execução</span>
+                                        <span className="italic">Nenhuma</span>
                                     )}
                                 </div>
                             </div>
@@ -155,118 +147,113 @@ export default async function DashboardPage({
 
                     {/* Orçamento Mensal */}
                     <Link href="/admin/reports/monthly" className="block group">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-emerald-200 dark:hover:border-emerald-900/50">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
-                                    <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-emerald-500/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <DollarSign className="h-16 w-16 text-emerald-500" />
                             </div>
-                            <div className="space-y-1">
-                                <div>
-                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Total Previsto</p>
-                                    <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetTotal)}
-                                    </p>
+                            <div className="relative z-10">
+                                <p className="text-sm font-medium text-muted-foreground">Orçamento ({data.stats.budgetMonth})</p>
+                                <div className="mt-2 space-y-1">
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Realizado</p>
+                                        <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetDone)}
+                                        </p>
+                                    </div>
+                                    <div className="pt-1 border-t border-border/50">
+                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Previsto</p>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetTotal)}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Valor Concluído</p>
-                                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetDone)}
-                                    </p>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground font-bold tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/50">MES: {data.stats.budgetMonth}</p>
                             </div>
                         </div>
                     </Link>
 
                     {/* Caixas do Mês */}
                     <Link href="/admin/reports/boxes" className="block group">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-blue-200 dark:hover:border-blue-900/50">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
-                                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-blue-500/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Package className="h-16 w-16 text-blue-500" />
                             </div>
-                            <div className="space-y-1">
-                                <div>
-                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Caixas Planejadas</p>
-                                    <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                        {data.stats.boxesTotal}
-                                    </p>
+                            <div className="relative z-10">
+                                <p className="text-sm font-medium text-muted-foreground">Caixas ({data.stats.budgetMonth})</p>
+                                <div className="mt-2 space-y-1">
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Realizado</p>
+                                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                                            {data.stats.boxesDone}
+                                        </p>
+                                    </div>
+                                    <div className="pt-1 border-t border-border/50">
+                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Planejado</p>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {data.stats.boxesTotal}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Caixas Realizadas</p>
-                                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                                        {data.stats.boxesDone}
-                                    </p>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground font-bold tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/50">PRODUTIVIDADE {data.stats.budgetMonth}</p>
                             </div>
                         </div>
                     </Link>
 
                     {/* Facilidades do Mês */}
                     <Link href="/admin/reports/facilities" className="block group">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all h-full hover:border-amber-200 dark:hover:border-amber-900/50">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
-                                    <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
+                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-amber-500/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Wrench className="h-16 w-16 text-amber-500" />
                             </div>
-                            <div className="space-y-1">
-                                <div>
-                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Facilidades Planejadas</p>
-                                    <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                        {data.stats.facilitiesTotal}
-                                    </p>
+                            <div className="relative z-10">
+                                <p className="text-sm font-medium text-muted-foreground">Facilidades ({data.stats.budgetMonth})</p>
+                                <div className="mt-2 space-y-1">
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Realizado</p>
+                                        <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                                            {data.stats.facilitiesDone}
+                                        </p>
+                                    </div>
+                                    <div className="pt-1 border-t border-border/50">
+                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Planejado</p>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {data.stats.facilitiesTotal}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground font-semibold tracking-tight leading-none mb-1">Facilidades Realizadas</p>
-                                    <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                                        {data.stats.facilitiesDone}
-                                    </p>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground font-bold tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/50">PRODUTIVIDADE {data.stats.budgetMonth}</p>
                             </div>
                         </div>
                     </Link>
                 </div>
 
                 {/* Completion Progress Bar */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Progresso Geral</span>
-                        <span className="text-sm font-semibold text-primary">{data.stats.completionRate}%</span>
+                <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-foreground">Progresso Geral</span>
+                        <span className="text-lg font-bold text-primary">{data.stats.completionRate}%</span>
                     </div>
-                    <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-4 bg-muted rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            className="h-full bg-primary rounded-full transition-all duration-500 shadow-sm"
                             style={{ width: `${data.stats.completionRate}%` }}
                         />
                     </div>
-                    <div className="flex justify-between mt-2 text-[11px] text-muted-foreground">
-                        <span>{data.stats.completedTotal} encerradas</span>
-                        <span>{data.stats.total} ativas restantes</span>
+                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                        <span>{data.stats.completedTotal} OS encerradas</span>
+                        <span>{data.stats.total} OS ativas restantes</span>
                     </div>
                 </div>
 
                 {/* Middle Row: Activity Feed + UF Breakdown + Tech Performance */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* Prazo OS Abertas */}
-                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm overflow-hidden">
-                        <CardHeader className="pb-3 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                            <CardTitle className="text-sm font-bold flex items-center justify-between dark:text-white">
+                    <Card className="lg:col-span-1 border-border shadow-sm">
+                        <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+                            <CardTitle className="text-base font-semibold flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <div className="h-6 w-6 rounded-md bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center">
-                                        <Clock className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
-                                    </div>
+                                    <Clock className="h-4 w-4 text-sky-500" />
                                     Prazo OS Abertas
                                 </div>
-                                <Badge variant="outline" className="font-bold text-[10px] uppercase border-slate-200 dark:border-slate-700">
+                                <Badge variant="outline" className="text-[10px] uppercase font-bold">
                                     {data.deadlineGrandTotal.total} OS
                                 </Badge>
                             </CardTitle>
@@ -279,80 +266,37 @@ export default async function DashboardPage({
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
-                                    <table className="w-full">
+                                    <table className="w-full text-xs">
                                         <thead>
-                                            <tr className="text-[9px] font-bold uppercase tracking-wider text-center border-b border-slate-100 dark:border-slate-800">
-                                                <th className="py-2.5 px-3 text-left font-extrabold text-slate-500 dark:text-slate-400">UF</th>
-                                                <th className="py-2.5 px-2 font-extrabold text-rose-400">Vencido</th>
-                                                <th className="py-2.5 px-2 font-extrabold text-amber-400">Hoje</th>
-                                                <th className="py-2.5 px-2 font-extrabold text-sky-400">5 dias</th>
-                                                <th className="py-2.5 px-2 font-extrabold text-slate-400">{'>'}5 dias</th>
-                                                <th className="py-2.5 px-2 font-extrabold text-slate-500 dark:text-slate-400">Total</th>
+                                            <tr className="font-semibold text-muted-foreground border-b border-border/50 bg-muted/10">
+                                                <th className="py-3 px-4 text-left">UF</th>
+                                                <th className="py-3 px-2 text-center text-rose-500 font-bold">Vencido</th>
+                                                <th className="py-3 px-2 text-center text-amber-500 font-bold">Hoje</th>
+                                                <th className="py-3 px-2 text-center text-sky-500 font-bold">5 dias</th>
+                                                <th className="py-3 px-2 text-center">{'>'}5 dias</th>
+                                                <th className="py-3 px-2 text-center">Total</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            {data.deadlineUfBreakdown.map((item: any, i: number) => (
-                                                <tr
-                                                    key={item.uf}
-                                                    className={`text-center text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}
-                                                >
-                                                    <td className="py-2.5 px-3 text-left">
-                                                        <span className="font-black text-slate-800 dark:text-slate-100 text-[11px] tracking-wide">{item.uf}</span>
+                                        <tbody className="divide-y divide-border/50">
+                                            {data.deadlineUfBreakdown.map((item: any) => (
+                                                <tr key={item.uf} className="hover:bg-muted/30 transition-colors">
+                                                    <td className="py-2.5 px-4 font-bold text-foreground">{item.uf}</td>
+                                                    <td className="py-2.5 px-2 text-center">
+                                                        {item.vencido > 0 ? <span className="text-rose-600 font-bold bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded">{item.vencido}</span> : <span className="text-muted-foreground/30">-</span>}
                                                     </td>
-                                                    <td className="py-2 px-2">
-                                                        {item.vencido > 0 ? (
-                                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 font-black text-[11px] px-1.5">{item.vencido}</span>
-                                                        ) : (
-                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
-                                                        )}
+                                                    <td className="py-2.5 px-2 text-center">
+                                                        {item.hoje > 0 ? <span className="text-amber-600 font-bold bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded">{item.hoje}</span> : <span className="text-muted-foreground/30">-</span>}
                                                     </td>
-                                                    <td className="py-2 px-2">
-                                                        {item.hoje > 0 ? (
-                                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-black text-[11px] px-1.5">{item.hoje}</span>
-                                                        ) : (
-                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
-                                                        )}
+                                                    <td className="py-2.5 px-2 text-center">
+                                                        {item.em5dias > 0 ? <span className="text-sky-600 font-bold bg-sky-50 dark:bg-sky-900/20 px-1.5 py-0.5 rounded">{item.em5dias}</span> : <span className="text-muted-foreground/30">-</span>}
                                                     </td>
-                                                    <td className="py-2 px-2">
-                                                        {item.em5dias > 0 ? (
-                                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 font-bold text-[11px] px-1.5">{item.em5dias}</span>
-                                                        ) : (
-                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
-                                                        )}
+                                                    <td className="py-2.5 px-2 text-center text-muted-foreground">
+                                                        {item.acima5dias > 0 ? item.acima5dias : <span className="opacity-30">-</span>}
                                                     </td>
-                                                    <td className="py-2 px-2">
-                                                        {item.acima5dias > 0 ? (
-                                                            <span className="text-slate-500 dark:text-slate-400 font-semibold text-[11px]">{item.acima5dias}</span>
-                                                        ) : (
-                                                            <span className="text-slate-200 dark:text-slate-700">–</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="py-2 px-2">
-                                                        <span className="font-black text-slate-800 dark:text-white text-xs">{item.total}</span>
-                                                    </td>
+                                                    <td className="py-2.5 px-2 text-center font-bold text-foreground">{item.total}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot>
-                                            <tr className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-center text-xs">
-                                                <td className="py-3 px-3 text-left text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Total</td>
-                                                <td className="py-3 px-2">
-                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-rose-500 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.vencido}</span>
-                                                </td>
-                                                <td className="py-3 px-2">
-                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-amber-500 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.hoje}</span>
-                                                </td>
-                                                <td className="py-3 px-2">
-                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-sky-500 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.em5dias}</span>
-                                                </td>
-                                                <td className="py-3 px-2">
-                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-slate-400 dark:bg-slate-600 text-white font-black text-xs px-2 shadow-sm">{data.deadlineGrandTotal.acima5dias}</span>
-                                                </td>
-                                                <td className="py-3 px-2">
-                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-slate-800 dark:bg-white text-white dark:text-slate-900 font-black text-sm px-2 shadow-sm">{data.deadlineGrandTotal.total}</span>
-                                                </td>
-                                            </tr>
-                                        </tfoot>
                                     </table>
                                 </div>
                             )}
@@ -360,21 +304,21 @@ export default async function DashboardPage({
                     </Card>
 
                     {/* Activity Feed */}
-                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
+                    <Card className="lg:col-span-1 border-border shadow-sm">
+                        <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
                                 <Bell className="h-4 w-4 text-primary" />
                                 Atividade Recente
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-0">
                             {data.activityFeed.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-20" />
                                     <p className="text-sm">Nenhuma atividade recente</p>
                                 </div>
                             ) : (
-                                <div className="space-y-1 max-h-[320px] overflow-y-auto">
+                                <div className="divide-y divide-border/50 max-h-[350px] overflow-y-auto">
                                     {data.activityFeed.map((item: any) => {
                                         const targetPath = item.osId
                                             ? (item.type === 'CHECKLIST' ? `/os/${item.osId}/execution` : `/os/${item.osId}`)
@@ -388,31 +332,31 @@ export default async function DashboardPage({
                                             <Link
                                                 key={item.id}
                                                 href={targetPath}
-                                                className={`flex gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${item.osId ? 'cursor-pointer' : 'cursor-default'}`}
+                                                className={`flex gap-3 p-3 hover:bg-muted/50 transition-all ${item.osId ? 'cursor-pointer' : 'cursor-default'}`}
                                             >
-                                                <div className={`mt-1 shrink-0`}>
+                                                <div className="mt-1 shrink-0">
                                                     {isPhoto ? (
-                                                        <Camera className="h-4 w-4 text-emerald-500" />
+                                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-1.5 rounded-full"><Camera className="h-3 w-3 text-emerald-600" /></div>
                                                     ) : isNOK ? (
-                                                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                                                        <div className="bg-rose-50 dark:bg-rose-900/20 p-1.5 rounded-full"><AlertTriangle className="h-3 w-3 text-rose-600" /></div>
                                                     ) : (item.title.toLowerCase().includes('certificada') || item.message.toLowerCase().includes('certificada')) ? (
-                                                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-1.5 rounded-full"><CheckCircle className="h-3 w-3 text-emerald-600" /></div>
                                                     ) : (item.title.toLowerCase().includes('concluída') || item.title.toLowerCase().includes('concluida') || item.message.toLowerCase().includes('concluiu')) ? (
-                                                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded-full"><CheckCircle className="h-3 w-3 text-blue-600" /></div>
                                                     ) : isReset ? (
-                                                        <Trash2 className="h-4 w-4 text-slate-500" />
+                                                        <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full"><Trash2 className="h-3 w-3 text-slate-500" /></div>
                                                     ) : (
-                                                        <div className={`h-2 w-2 rounded-full ${item.type === 'OS_CLOSE' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                                                        <div className={`h-2.5 w-2.5 rounded-full mt-1.5 ml-1.5 ${item.type === 'OS_CLOSE' ? 'bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]' : 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]'}`} />
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                                                    <p className="text-xs font-semibold text-foreground truncate">
                                                         {item.title}
                                                     </p>
                                                     <p className="text-[11px] text-muted-foreground truncate leading-relaxed">
                                                         {item.message}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-400 mt-0.5">
+                                                    <p className="text-[10px] text-muted-foreground/60 mt-0.5">
                                                         {timeAgo(item.createdAt)}
                                                     </p>
                                                 </div>
@@ -425,47 +369,47 @@ export default async function DashboardPage({
                     </Card>
 
                     {/* Daily Execution Performance (Grouped by OS) */}
-                    <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm overflow-hidden">
-                        <CardHeader className="pb-3 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                            <CardTitle className="text-sm font-bold flex items-center justify-between dark:text-white">
+                    <Card className="lg:col-span-1 border-border shadow-sm">
+                        <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+                            <CardTitle className="text-base font-semibold flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-emerald-500" />
                                     Execução {displayDate}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <DateSelector initialDate={displayDate} />
-                                    <Badge variant="outline" className="font-bold text-[10px] uppercase">{data.performanceByOS.length} OS</Badge>
+                                    <Badge variant="outline" className="text-[10px] uppercase font-bold">{data.performanceByOS.length} OS</Badge>
                                 </div>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
                             {data.performanceByOS.length === 0 ? (
-                                <div className="text-center py-12 text-muted-foreground border-b dark:border-slate-800">
+                                <div className="text-center py-12 text-muted-foreground">
                                     <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
                                     <p className="text-sm italic">Nenhuma produtividade hoje</p>
                                 </div>
                             ) : (
-                                <div className="divide-y dark:divide-slate-800 max-h-[350px] overflow-y-auto">
+                                <div className="divide-y divide-border/50 max-h-[350px] overflow-y-auto">
                                     {data.performanceByOS.map((os: any, i: number) => (
-                                        <div key={i} className="p-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                        <div key={i} className="p-3 hover:bg-muted/50 transition-colors">
                                             <div className="flex items-start gap-2 mb-2">
-                                                <div className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                                <div className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                                                 <div className="min-w-0">
-                                                    <p className="text-[11px] font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-tight">
+                                                    <p className="text-xs font-bold text-foreground uppercase tracking-tight leading-tight">
                                                         {os.title}
                                                     </p>
                                                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{os.pop}</p>
                                                 </div>
                                             </div>
-                                            <div className="space-y-1 ml-4 border-l border-slate-200 dark:border-slate-800 pl-3">
+                                            <div className="space-y-1 ml-4 border-l border-border pl-3">
                                                 {os.teams.map((team: any, j: number) => (
                                                     <div key={j} className="flex items-center justify-between text-xs py-0.5">
-                                                        <span className="text-slate-600 dark:text-slate-400 font-medium truncate pr-2">
+                                                        <span className="text-muted-foreground font-medium truncate pr-2">
                                                             {team.name}
                                                         </span>
-                                                        <span className="text-emerald-600 dark:text-emerald-400 font-black whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded text-[10px]">
-                                                            {team.count} {team.count === 1 ? 'caixa' : 'caixas'}
-                                                        </span>
+                                                        <Badge variant="outline" className="text-[10px] h-5 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
+                                                            {team.count} {team.count === 1 ? 'cx' : 'cxs'}
+                                                        </Badge>
                                                     </div>
                                                 ))}
                                             </div>
@@ -478,14 +422,13 @@ export default async function DashboardPage({
                 </div>
 
                 {/* OS Table */}
-                <Card className="dark:bg-slate-900 dark:border-slate-800 shadow-sm">
-                    <CardHeader className="pb-3">
+                <Card className="border-border shadow-sm">
+                    <CardHeader className="pb-4 border-b border-border/50">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
-                                <Wrench className="h-4 w-4 text-slate-500" />
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <Wrench className="h-4 w-4 text-primary" />
                                 Ordens de Serviço
                             </CardTitle>
-
                         </div>
                     </CardHeader>
                     <CardContent className="pt-0">
