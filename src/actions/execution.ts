@@ -11,7 +11,7 @@ import type { ActionResult } from '@/lib/types';
 import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
 import { optimizeImage } from '@/lib/images';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const closeOSSchema = z.object({
@@ -75,6 +75,7 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
         }
 
         // 4. Handle File Uploads
+        let uploadedCount = 0;
         if (files.length > 0 && files[0].size > 0) {
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
@@ -84,22 +85,33 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
             await mkdir(uploadDir, { recursive: true });
 
             for (const file of files) {
-                if (file.size > MAX_FILE_SIZE) continue;
-                if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
+                if (file.size > MAX_FILE_SIZE) {
+                    logger.warn('File too large in execution closure, skipping', { name: file.name, size: file.size });
+                    continue;
+                }
+                if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+                    logger.warn('Invalid file type in execution closure, skipping', { name: file.name, type: file.type });
+                    continue;
+                }
 
-                const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
-                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
-                const fileName = `${Date.now()}-${safeName}`;
-                const filePath = path.join(uploadDir, fileName);
+                try {
+                    const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
+                    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
+                    const fileName = `${Date.now()}-${safeName}`;
+                    const filePath = path.join(uploadDir, fileName);
 
-                await writeFile(filePath, buffer);
+                    await writeFile(filePath, buffer);
 
-                await prisma.photo.create({
-                    data: {
-                        executionId: execution.id,
-                        path: `/api/images/${protocol}/${fileName}`
-                    }
-                });
+                    await prisma.photo.create({
+                        data: {
+                            executionId: execution.id,
+                            path: `/api/images/${protocol}/${fileName}`
+                        }
+                    });
+                    uploadedCount++;
+                } catch (err) {
+                    logger.error('Error processing file in execution closure', { name: file.name, error: String(err) });
+                }
             }
         }
 

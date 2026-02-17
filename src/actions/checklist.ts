@@ -12,7 +12,7 @@ import type { ActionResult } from '@/lib/types';
 import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
 import { optimizeImage } from '@/lib/images';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const checklistSchema = z.object({
@@ -118,6 +118,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
 
         // 5. Handle File Uploads (Only if Done)
         // Using itemId as designated caixaId
+        let uploadedCount = 0;
         if (done && files.length > 0 && files[0].size > 0) {
             const { getOSById } = await import('@/lib/excel');
             const osData = await getOSById(osId);
@@ -127,27 +128,38 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             await mkdir(uploadDir, { recursive: true });
 
             for (const file of files) {
-                if (file.size > MAX_FILE_SIZE) continue;
-                if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
+                if (file.size > MAX_FILE_SIZE) {
+                    logger.warn('File too large, skipping', { name: file.name, size: file.size });
+                    continue;
+                }
+                if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+                    logger.warn('Invalid file type, skipping', { name: file.name, type: file.type });
+                    continue;
+                }
 
-                const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
+                try {
+                    const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
 
-                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
-                const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
-                const fileName = `${uniqueSuffix}-${safeName}`;
+                    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
+                    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
+                    const fileName = `${uniqueSuffix}-${safeName}`;
 
-                const filePath = path.join(uploadDir, fileName);
+                    const filePath = path.join(uploadDir, fileName);
 
-                await writeFile(filePath, buffer);
+                    await writeFile(filePath, buffer);
 
-                await prisma.photo.create({
-                    data: {
-                        executionId: execution.id,
-                        caixaId: itemId,
-                        equipeId: equipeId,
-                        path: `/api/images/${protocol}/${fileName}`
-                    }
-                });
+                    await prisma.photo.create({
+                        data: {
+                            executionId: execution.id,
+                            caixaId: itemId,
+                            equipeId: equipeId,
+                            path: `/api/images/${protocol}/${fileName}`
+                        }
+                    });
+                    uploadedCount++;
+                } catch (err) {
+                    logger.error('Error processing individual file', { name: file.name, error: String(err) });
+                }
             }
         }
 
@@ -174,11 +186,11 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                 osId: osId
             });
 
-            if (files.length > 0 && files[0].size > 0) {
+            if (uploadedCount > 0) {
                 await createNotification({
                     type: 'CHECKLIST' as any,
                     title: 'Fotos Anexadas',
-                    message: `${techName} enviou ${files.length} foto(s) da CTO ${ctoName} na OS ${proto}`,
+                    message: `${techName} enviou ${uploadedCount} foto(s) da CTO ${ctoName} na OS ${proto}`,
                     equipeId: execution.equipeId || undefined,
                     technicianName: techName,
                     osId: osId
@@ -354,6 +366,7 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
         }
 
         // 3. Process Files
+        let uploadedCount = 0;
         const { getOSById } = await import('@/lib/excel');
         const osData = await getOSById(osId);
         const protocol = osData?.protocolo || 'SEM_PROTOCOLO';
@@ -362,26 +375,37 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
         await mkdir(uploadDir, { recursive: true });
 
         for (const file of files) {
-            if (file.size > MAX_FILE_SIZE) continue;
-            if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
+            if (file.size > MAX_FILE_SIZE) {
+                logger.warn('File too large, skipping', { name: file.name, size: file.size });
+                continue;
+            }
+            if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+                logger.warn('Invalid file type, skipping', { name: file.name, type: file.type });
+                continue;
+            }
 
-            const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
-            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
-            const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
-            const fileName = `${uniqueSuffix}-${safeName}`;
-            const filePath = path.join(uploadDir, fileName);
+            try {
+                const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
+                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
+                const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
+                const fileName = `${uniqueSuffix}-${safeName}`;
+                const filePath = path.join(uploadDir, fileName);
 
-            await writeFile(filePath, buffer);
+                await writeFile(filePath, buffer);
 
-            await prisma.photo.create({
-                data: {
-                    executionId: execution.id,
-                    caixaId: itemId,
-                    equipeId: session.id,
-                    path: `/api/images/${protocol}/${fileName}`
-                }
-            });
-            logger.info('Photo record created in DB', { caixaId: itemId, path: fileName });
+                await prisma.photo.create({
+                    data: {
+                        executionId: execution.id,
+                        caixaId: itemId,
+                        equipeId: session.id,
+                        path: `/api/images/${protocol}/${fileName}`
+                    }
+                });
+                logger.info('Photo record created in DB', { caixaId: itemId, path: fileName });
+                uploadedCount++;
+            } catch (err) {
+                logger.error('Error processing file in upload action', { name: file.name, error: String(err) });
+            }
         }
 
         revalidatePath('/os/[id]', 'page');
@@ -395,14 +419,16 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
         const ctoItem = osInfo?.items?.find((item) => String(item.id) === itemId);
         const ctoName = ctoItem?.cto || itemId;
 
-        await createNotification({
-            type: 'CHECKLIST' as any,
-            title: 'Novas Fotos Anexadas',
-            message: `${techName} enviou ${files.length} novas foto(s) da CTO ${ctoName} na OS ${proto}`,
-            equipeId: session.id,
-            technicianName: techName,
-            osId: osId
-        });
+        if (uploadedCount > 0) {
+            await createNotification({
+                type: 'CHECKLIST' as any,
+                title: 'Novas Fotos Anexadas',
+                message: `${techName} enviou ${uploadedCount} novas foto(s) da CTO ${ctoName} na OS ${proto}`,
+                equipeId: session.id,
+                technicianName: techName,
+                osId: osId
+            });
+        }
 
         return { success: true, message: 'Fotos adicionadas.' };
     } catch (error) {
