@@ -96,7 +96,7 @@ export default function OSExecutionClient({
 
         prevMarkedRef.current = totalMarked;
         isInitialMount.current = false;
-    }, [totalMarked, stats.total]);
+    }, [totalMarked, stats.total, isClosed]);
 
     return (
         <div className="space-y-6">

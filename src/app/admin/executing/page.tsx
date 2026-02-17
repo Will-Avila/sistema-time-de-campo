@@ -46,7 +46,7 @@ export default async function ExecutingOSPage() {
             <div className="container pt-24 pb-6">
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Ordens em Execução</h1>
-                    <p className="text-sm text-muted-foreground">Exibindo todas as ordens de serviço com status "Em Execução" no Excel</p>
+                    <p className="text-sm text-muted-foreground">Exibindo todas as ordens de serviço com status &quot;Em Execução&quot; no Excel</p>
                 </div>
 
                 <OSListClient

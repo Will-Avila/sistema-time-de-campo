@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, Camera, AlertTriangle, Trash2 } from 'lucide-react';
 import { getUnreadNotifications, markAsRead, archiveAllNotifications } from '@/actions/notification';
@@ -36,14 +36,14 @@ export function NotificationBell() {
     const lastShownIdRef = useRef<string | null>(null);
     const router = useRouter();
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         const data = await getUnreadNotifications();
 
         // Browser notification logic
         if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
             const unreadNotifs = data.filter(n => !n.read);
             if (unreadNotifs.length > 0) {
-                const newest = unreadNotifs[0];
+                const newest = unreadNotifs[unreadNotifs.length - 1]; // Use last to be sure
                 if (newest.id !== lastShownIdRef.current) {
                     const notification = new Notification(newest.title, {
                         body: newest.message,
@@ -68,7 +68,7 @@ export function NotificationBell() {
 
         setNotifications(data);
         setIsLoading(false);
-    };
+    }, [router]);
 
     useEffect(() => {
         // Request permission on mount
@@ -79,7 +79,7 @@ export function NotificationBell() {
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
         return () => clearInterval(interval);
-    }, []);
+    }, [fetchNotifications]);
 
     const handleMarkAsReadLocal = async (id: string) => {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -166,8 +166,12 @@ export function NotificationBell() {
                                                     <div className="mt-1.5 shrink-0">
                                                         {notification.title.toLowerCase().includes('foto') ? (
                                                             <Camera className="h-3.5 w-3.5 text-emerald-500" />
-                                                        ) : (notification.title.toLowerCase().includes('não verificada') || notification.title.toLowerCase().includes('nao verificada')) ? (
+                                                        ) : (notification.title.toLowerCase().includes('não concluída') || notification.title.toLowerCase().includes('nao concluida') || notification.title.toLowerCase().includes('não verificada') || notification.title.toLowerCase().includes('nao verificada')) ? (
                                                             <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                                                        ) : (notification.title.toLowerCase().includes('certificada') || notification.message.toLowerCase().includes('certificada')) ? (
+                                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                                        ) : (notification.title.toLowerCase().includes('concluída') || notification.title.toLowerCase().includes('concluida') || notification.message.toLowerCase().includes('concluiu')) ? (
+                                                            <Check className="h-3.5 w-3.5 text-blue-500" />
                                                         ) : notification.title.toLowerCase().includes('desmarcada') ? (
                                                             <Trash2 className="h-3.5 w-3.5 text-slate-500" />
                                                         ) : (

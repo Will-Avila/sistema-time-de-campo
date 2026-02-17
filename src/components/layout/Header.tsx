@@ -41,7 +41,7 @@ export function Header({ username, isAdmin }: HeaderProps) {
             <div className="container h-full flex items-center justify-between">
                 {/* Left: Brand */}
                 <div className="flex-1">
-                    <Link href="/os" className="text-xl font-bold tracking-tighter text-primary">
+                    <Link href={isAdmin ? "/admin/dashboard" : "/os"} className="text-xl font-bold tracking-tighter text-primary">
                         X-ON
                     </Link>
                 </div>

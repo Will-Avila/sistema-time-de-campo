@@ -1,20 +1,7 @@
 {
-  "/admin/equipes/page": "app/admin/equipes/page.js",
-  "/_not-found": "app/_not-found.js",
-  "/admin/reports/facilities/page": "app/admin/reports/facilities/page.js",
-  "/api/sync-progress/route": "app/api/sync-progress/route.js",
-  "/api/preferences/route": "app/api/preferences/route.js",
-  "/api/images/[folder]/[filename]/route": "app/api/images/[folder]/[filename]/route.js",
-  "/login/page": "app/login/page.js",
-  "/os/[id]/admin/page": "app/os/[id]/admin/page.js",
-  "/os/[id]/execution/page": "app/os/[id]/execution/page.js",
-  "/os/[id]/page": "app/os/[id]/page.js",
-  "/page": "app/page.js",
-  "/profile/page": "app/profile/page.js",
-  "/admin/reports/boxes/page": "app/admin/reports/boxes/page.js",
-  "/admin/reports/monthly/page": "app/admin/reports/monthly/page.js",
   "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/os/page": "app/os/page.js",
-  "/admin/today/page": "app/admin/today/page.js",
-  "/admin/executing/page": "app/admin/executing/page.js"
+  "/os/[id]/page": "app/os/[id]/page.js",
+  "/api/sync-progress/route": "app/api/sync-progress/route.js",
+  "/os/[id]/admin/page": "app/os/[id]/admin/page.js",
+  "/os/[id]/execution/page": "app/os/[id]/execution/page.js"
 }

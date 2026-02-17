@@ -70,7 +70,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                     equipeId,
                     technicianName: techName,
                     status: 'PENDING',
-                    obs: 'Iniciado via checklist',
+                    obs: 'Trabalho de campo iniciado',
                 }
             });
         } else if (!execution.technicianName) {
@@ -165,8 +165,8 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
         if (done) {
             await createNotification({
                 type: 'CHECKLIST' as any,
-                title: 'Caixa Verificada',
-                message: `${techName} marcou CTO ${ctoName} na OS ${proto}${obs ? ` (Obs: ${obs})` : ''}`,
+                title: 'Caixa Concluída',
+                message: `${techName} concluiu CTO ${ctoName} na OS ${proto}${certified ? ' (Certificada)' : ''}${obs ? ` (Obs: ${obs})` : ''}`,
                 equipeId: execution.equipeId || undefined,
                 technicianName: techName,
                 osId: osId
@@ -186,8 +186,8 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             // Marked as NOT Verified
             await createNotification({
                 type: 'CHECKLIST' as any,
-                title: 'Caixa NÃO Verificada',
-                message: `${techName} marcou CTO ${ctoName} como não verificada na OS ${proto}${obs ? ` (Alerta: ${obs})` : ''}`,
+                title: 'Caixa NÃO Concluída',
+                message: `${techName} marcou CTO ${ctoName} como não concluída na OS ${proto}${obs ? ` (Alerta: ${obs})` : ''}`,
                 equipeId: execution.equipeId || undefined,
                 technicianName: techName,
                 osId: osId
@@ -339,7 +339,7 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
                     equipeId: session.id,
                     technicianName: techName,
                     status: 'PENDING',
-                    obs: 'Iniciado via upload de fotos',
+                    obs: 'Trabalho de campo iniciado',
                 }
             });
         } else if (!execution.technicianName) {

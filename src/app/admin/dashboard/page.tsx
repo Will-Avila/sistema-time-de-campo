@@ -380,7 +380,7 @@ export default async function DashboardPage({
                                             : '#';
 
                                         const isPhoto = item.title.toLowerCase().includes('foto');
-                                        const isNOK = item.title.toLowerCase().includes('não verificada') || item.title.toLowerCase().includes('nao verificada');
+                                        const isNOK = item.title.toLowerCase().includes('não concluída') || item.title.toLowerCase().includes('nao concluida') || item.title.toLowerCase().includes('não verificada') || item.title.toLowerCase().includes('nao verificada');
                                         const isReset = item.title.toLowerCase().includes('desmarcada');
 
                                         return (
@@ -394,6 +394,10 @@ export default async function DashboardPage({
                                                         <Camera className="h-4 w-4 text-emerald-500" />
                                                     ) : isNOK ? (
                                                         <AlertTriangle className="h-4 w-4 text-red-500" />
+                                                    ) : (item.title.toLowerCase().includes('certificada') || item.message.toLowerCase().includes('certificada')) ? (
+                                                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                                    ) : (item.title.toLowerCase().includes('concluída') || item.title.toLowerCase().includes('concluida') || item.message.toLowerCase().includes('concluiu')) ? (
+                                                        <CheckCircle className="h-4 w-4 text-blue-500" />
                                                     ) : isReset ? (
                                                         <Trash2 className="h-4 w-4 text-slate-500" />
                                                     ) : (
@@ -498,6 +502,7 @@ export default async function DashboardPage({
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Condomínio / POP</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Entrada</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Prazo</th>
+                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Finalização</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Caixas</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
                                                 <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Observações</th>
@@ -542,6 +547,11 @@ export default async function DashboardPage({
                                                         <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
                                                             <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                                 {os.dataPrevExec}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-[11px] hidden md:table-cell">
+                                                            <Link href={`/os/${os.id}`} className={`block w-full h-full font-medium ${os.dataConclusao && os.dataConclusao !== '-' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                                                                {os.dataConclusao || '-'}
                                                             </Link>
                                                         </td>
                                                         <td className="py-3 px-3 hidden md:table-cell">

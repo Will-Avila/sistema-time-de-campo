@@ -254,7 +254,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
                                 {status === 'DONE' && item.potencia && (
-                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Signal: {item.potencia} dBm</span>
+                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Potência: {String(item.potencia).replace('.', ',')} dBm</span>
                                 )}
                                 {status === 'DONE' && certified && (
                                     <span className="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
