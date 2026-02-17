@@ -9,6 +9,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import type { ActionResult } from '@/lib/types';
 import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
+import { optimizeImage } from '@/lib/images';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -86,8 +87,8 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
                 if (file.size > MAX_FILE_SIZE) continue;
                 if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
 
-                const buffer = Buffer.from(await file.arrayBuffer());
-                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+                const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
+                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
                 const fileName = `${Date.now()}-${safeName}`;
                 const filePath = path.join(uploadDir, fileName);
 
@@ -102,7 +103,8 @@ export async function closeOS(prevState: ActionResult | null, formData: FormData
             }
         }
 
-        revalidatePath(`/os/${osId}`);
+        revalidatePath('/os/[id]', 'page');
+        revalidatePath('/os/[id]/execution', 'page');
         revalidatePath('/os');
         revalidatePath('/admin/dashboard');
 
@@ -148,7 +150,8 @@ export async function deleteExecutionPhoto(photoId: string, osId: string) {
         // 2. Remove record
         await prisma.photo.delete({ where: { id: photoId } });
 
-        revalidatePath(`/os/${osId}`);
+        revalidatePath('/os/[id]', 'page');
+        revalidatePath('/os/[id]/execution', 'page');
         return { success: true, message: 'Foto removida.' };
     } catch (error) {
         logger.error('Error deleting photo', { error: String(error) });

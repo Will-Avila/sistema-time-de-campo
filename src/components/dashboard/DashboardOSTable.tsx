@@ -64,7 +64,6 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
 
         return matchesUF && matchesSearch && matchesStatus && matchesMedicao;
     });
-
     const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
 
     // Sort logic
@@ -85,23 +84,26 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-3 items-center bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-200 dark:border-slate-800 relative z-30">
-                <div className="shrink-0 flex items-center gap-2">
-                    <Badge variant="secondary" className="px-2 py-0.5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shadow-sm animate-in fade-in zoom-in duration-300">
-                        {filteredList.length}
-                    </Badge>
+            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-lg border border-slate-200 dark:border-slate-800 relative z-30">
+                <div className="flex items-center gap-3 flex-1">
+                    <div className="shrink-0">
+                        <Badge variant="secondary" className="px-2 py-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shadow-sm">
+                            {filteredList.length}
+                        </Badge>
+                    </div>
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                        <Input
+                            placeholder="Buscar..."
+                            className="pl-9 h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
-                <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-                    <Input
-                        placeholder="Buscar protocolo, POP ou condomínio..."
-                        className="pl-9 h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-40">
+
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:flex gap-2 items-center">
+                    <div className="relative w-full md:w-32">
                         <select
                             value={selectedUF}
                             onChange={(e) => setSelectedUF(e.target.value)}
@@ -115,14 +117,15 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                             <Filter className="h-3 w-3" />
                         </div>
                     </div>
-                    <div className="relative flex-1 md:w-56">
+
+                    <div className="relative w-full md:w-48">
                         <button
                             type="button"
                             onClick={() => setIsStatusOpen(!isStatusOpen)}
-                            className="h-10 w-full flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer overflow-hidden"
+                            className="h-10 w-full flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                         >
                             <span className="truncate">
-                                {selectedStatuses.includes('Todas') ? 'Todos Status' : selectedStatuses.join(', ')}
+                                {selectedStatuses.includes('Todas') ? 'Status' : selectedStatuses.join(', ')}
                             </span>
                             <Filter className="h-3 w-3 text-slate-400 shrink-0 ml-2" />
                         </button>
@@ -238,21 +241,22 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
             </div>
 
             <div className="relative">
+                {/* Scrollable Table Container */}
                 <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 pb-2">
-                    <div className="min-w-[800px]">
+                    <div className="min-w-[1100px]">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b dark:border-slate-700">
                                     <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">UF</th>
                                     <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">OS</th>
                                     <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Condomínio / POP</th>
-                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Entrada</th>
-                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Prazo</th>
-                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Finalização</th>
-                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Caixas</th>
+                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Entrada</th>
+                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Prazo</th>
+                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Finalização</th>
+                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Caixas</th>
                                     <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
                                     <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Medição</th>
-                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Observações</th>
+                                    <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Observações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -286,22 +290,22 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                                     </div>
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
+                                            <td className="py-3 px-3 text-[11px] text-muted-foreground">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                     {os.dataEntrante}
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
+                                            <td className="py-3 px-3 text-[11px] text-muted-foreground">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                     {os.dataPrevExec}
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-3 text-[11px] hidden md:table-cell">
+                                            <td className="py-3 px-3 text-[11px]">
                                                 <Link href={`/os/${os.id}`} className={`block w-full h-full font-medium ${os.dataConclusao && os.dataConclusao !== '-' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
                                                     {os.dataConclusao || '-'}
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-3 hidden md:table-cell">
+                                            <td className="py-3 px-3">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                     <div className="flex items-center gap-2">
                                                         <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[60px]">
@@ -332,7 +336,7 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                                     </div>
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-3 hidden lg:table-cell max-w-[200px]">
+                                            <td className="py-3 px-3 max-w-[250px]">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                     <p className="text-[10px] text-slate-600 dark:text-slate-400 line-clamp-2 italic" title={os.executionObs || os.observacoes || os.descricao || undefined}>
                                                         {os.executionObs || os.observacoes || os.descricao || '-'}
@@ -342,65 +346,64 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                         </tr>
                                     );
                                 })}
-                                {filteredList.length === 0 && (
-                                    <tr>
-                                        <td colSpan={10} className="py-12 text-center text-muted-foreground italic">
-                                            Nenhuma ordem encontrada com os filtros selecionados.
-                                        </td>
-                                    </tr>
-                                )}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/10 rounded-b-lg">
-                        <div className="text-xs text-muted-foreground">
-                            Mostrando <span className="font-medium text-slate-700 dark:text-slate-300">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> a <span className="font-medium text-slate-700 dark:text-slate-300">{Math.min(currentPage * ITEMS_PER_PAGE, filteredList.length)}</span> de <span className="font-medium text-slate-700 dark:text-slate-300">{filteredList.length}</span> ordens
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                                className="inline-flex items-center justify-center rounded-md p-2 text-sm font-medium transition-colors hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:pointer-events-none"
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </button>
-
-                            <div className="flex items-center gap-1 px-2">
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    // Basic pagination logic to show current +/- 2
-                                    let pageNum: number;
-                                    if (totalPages <= 5) pageNum = i + 1;
-                                    else if (currentPage <= 3) pageNum = i + 1;
-                                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                                    else pageNum = currentPage - 2 + i;
-
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            onClick={() => setCurrentPage(pageNum)}
-                                            className={`w-8 h-8 flex items-center justify-center rounded-md text-xs font-medium transition-all ${currentPage === pageNum ? 'bg-primary text-white shadow-sm' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
-                                        >
-                                            {pageNum}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                disabled={currentPage === totalPages}
-                                className="inline-flex items-center justify-center rounded-md p-2 text-sm font-medium transition-colors hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:pointer-events-none"
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </button>
-                        </div>
+                {paginatedList.length === 0 && (
+                    <div className="py-12 text-center text-muted-foreground italic bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                        Nenhuma ordem encontrada com os filtros selecionados.
                     </div>
                 )}
             </div>
-        </div >
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/10 rounded-b-lg">
+                    <div className="text-xs text-muted-foreground">
+                        Mostrando <span className="font-medium text-slate-700 dark:text-slate-300">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> a <span className="font-medium text-slate-700 dark:text-slate-300">{Math.min(currentPage * ITEMS_PER_PAGE, filteredList.length)}</span> de <span className="font-medium text-slate-700 dark:text-slate-300">{filteredList.length}</span> ordens
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="inline-flex items-center justify-center rounded-md p-2 text-sm font-medium transition-colors hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:pointer-events-none"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </button>
+
+                        <div className="flex items-center gap-1 px-2">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                // Basic pagination logic to show current +/- 2
+                                let pageNum: number;
+                                if (totalPages <= 5) pageNum = i + 1;
+                                else if (currentPage <= 3) pageNum = i + 1;
+                                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                else pageNum = currentPage - 2 + i;
+
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => setCurrentPage(pageNum)}
+                                        className={`w-8 h-8 flex items-center justify-center rounded-md text-xs font-medium transition-all ${currentPage === pageNum ? 'bg-primary text-white shadow-sm' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="inline-flex items-center justify-center rounded-md p-2 text-sm font-medium transition-colors hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:pointer-events-none"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

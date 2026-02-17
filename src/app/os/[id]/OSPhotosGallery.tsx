@@ -47,6 +47,7 @@ export function OSPhotosGallery({ photos, osId, allowDelete = false }: OSPhotosG
         const result = await deleteExecutionPhoto(photoId, osId);
 
         if (result.success) {
+            setViewerOpen(false);
             toast('Foto removida.', 'success');
         } else {
             toast(result.message || 'Erro ao remover foto.', 'error');
@@ -78,20 +79,6 @@ export function OSPhotosGallery({ photos, osId, allowDelete = false }: OSPhotosG
                                 fill
                                 className="object-cover transition-transform hover:scale-105"
                             />
-                            {allowDelete && (
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        requestDeletePhoto(photo.id);
-                                    }}
-                                    className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
-                                    title="Excluir foto"
-                                    disabled={isLoading}
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                </button>
-                            )}
                         </div>
                     ))}
                 </div>
@@ -102,6 +89,13 @@ export function OSPhotosGallery({ photos, osId, allowDelete = false }: OSPhotosG
                 onClose={() => setViewerOpen(false)}
                 images={photos.map(p => p.path)}
                 initialIndex={initialIndex}
+                onDelete={(index) => {
+                    const photoToDelete = photos[index];
+                    if (photoToDelete) {
+                        requestDeletePhoto(photoToDelete.id);
+                    }
+                }}
+                canDelete={allowDelete}
             />
 
             <ConfirmModal

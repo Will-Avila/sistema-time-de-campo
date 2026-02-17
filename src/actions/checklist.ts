@@ -10,6 +10,7 @@ import { mkdir, writeFile, unlink } from 'fs/promises';
 import path from 'path';
 import type { ActionResult } from '@/lib/types';
 import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
+import { optimizeImage } from '@/lib/images';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -129,9 +130,9 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                 if (file.size > MAX_FILE_SIZE) continue;
                 if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
 
-                const buffer = Buffer.from(await file.arrayBuffer());
+                const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
 
-                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
                 const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
                 const fileName = `${uniqueSuffix}-${safeName}`;
 
@@ -150,7 +151,8 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             }
         }
 
-        revalidatePath(`/os/${osId}`);
+        revalidatePath('/os/[id]', 'page');
+        revalidatePath('/os/[id]/execution', 'page');
         revalidatePath('/admin/dashboard');
         revalidatePath('/os');
 
@@ -224,7 +226,8 @@ export async function deleteChecklistPhoto(photoId: string, osId: string) {
         } catch { }
         await prisma.photo.delete({ where: { id: photoId } });
 
-        revalidatePath(`/os/${osId}`);
+        revalidatePath('/os/[id]', 'page');
+        revalidatePath('/os/[id]/execution', 'page');
         return { success: true, message: 'Foto removida.' };
     } catch (error) {
         logger.error('Error deleting photo', { error: String(error) });
@@ -278,7 +281,8 @@ export async function resetChecklistItem(osId: string, itemId: string) {
             }
         });
 
-        revalidatePath(`/os/${osId}`);
+        revalidatePath('/os/[id]', 'page');
+        revalidatePath('/os/[id]/execution', 'page');
 
         // Create notification for reset
         const { createNotification } = await import('@/actions/notification');
@@ -361,8 +365,8 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
             if (file.size > MAX_FILE_SIZE) continue;
             if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue;
 
-            const buffer = Buffer.from(await file.arrayBuffer());
-            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const buffer = await optimizeImage(Buffer.from(await file.arrayBuffer()));
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "") + ".jpg";
             const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
             const fileName = `${uniqueSuffix}-${safeName}`;
             const filePath = path.join(uploadDir, fileName);
@@ -377,9 +381,11 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
                     path: `/api/images/${protocol}/${fileName}`
                 }
             });
+            logger.info('Photo record created in DB', { caixaId: itemId, path: fileName });
         }
 
-        revalidatePath(`/os/${osId}`);
+        revalidatePath('/os/[id]', 'page');
+        revalidatePath('/os/[id]/execution', 'page');
 
         // Create notification for photos upload
         const { createNotification } = await import('@/actions/notification');

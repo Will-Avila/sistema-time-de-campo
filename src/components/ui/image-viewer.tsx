@@ -1,6 +1,4 @@
-'use client';
-
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,9 +8,11 @@ interface ImageViewerProps {
     onClose: () => void;
     images: string[];
     initialIndex?: number;
+    onDelete?: (index: number) => void;
+    canDelete?: boolean;
 }
 
-export function ImageViewer({ isOpen, onClose, images, initialIndex = 0 }: ImageViewerProps) {
+export function ImageViewer({ isOpen, onClose, images, initialIndex = 0, onDelete, canDelete = false }: ImageViewerProps) {
     const [currentIndex, setCurrentIndex] = React.useState(initialIndex);
 
     // Sync internal index if initialIndex changes when opening
@@ -21,6 +21,15 @@ export function ImageViewer({ isOpen, onClose, images, initialIndex = 0 }: Image
             setCurrentIndex(initialIndex);
         }
     }, [isOpen, initialIndex]);
+
+    // Ensure index is valid if images change
+    useEffect(() => {
+        if (currentIndex >= images.length && images.length > 0) {
+            setCurrentIndex(images.length - 1);
+        } else if (images.length === 0 && isOpen) {
+            onClose();
+        }
+    }, [images.length, currentIndex, isOpen, onClose]);
 
     const handleNext = useCallback(() => {
         setCurrentIndex((prev) => (prev + 1) % images.length);
@@ -54,10 +63,21 @@ export function ImageViewer({ isOpen, onClose, images, initialIndex = 0 }: Image
             {/* Close Button */}
             <button
                 onClick={onClose}
-                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors bg-black/20 p-2 rounded-full hover:bg-white/10"
+                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors bg-black/20 p-2 rounded-full hover:bg-white/10 z-[10000]"
             >
                 <X className="h-8 w-8" />
             </button>
+
+            {/* Delete Button (Centralized) */}
+            {onDelete && canDelete && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(currentIndex); }}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 hover:text-red-500 transition-all bg-black/20 p-3 rounded-full hover:bg-white/10 group z-[10000]"
+                    title="Excluir foto"
+                >
+                    <Trash2 className="h-7 w-7 group-hover:scale-110" />
+                </button>
+            )}
 
             {/* Navigation Buttons */}
             {images.length > 1 && (

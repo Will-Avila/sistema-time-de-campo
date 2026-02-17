@@ -1,6 +1,5 @@
-'use client';
-
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { updateChecklistItem, deleteChecklistPhoto, resetChecklistItem, uploadChecklistPhotos } from '@/actions/checklist';
 import Image from 'next/image';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -62,6 +61,8 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
         action: () => void;
     } | null>(null);
 
+    const router = useRouter();
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setIsLoading(true);
@@ -75,6 +76,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
         if (result.success) {
             setStatus('DONE');
             setIsOpen(false);
+            router.refresh();
             toast('Caixa concluída!', 'success');
         } else {
             toast(result.message || 'Erro ao salvar.', 'error');
@@ -95,6 +97,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
         if (result.success) {
             setStatus('PENDING');
             setIsOpen(false);
+            router.refresh();
             toast('Marcada como não executada.', 'warning');
         } else {
             toast(result.message || 'Erro ao atualizar.', 'error');
@@ -117,6 +120,8 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
         const result = await deleteChecklistPhoto(photoId, osId);
 
         if (result.success) {
+            setViewerOpen(false);
+            router.refresh();
             toast('Foto removida.', 'success');
         } else {
             toast(result.message || 'Erro ao remover foto.', 'error');
@@ -144,6 +149,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
             setObs('');
             setShowPhotos(false);
             setIsOpen(false);
+            router.refresh();
             toast('Caixa desmarcada.', 'success');
         } else {
             toast(result.message || 'Erro ao desmarcar.', 'error');
@@ -166,6 +172,8 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
         const result = await uploadChecklistPhotos(formData);
 
         if (result.success) {
+            setShowPhotos(true);
+            router.refresh();
             toast('Fotos adicionadas!', 'success');
             // Removed auto-pending status update as requested
         } else {
@@ -302,14 +310,6 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                         setViewerOpen(true);
                                     }}
                                 />
-                                <button
-                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); requestDeletePhoto(p.id); }}
-                                    className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover/photo:opacity-100 transition-opacity hover:bg-red-600"
-                                    title="Excluir foto"
-                                    disabled={(!session?.isAdmin && p.equipeId !== session?.id)}
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                </button>
                             </div>
                         ))}
                     </div>
@@ -333,6 +333,13 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                 onClose={() => setViewerOpen(false)}
                 images={item.photos?.map(p => p.path) || []}
                 initialIndex={viewerInitialIndex}
+                onDelete={(index) => {
+                    const photoToDelete = item.photos?.[index];
+                    if (photoToDelete) {
+                        requestDeletePhoto(photoToDelete.id);
+                    }
+                }}
+                canDelete={true}
             />
 
             {/* Map Selector Dialog */}

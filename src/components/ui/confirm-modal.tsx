@@ -1,7 +1,6 @@
-'use client';
-
-import { useState } from 'react';
-import { Card, CardHeader } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
@@ -26,10 +25,16 @@ export function ConfirmModal({
     onConfirm,
     onCancel,
 }: ConfirmModalProps) {
-    if (!open) return null;
+    const [mounted, setMounted] = useState(false);
 
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!open || !mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <Card className="w-full max-w-sm shadow-2xl dark:bg-slate-900 dark:border-slate-700">
                 <div className="p-6 space-y-4">
                     <div className="flex items-start gap-3">
@@ -54,6 +59,7 @@ export function ConfirmModal({
                     </div>
                 </div>
             </Card>
-        </div>
+        </div>,
+        document.body
     );
 }
