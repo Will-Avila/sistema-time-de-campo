@@ -12,8 +12,9 @@ import { ExcelUploadButton } from '@/components/ExcelUploadButton';
 import { SyncDataButton } from '@/components/SyncDataButton';
 import { StatusBadge } from '@/components/os/StatusBadge';
 import { DateSelector } from '@/components/dashboard/DateSelector';
-import { getOSStatusInfo, getDaysRemaining } from '@/lib/utils';
+import { getOSStatusInfo, getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
 import { EnrichedOS } from '@/lib/types';
+import { DashboardOSTable } from '@/components/dashboard/DashboardOSTable';
 
 function timeAgo(dateStr: string): string {
     const now = new Date();
@@ -64,7 +65,7 @@ export default async function DashboardPage({
                         </Link>
                         <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-6 transition-colors shadow-md whitespace-nowrap">
                             <Users className="h-4 w-4 shrink-0" />
-                            Usuários
+                            Equipes
                         </Link>
                     </div>
                 </header>
@@ -257,15 +258,15 @@ export default async function DashboardPage({
 
                     {/* Prazo OS Abertas */}
                     <Card className="lg:col-span-1 dark:bg-slate-900 dark:border-slate-800 shadow-sm overflow-hidden">
-                        <CardHeader className="pb-3 border-b dark:border-slate-800 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-800/80 dark:to-slate-900/80">
-                            <CardTitle className="text-sm font-bold flex items-center justify-between text-white">
+                        <CardHeader className="pb-3 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                            <CardTitle className="text-sm font-bold flex items-center justify-between dark:text-white">
                                 <div className="flex items-center gap-2">
-                                    <div className="h-6 w-6 rounded-md bg-white/10 flex items-center justify-center">
-                                        <Clock className="h-3.5 w-3.5 text-sky-400" />
+                                    <div className="h-6 w-6 rounded-md bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center">
+                                        <Clock className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
                                     </div>
                                     Prazo OS Abertas
                                 </div>
-                                <Badge variant="outline" className="font-bold text-[10px] uppercase border-white/20 text-white/70">
+                                <Badge variant="outline" className="font-bold text-[10px] uppercase border-slate-200 dark:border-slate-700">
                                     {data.deadlineGrandTotal.total} OS
                                 </Badge>
                             </CardTitle>
@@ -483,120 +484,12 @@ export default async function DashboardPage({
                             <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
                                 <Wrench className="h-4 w-4 text-slate-500" />
                                 Ordens de Serviço
-                                <Badge variant="secondary" className="ml-2">{data.osList.length}</Badge>
                             </CardTitle>
-                            <Link href="/os" className="text-xs text-primary font-medium flex items-center gap-1 hover:opacity-80 transition-all">
-                                Ver todas <ArrowRight className="h-3 w-3" />
-                            </Link>
+
                         </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                        <div className="relative">
-                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 pb-2">
-                                <div className="min-w-[800px]">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b dark:border-slate-700">
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">UF</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">OS</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Condomínio / POP</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Entrada</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Prazo</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Finalização</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden md:table-cell">Caixas</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
-                                                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Observações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.osList.slice(0, 25).map((os: EnrichedOS) => {
-                                                const progressPct = os.totalCaixas > 0 ? Math.round((os.checklistDone! / os.totalCaixas) * 100) : 0;
-
-                                                return (
-                                                    <tr
-                                                        key={os.id}
-                                                        className="border-b dark:border-slate-800 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                                                    >
-                                                        <td className="py-3 px-3">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                                <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">{os.uf}</span>
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                            <Link href={`/os/${os.id}`} className="font-mono text-[11px] text-primary group-hover:underline">
-                                                                {os.protocolo || '-'}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full space-y-0.5">
-                                                                {os.condominio && (
-                                                                    <div className="text-[10px] font-bold text-slate-700 dark:text-slate-200 uppercase truncate max-w-[180px]">
-                                                                        {os.condominio}
-                                                                    </div>
-                                                                )}
-                                                                <div className="text-xs text-muted-foreground truncate max-w-[180px]">
-                                                                    {os.pop}
-                                                                </div>
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                                {os.dataEntrante}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3 text-[11px] text-muted-foreground hidden md:table-cell">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                                {os.dataPrevExec}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3 text-[11px] hidden md:table-cell">
-                                                            <Link href={`/os/${os.id}`} className={`block w-full h-full font-medium ${os.dataConclusao && os.dataConclusao !== '-' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
-                                                                {os.dataConclusao || '-'}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3 hidden md:table-cell">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[60px]">
-                                                                        <div
-                                                                            className={`h-full rounded-full transition-all ${progressPct === 100 ? 'bg-emerald-500' : progressPct > 0 ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-                                                                            style={{ width: `${progressPct}%` }}
-                                                                        />
-                                                                    </div>
-                                                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                                                        {os.checklistDone}/{os.totalCaixas}
-                                                                    </span>
-                                                                </div>
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                                <StatusBadge
-                                                                    label={os.executionStatus}
-                                                                    showIcon={true}
-                                                                    className="scale-90 origin-left"
-                                                                />
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-3 px-3 hidden lg:table-cell max-w-[200px]">
-                                                            <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                                <p className="text-[10px] text-slate-600 dark:text-slate-400 line-clamp-2 italic" title={os.executionObs || os.observacoes || os.descricao || undefined}>
-                                                                    {os.executionObs || os.observacoes || os.descricao || '-'}
-                                                                </p>
-                                                            </Link>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div className="flex md:hidden items-center justify-center gap-2 py-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-muted-foreground bg-slate-50/50 dark:bg-slate-800/20 -mx-6 px-6">
-                                <ArrowRight className="h-3 w-3 animate-pulse" />
-                                Deslize para ver mais detalhes
-                            </div>
-                        </div>
+                        <DashboardOSTable initialOSList={data.osList} />
                     </CardContent>
                 </Card>
             </div>
