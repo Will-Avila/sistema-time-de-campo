@@ -6,7 +6,7 @@ import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft } from 'lucide-react';
+import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft, User } from 'lucide-react';
 import { updatePreferences } from '@/actions/equipe';
 import { getStatusVariantFromLabel, formatDateSP, cn, getDeadlineInfo } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
@@ -260,7 +260,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                     <div className="flex justify-between items-start gap-4">
                                         <div className="space-y-1.5 flex-1 pr-24">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <Badge variant="outline" className="font-mono text-xs text-muted-foreground border-border bg-muted/50">
+                                                <Badge variant="secondary" className="font-mono text-xs font-bold text-[#4da8bc] bg-[#4da8bc]/10 border-[#4da8bc]/20 shadow-sm">
                                                     {os.protocolo || 'SEM PROTOCOLO'}
                                                 </Badge>
                                                 {os.uf && (
@@ -272,7 +272,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
 
                                             {os.condominio && (
                                                 <div className="flex items-center gap-1.5 mb-0.5 mt-1">
-                                                    <Building className="h-3.5 w-3.5 text-muted-foreground/70" />
+                                                    <Building className="h-3.5 w-3.5 text-[#4da8bc]" />
                                                     <span className="text-xs font-bold text-foreground/80 uppercase tracking-wide truncate">
                                                         {os.condominio}
                                                     </span>
@@ -288,18 +288,19 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                 <CardContent className="p-5 pt-2 flex-1 flex flex-col justify-end space-y-4">
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-md border border-border/50">
-                                            <Box className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                                            <Box className="h-4 w-4 text-[#4da8bc]" />
                                             <span className="font-medium text-foreground/70">{os.totalCaixas} caixas</span>
                                         </div>
                                         {os.tipoOs && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
-                                                <Wrench className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                                                <Wrench className="h-3.5 w-3.5 text-[#4da8bc]" />
                                                 <span className="truncate text-xs">{os.tipoOs}</span>
                                             </div>
                                         )}
                                         {os.equipeName && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
-                                                <span className="text-xs">👤 {os.equipeName}</span>
+                                                <User className="h-3.5 w-3.5 text-[#4da8bc]" />
+                                                <span className="text-xs">{os.equipeName}</span>
                                             </div>
                                         )}
                                     </div>
@@ -308,7 +309,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                         <div>
                                             <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Entrada</span>
                                             <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                                                <Calendar className="h-3 w-3 text-muted-foreground/70" />
+                                                <Calendar className="h-3 w-3 text-[#4da8bc]" />
                                                 {os.dataEntrante}
                                             </div>
                                         </div>
@@ -328,7 +329,7 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                                 <span className="block text-muted-foreground/60 mb-0.5 text-[10px] uppercase font-bold tracking-wider">Prazo</span>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                                                        <Calendar className="h-3 w-3 text-muted-foreground/70" />
+                                                        <Calendar className="h-3 w-3 text-[#4da8bc]" />
                                                         {os.dataPrevExec || '-'}
                                                     </div>
                                                     {getDeadlineInfo(os.dataPrevExec) && (

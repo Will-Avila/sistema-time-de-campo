@@ -30,14 +30,14 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+        <div className="min-h-screen bg-background transition-colors">
             <HeaderServer />
 
-            <div className="container pt-24 pb-8 space-y-8">
+            <div className="container pt-6 pb-8 space-y-8">
                 {/* Header */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Relatório Mensal</h1>
+                        <h1 className="text-3xl font-bold text-foreground">Relatório Mensal</h1>
                         <p className="text-muted-foreground mt-1">
                             Desempenho financeiro e análise de orçamento para <span className="font-bold text-primary">{currentMonth}</span>
                         </p>
@@ -48,7 +48,7 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
                 <div>
                     <Link
                         href="/admin/dashboard"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors bg-card px-3 py-1.5 rounded-lg border border-border shadow-sm"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Voltar para Dashboard
@@ -57,25 +57,25 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="bg-white dark:bg-slate-900 border-none shadow-sm overflow-hidden relative group">
+                    <Card className="bg-card border-none shadow-sm overflow-hidden relative group">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
                             <Target className="h-12 w-12 text-blue-600" />
                         </div>
                         <CardContent className="p-6">
-                            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Previsto</p>
-                            <p className="text-3xl font-bold text-slate-900 dark:text-white">{formatCurrency(data.summary.totalPrevisto)}</p>
-                            <div className="flex items-center gap-1 mt-2 text-xs font-medium text-slate-400">
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Previsto</p>
+                            <p className="text-3xl font-bold text-foreground">{formatCurrency(data.summary.totalPrevisto)}</p>
+                            <div className="flex items-center gap-1 mt-2 text-xs font-medium text-muted-foreground">
                                 <span>Meta de faturamento do mês</span>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white dark:bg-slate-900 border-none shadow-sm overflow-hidden relative group">
+                    <Card className="bg-card border-none shadow-sm overflow-hidden relative group">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
                             <Landmark className="h-12 w-12 text-emerald-600" />
                         </div>
                         <CardContent className="p-6">
-                            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Valor Realizado</p>
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Valor Realizado</p>
                             <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(data.summary.totalRealizado)}</p>
                             <div className="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-500">
                                 <TrendingUp className="h-3 w-3" />
@@ -84,12 +84,12 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white dark:bg-slate-900 border-none shadow-sm overflow-hidden relative group">
+                    <Card className="bg-card border-none shadow-sm overflow-hidden relative group">
                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
                             <TrendingDown className="h-12 w-12 text-orange-600" />
                         </div>
                         <CardContent className="p-6">
-                            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Sem execução</p>
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Sem execução</p>
                             <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(data.summary.totalCancelado)}</p>
                             <div className="flex items-center gap-1 mt-2 text-xs font-medium text-orange-500">
                                 <span>Valor total de OS canceladas</span>

@@ -19,7 +19,7 @@ export function BoxesChartsClient({ dailyEvolution, ufData, teamData }: ChartPro
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* 1. Daily Evolution */}
-            <Card className="lg:col-span-2 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <Card className="lg:col-span-2 shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Evolução Diária de Caixas Concluídas</CardTitle>
                 </CardHeader>
@@ -56,7 +56,7 @@ export function BoxesChartsClient({ dailyEvolution, ufData, teamData }: ChartPro
             </Card>
 
             {/* 2. Boxes by UF */}
-            <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <Card className="shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Produtividade por UF (Planejado vs Realizado)</CardTitle>
                 </CardHeader>
@@ -76,7 +76,7 @@ export function BoxesChartsClient({ dailyEvolution, ufData, teamData }: ChartPro
             </Card>
 
             {/* 3. Team Ranking */}
-            <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <Card className="shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Ranking de Equipes (Total de Caixas)</CardTitle>
                 </CardHeader>

@@ -95,9 +95,19 @@ export async function getDashboardData(targetDate?: string) {
         const uf = os.uf || 'N/A';
         openUfMap[uf] = (openUfMap[uf] || 0) + 1;
     });
+    const UF_ORDER = ['CE', 'RN', 'PB'];
     const openUfBreakdown = Object.entries(openUfMap)
         .map(([uf, count]) => ({ uf, count }))
-        .sort((a, b) => b.count - a.count);
+        .sort((a, b) => {
+            const indexA = UF_ORDER.indexOf(a.uf);
+            const indexB = UF_ORDER.indexOf(b.uf);
+
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+
+            return b.count - a.count;
+        });
 
 
     const completedToday = osList.filter(os => {
@@ -177,7 +187,16 @@ export async function getDashboardData(targetDate?: string) {
     });
     const emExecucaoUfBreakdown = Object.entries(emExecucaoUfMap)
         .map(([uf, count]) => ({ uf, count }))
-        .sort((a, b) => b.count - a.count);
+        .sort((a, b) => {
+            const indexA = UF_ORDER.indexOf(a.uf);
+            const indexB = UF_ORDER.indexOf(b.uf);
+
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+
+            return b.count - a.count;
+        });
 
     const completionRate = (open + completedTotal) > 0
         ? Math.round((completedTotal / (open + completedTotal)) * 100)

@@ -61,7 +61,7 @@ export default async function DashboardPage({
                         <SyncDataButton />
                         <ExcelUploadButton />
                         <div className="h-8 w-px bg-border mx-1 hidden md:block" />
-                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
+                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-card dark:bg-muted hover:bg-accent hover:text-accent-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
                             <Wrench className="h-4 w-4 text-muted-foreground" />
                             Ordens de Serviço
                         </Link>
@@ -76,47 +76,28 @@ export default async function DashboardPage({
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                     {/* Total OS */}
                     <Link href="/os" className="block group">
-                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-primary/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-all h-full group-hover:border-primary/50 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <LayoutDashboard className="h-16 w-16 text-primary" />
                             </div>
-                            <div className="relative z-10">
-                                <p className="text-sm font-medium text-muted-foreground">OS Abertas</p>
-                                <div className="flex items-baseline gap-2 mt-2">
-                                    <p className="text-3xl font-bold text-foreground">{data.stats.open}</p>
+                            <div className="relative z-10 flex flex-col h-full">
+                                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">OS Abertas</p>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-2xl font-black text-foreground">{data.stats.open}</p>
                                 </div>
-                                <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-medium text-muted-foreground">
-                                    {(data.stats.openUfBreakdown || []).map((item: any) => (
-                                        <span key={item.uf} className="bg-muted px-1.5 py-0.5 rounded text-foreground">{item.uf}: {item.count}</span>
-                                    ))}
-                                    {(!data.stats.openUfBreakdown || data.stats.openUfBreakdown.length === 0) && (
-                                        <span className="italic">Sem OS abertas</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-
-                    {/* Concluídas Hoje */}
-                    <Link href="/admin/today" className="block group">
-                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-emerald-500/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <CheckCircle className="h-16 w-16 text-emerald-500" />
-                            </div>
-                            <div className="relative z-10">
-                                <p className="text-sm font-medium text-muted-foreground">Encerradas Hoje</p>
-                                <div className="flex items-baseline gap-2 mt-2">
-                                    <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{data.stats.completedToday}</p>
-                                </div>
-                                <div className="mt-4 flex gap-4 text-xs">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase text-muted-foreground font-semibold">Concluídas</span>
-                                        <span className="font-bold text-emerald-600">{data.stats.todayConcluidas}</span>
+                                <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between group/footer gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {(data.stats.openUfBreakdown || []).slice(0, 4).map((item: any) => (
+                                            <div key={item.uf} className="flex flex-col items-center justify-center bg-muted/50 px-1.5 py-1 rounded border border-border/50 min-w-[28px]">
+                                                <span className="text-[8px] text-muted-foreground font-bold leading-none mb-0.5">{item.uf}</span>
+                                                <span className="text-[10px] font-black text-foreground leading-none">{item.count}</span>
+                                            </div>
+                                        ))}
+                                        {(!data.stats.openUfBreakdown || data.stats.openUfBreakdown.length === 0) && (
+                                            <span className="text-[10px] italic text-muted-foreground">Vazio</span>
+                                        )}
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase text-muted-foreground font-semibold">Canceladas</span>
-                                        <span className="font-bold text-rose-600">{data.stats.todayCanceladas}</span>
-                                    </div>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-primary transition-all group-hover:translate-x-0.5 shrink-0" />
                                 </div>
                             </div>
                         </div>
@@ -124,22 +105,56 @@ export default async function DashboardPage({
 
                     {/* Em Execução */}
                     <Link href="/admin/executing" className="block group">
-                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-amber-500/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-all h-full group-hover:border-amber-500/50 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <Activity className="h-16 w-16 text-amber-500" />
                             </div>
-                            <div className="relative z-10">
-                                <p className="text-sm font-medium text-muted-foreground">Em Execução</p>
-                                <div className="flex items-baseline gap-2 mt-2">
-                                    <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{data.stats.emExecucao}</p>
+                            <div className="relative z-10 flex flex-col h-full">
+                                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Em Execução</p>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{data.stats.emExecucao}</p>
                                 </div>
-                                <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-medium text-muted-foreground">
-                                    {(data.stats.emExecucaoUfBreakdown || []).map((item: any) => (
-                                        <span key={item.uf} className="bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded text-amber-700 dark:text-amber-400">{item.uf}: {item.count}</span>
-                                    ))}
-                                    {(!data.stats.emExecucaoUfBreakdown || data.stats.emExecucaoUfBreakdown.length === 0) && (
-                                        <span className="italic">Nenhuma</span>
-                                    )}
+                                <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {(data.stats.emExecucaoUfBreakdown || []).slice(0, 4).map((item: any) => (
+                                            <div key={item.uf} className="flex flex-col items-center justify-center bg-amber-500/10 px-1.5 py-1 rounded border border-amber-500/20 min-w-[28px]">
+                                                <span className="text-[8px] text-amber-600/70 dark:text-amber-400/70 font-bold leading-none mb-0.5">{item.uf}</span>
+                                                <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 leading-none">{item.count}</span>
+                                            </div>
+                                        ))}
+                                        {(!data.stats.emExecucaoUfBreakdown || data.stats.emExecucaoUfBreakdown.length === 0) && (
+                                            <span className="text-[10px] italic text-muted-foreground">Nenhuma</span>
+                                        )}
+                                    </div>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-amber-500 transition-all group-hover:translate-x-0.5 shrink-0" />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+
+                    {/* Concluídas Hoje */}
+                    <Link href="/admin/today" className="block group">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-all h-full group-hover:border-emerald-500/50 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <CheckCircle className="h-16 w-16 text-emerald-500" />
+                            </div>
+                            <div className="relative z-10 flex flex-col h-full">
+                                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Encerradas Hoje</p>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{data.stats.completedToday}</p>
+                                </div>
+                                <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between gap-1">
+                                    <div className="flex items-center gap-x-2 sm:gap-x-3">
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[9px] uppercase text-muted-foreground font-bold">Conc:</span>
+                                            <span className="font-bold text-xs text-emerald-600">{data.stats.todayConcluidas}</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1 border-l border-border/50 pl-2">
+                                            <span className="text-[9px] uppercase text-muted-foreground font-bold">Canc:</span>
+                                            <span className="font-bold text-xs text-rose-600">{data.stats.todayCanceladas}</span>
+                                        </div>
+                                    </div>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-emerald-500 transition-all group-hover:translate-x-0.5 shrink-0" />
                                 </div>
                             </div>
                         </div>
@@ -147,25 +162,25 @@ export default async function DashboardPage({
 
                     {/* Orçamento Mensal */}
                     <Link href="/admin/reports/monthly" className="block group">
-                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-emerald-500/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-all h-full group-hover:border-emerald-500/50 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <DollarSign className="h-16 w-16 text-emerald-500" />
                             </div>
-                            <div className="relative z-10">
-                                <p className="text-sm font-medium text-muted-foreground">Orçamento ({data.stats.budgetMonth})</p>
-                                <div className="mt-2 space-y-1">
+                            <div className="relative z-10 flex flex-col h-full">
+                                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Orçamento ({data.stats.budgetMonth})</p>
+                                <div className="flex flex-col">
+                                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 truncate">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetDone)}
+                                    </p>
+                                </div>
+                                <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Realizado</p>
-                                        <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetDone)}
-                                        </p>
-                                    </div>
-                                    <div className="pt-1 border-t border-border/50">
-                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Previsto</p>
-                                        <p className="text-sm font-semibold text-foreground">
+                                        <p className="text-[9px] text-muted-foreground font-bold uppercase mb-0.5">Previsto</p>
+                                        <p className="text-xs font-bold text-foreground">
                                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.stats.budgetTotal)}
                                         </p>
                                     </div>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-emerald-500 transition-all group-hover:translate-x-0.5 shrink-0" />
                                 </div>
                             </div>
                         </div>
@@ -173,25 +188,21 @@ export default async function DashboardPage({
 
                     {/* Caixas do Mês */}
                     <Link href="/admin/reports/boxes" className="block group">
-                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-blue-500/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-all h-full group-hover:border-blue-500/50 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <Package className="h-16 w-16 text-blue-500" />
                             </div>
-                            <div className="relative z-10">
-                                <p className="text-sm font-medium text-muted-foreground">Caixas ({data.stats.budgetMonth})</p>
-                                <div className="mt-2 space-y-1">
+                            <div className="relative z-10 flex flex-col h-full">
+                                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Caixas ({data.stats.budgetMonth})</p>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{data.stats.boxesDone}</p>
+                                </div>
+                                <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Realizado</p>
-                                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                                            {data.stats.boxesDone}
-                                        </p>
+                                        <p className="text-[9px] text-muted-foreground font-bold uppercase mb-0.5">Planejado</p>
+                                        <p className="text-xs font-bold text-foreground">{data.stats.boxesTotal}</p>
                                     </div>
-                                    <div className="pt-1 border-t border-border/50">
-                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Planejado</p>
-                                        <p className="text-sm font-semibold text-foreground">
-                                            {data.stats.boxesTotal}
-                                        </p>
-                                    </div>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-blue-500 transition-all group-hover:translate-x-0.5 shrink-0" />
                                 </div>
                             </div>
                         </div>
@@ -199,48 +210,28 @@ export default async function DashboardPage({
 
                     {/* Facilidades do Mês */}
                     <Link href="/admin/reports/facilities" className="block group">
-                        <div className="bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-all h-full group-hover:border-amber-500/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-all h-full group-hover:border-amber-500/50 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <Wrench className="h-16 w-16 text-amber-500" />
                             </div>
-                            <div className="relative z-10">
-                                <p className="text-sm font-medium text-muted-foreground">Facilidades ({data.stats.budgetMonth})</p>
-                                <div className="mt-2 space-y-1">
+                            <div className="relative z-10 flex flex-col h-full">
+                                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Facilidades ({data.stats.budgetMonth})</p>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{data.stats.facilitiesDone}</p>
+                                </div>
+                                <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Realizado</p>
-                                        <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                                            {data.stats.facilitiesDone}
-                                        </p>
+                                        <p className="text-[9px] text-muted-foreground font-bold uppercase mb-0.5">Planejado</p>
+                                        <p className="text-xs font-bold text-foreground">{data.stats.facilitiesTotal}</p>
                                     </div>
-                                    <div className="pt-1 border-t border-border/50">
-                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Planejado</p>
-                                        <p className="text-sm font-semibold text-foreground">
-                                            {data.stats.facilitiesTotal}
-                                        </p>
-                                    </div>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-amber-500 transition-all group-hover:translate-x-0.5 shrink-0" />
                                 </div>
                             </div>
                         </div>
                     </Link>
                 </div>
 
-                {/* Completion Progress Bar */}
-                <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-foreground">Progresso Geral</span>
-                        <span className="text-lg font-bold text-primary">{data.stats.completionRate}%</span>
-                    </div>
-                    <div className="h-4 bg-muted rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-primary rounded-full transition-all duration-500 shadow-sm"
-                            style={{ width: `${data.stats.completionRate}%` }}
-                        />
-                    </div>
-                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                        <span>{data.stats.completedTotal} OS encerradas</span>
-                        <span>{data.stats.total} OS ativas restantes</span>
-                    </div>
-                </div>
+
 
                 {/* Middle Row: Activity Feed + UF Breakdown + Tech Performance */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -297,6 +288,16 @@ export default async function DashboardPage({
                                                 </tr>
                                             ))}
                                         </tbody>
+                                        <tfoot className="border-t-2 border-border bg-muted/20">
+                                            <tr className="font-bold text-foreground">
+                                                <td className="py-3 px-4">TOTAL</td>
+                                                <td className="py-3 px-2 text-center text-rose-600">{data.deadlineGrandTotal.vencido}</td>
+                                                <td className="py-3 px-2 text-center text-amber-600">{data.deadlineGrandTotal.hoje}</td>
+                                                <td className="py-3 px-2 text-center text-sky-600">{data.deadlineGrandTotal.em5dias}</td>
+                                                <td className="py-3 px-2 text-center text-muted-foreground">{data.deadlineGrandTotal.acima5dias}</td>
+                                                <td className="py-3 px-2 text-center bg-primary/5">{data.deadlineGrandTotal.total}</td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             )}
@@ -431,7 +432,7 @@ export default async function DashboardPage({
                             </CardTitle>
                         </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-4 text-xs">
                         <DashboardOSTable initialOSList={data.osList} />
                     </CardContent>
                 </Card>

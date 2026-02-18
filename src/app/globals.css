@@ -4,77 +4,78 @@
 
 @layer base {
     :root {
-        --background: 210 20% 96%;
-        /* #F5F7FA - Very light cool grey */
+        --background: 210 15% 93%;
+        /* Neutral soft grey — not washed out */
         --foreground: 215 25% 15%;
-        /* #1d2633 - Deep slate */
+        /* Deep slate for strong readability */
 
         --card: 0 0% 100%;
-        /* #FFFFFF - Pure white for contrast */
+        /* Pure white — clear separation from bg */
         --card-foreground: 215 25% 15%;
 
         --popover: 0 0% 100%;
         --popover-foreground: 215 25% 15%;
 
         --primary: 191 56% 16%;
-        /* #12373F - Petrol Deep Blue */
+        /* Petrol Deep Blue */
         --primary-foreground: 0 0% 100%;
-        /* White text on petrol */
 
-        --secondary: 210 20% 94%;
-        /* Light grey for secondary actions */
+        --secondary: 210 12% 90%;
         --secondary-foreground: 191 56% 16%;
-        /* Petrol text on grey */
 
-        --muted: 210 20% 94%;
-        --muted-foreground: 215 15% 45%;
+        --muted: 210 12% 90%;
+        --muted-foreground: 215 20% 30%;
+        /* Darker slate for better contrast in light mode */
 
-        --accent: 210 20% 92%;
+        --accent: 210 12% 88%;
         --accent-foreground: 191 56% 16%;
 
         --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
+        --destructive-foreground: 0 0% 100%;
 
-        --border: 210 15% 85%;
-        /* Subtly visible borders */
-        --input: 210 15% 85%;
+        --border: 210 10% 82%;
+        /* Defined, visible borders */
+        --input: 210 10% 82%;
         --ring: 191 56% 16%;
 
         --radius: 0.5rem;
+        --vibrant-petrol: 191 75% 45%;
+        /* Constant vibrant petrol for icons */
     }
 
     .dark {
-        --background: 222 47% 4%;
-        /* #020617 - Deepest blue/black */
-        --foreground: 210 20% 98%;
-        /* Off-white text */
+        --background: 220 20% 8%;
+        /* Deeper charcoal for a premium dark look */
+        --foreground: 210 15% 93%;
+        /* Soft off-white for comfortable reading */
 
-        --card: 222 47% 6%;
-        /* Slightly lighter than bg */
-        --card-foreground: 210 20% 98%;
+        --card: 220 20% 12%;
+        /* High contrast separation from deeper background */
+        --card-foreground: 210 15% 93%;
 
-        --popover: 222 47% 6%;
-        --popover-foreground: 210 20% 98%;
+        --popover: 220 20% 12%;
+        --popover-foreground: 210 15% 93%;
 
         --primary: 191 50% 50%;
-        /* #408FA3 - Lighter petrol for visibility in dark mode */
-        --primary-foreground: 222 47% 4%;
-        /* Dark text on light petrol */
+        /* Lighter petrol for dark mode visibility */
+        --primary-foreground: 220 20% 10%;
 
-        --secondary: 222 47% 12%;
-        --secondary-foreground: 210 20% 98%;
+        --secondary: 220 15% 18%;
+        --secondary-foreground: 210 15% 90%;
 
-        --muted: 222 47% 12%;
-        --muted-foreground: 215 20% 65%;
+        --muted: 220 15% 18%;
+        --muted-foreground: 215 10% 65%;
+        /* Lighter for dark mode visibility */
 
-        --accent: 222 47% 15%;
-        --accent-foreground: 210 20% 98%;
+        --accent: 220 15% 20%;
+        --accent-foreground: 210 15% 93%;
 
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 20% 98%;
+        --destructive: 0 62.8% 45%;
+        --destructive-foreground: 0 0% 100%;
 
-        --border: 222 47% 12%;
-        --input: 222 47% 12%;
+        --border: 220 15% 20%;
+        /* Visible borders in dark mode */
+        --input: 220 15% 20%;
         --ring: 191 50% 50%;
     }
 }
@@ -86,17 +87,5 @@
 
     body {
         @apply bg-background text-foreground antialiased;
-    }
-
-    /* Soften hardcoded bg-white in light mode to a warm off-white */
-    :root .bg-white {
-        --tw-bg-opacity: 1;
-        background-color: rgb(247 248 250 / var(--tw-bg-opacity));
-    }
-
-    /* Soften hardcoded bg-slate-50 in light mode */
-    :root .bg-slate-50 {
-        --tw-bg-opacity: 1;
-        background-color: rgb(241 243 246 / var(--tw-bg-opacity));
     }
 }

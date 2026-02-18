@@ -51,94 +51,92 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     }
 
     return (
-        <Card className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+        <Card className="w-full max-w-2xl mx-auto bg-card shadow-sm">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                <CardTitle className="text-2xl font-bold flex items-center gap-2 text-foreground">
                     <UserIcon className="h-6 w-6 text-primary" />
                     Editar Perfil
                 </CardTitle>
-                <CardDescription className="text-slate-500 dark:text-slate-400">
+                <CardDescription className="text-muted-foreground">
                     Atualize suas informações pessoais e credenciais de acesso.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <form action={handleSubmit} className="space-y-6">
                     {message && (
-                        <div className={`p-3 rounded-md text-sm font-medium ${message.type === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>
+                        <div className={`p-3 rounded-md text-sm font-medium ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
                             {message.text}
                         </div>
                     )}
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Nome Completo</label>
+                            <label className="text-sm font-medium leading-none text-foreground">Nome Completo</label>
                             <div className="relative">
-                                <UserIcon className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     name="fullName"
                                     defaultValue={user.fullName || ''}
                                     placeholder="Seu nome completo"
-                                    className="pl-9 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                    className="pl-9"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Telefone</label>
+                            <label className="text-sm font-medium leading-none text-foreground">Telefone</label>
                             <div className="relative">
-                                <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     name="phone"
                                     defaultValue={user.phone || ''}
                                     placeholder="(00) 00000-0000"
-                                    className="pl-9 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                    className="pl-9"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Nome de Usuário (Login)</label>
+                            <label className="text-sm font-medium leading-none text-foreground">Nome de Usuário (Login)</label>
                             <div className="relative">
-                                <UserIcon className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     name="name"
                                     defaultValue={user.name}
                                     required
                                     placeholder="usuario.sistema"
-                                    className="pl-9 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                    className="pl-9"
                                 />
                             </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Este é o nome usado para entrar no sistema.</p>
+                            <p className="text-xs text-muted-foreground">Este é o nome usado para entrar no sistema.</p>
                         </div>
 
-                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                                <Lock className="h-4 w-4 text-slate-400" />
+                        <div className="pt-4 border-t border-border">
+                            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                <Lock className="h-4 w-4 text-muted-foreground" />
                                 Alterar Senha
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Nova Senha</label>
+                                    <label className="text-sm font-medium leading-none text-foreground">Nova Senha</label>
                                     <Input
                                         name="password"
                                         type="password"
                                         placeholder="Min. 6 caracteres"
                                         minLength={6}
-                                        className="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">Confirmar Senha</label>
+                                    <label className="text-sm font-medium leading-none text-foreground">Confirmar Senha</label>
                                     <Input
                                         name="confirmPassword"
                                         type="password"
                                         placeholder="Repita a senha"
                                         minLength={6}
-                                        className="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                                     />
                                 </div>
                             </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Deixe em branco se não quiser alterar a senha.</p>
+                            <p className="text-xs text-muted-foreground mt-2">Deixe em branco se não quiser alterar a senha.</p>
                         </div>
                     </div>
 

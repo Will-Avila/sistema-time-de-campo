@@ -32,7 +32,7 @@ export function OSClosureDate({
     if (dataConclusaoExcel && dataConclusaoExcel !== '-') {
         return (
             <div className={baseClasses}>
-                <Calendar className="h-3 w-3 text-slate-400" />
+                <Calendar className="h-3 w-3 text-[#4da8bc]" />
                 {dataConclusaoExcel}
             </div>
         );
@@ -42,7 +42,7 @@ export function OSClosureDate({
     if (technicalDate) {
         return (
             <div className={baseClasses}>
-                <Calendar className="h-3 w-3 text-slate-400" />
+                <Calendar className="h-3 w-3 text-[#4da8bc]" />
                 {formatDateSP(technicalDate)}
             </div>
         );
@@ -51,7 +51,7 @@ export function OSClosureDate({
     // 3. Not closed yet
     return (
         <div className={baseClasses}>
-            <Calendar className="h-3 w-3 text-slate-400" />
+            <Calendar className="h-3 w-3 text-primary" />
             -
         </div>
     );

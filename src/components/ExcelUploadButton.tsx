@@ -112,7 +112,7 @@ export function ExcelUploadButton() {
                 variant="outline"
                 disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="gap-2 border-border bg-background hover:bg-muted text-foreground h-11 px-6 transition-colors shadow-sm font-semibold"
+                className="gap-2 border-border bg-card dark:bg-muted hover:bg-muted text-foreground h-11 px-6 transition-colors shadow-sm font-semibold"
             >
                 {isUploading ? (
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />

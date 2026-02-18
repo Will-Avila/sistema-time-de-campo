@@ -39,10 +39,10 @@ export default async function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-20 transition-colors">
+        <div className="min-h-screen bg-background pb-20 transition-colors">
             <HeaderServer />
 
-            <div className="container pt-24 max-w-5xl space-y-6">
+            <div className="container pt-6 max-w-5xl space-y-6">
                 <ProfileForm user={user} />
             </div>
         </div>

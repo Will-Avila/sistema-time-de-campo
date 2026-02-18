@@ -247,20 +247,20 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm text-primary font-medium">
                         <div className="w-4 flex items-center justify-center shrink-0">
-                            <Circle className="h-3 w-3 fill-current" />
+                            <Circle className="h-3 w-3 fill-current text-[#4da8bc]" />
                         </div>
                         <span>{item.chassiPath}</span>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
                         <div className="w-4 flex items-center justify-center shrink-0 mt-0.5">
-                            <MapPin className="h-4 w-4" />
+                            <MapPin className="h-4 w-4 text-[#4da8bc]" />
                         </div>
                         <span className="line-clamp-2">{item.endereco}</span>
                     </div>
                     {(item.lat && item.long) && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <div className="w-4 flex items-center justify-center shrink-0">
-                                <Globe className="h-4 w-4" />
+                                <Globe className="h-4 w-4 text-[#4da8bc]" />
                             </div>
                             <span>{item.lat}, {item.long}</span>
                         </div>
@@ -291,7 +291,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                         showPhotos ? "text-primary bg-primary/10" : "text-primary hover:bg-primary/5"
                                     )}
                                 >
-                                    <Eye className="h-3 w-3" /> {showPhotos ? 'Esconder' : `Ver ${item.photos.length}`} Fotos
+                                    <Eye className="h-3 w-3 text-[#4da8bc]" /> {showPhotos ? 'Esconder' : `Ver ${item.photos.length}`} Fotos
                                 </Button>
                             )}
                         </div>

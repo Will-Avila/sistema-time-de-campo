@@ -30,19 +30,19 @@ export default async function OSExecutionPage({ params }: PageProps) {
     });
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-slate-950 pb-10 transition-colors">
+        <div className="min-h-screen bg-background pb-10 transition-colors">
             {/* Global Header */}
             <HeaderServer />
 
             <div className="container">
                 {/* Sub-header: back + OS number + closure button */}
-                <div className="pt-20 pb-2 flex items-center gap-3">
-                    <Link href={`/os/${os.id}`} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
-                        <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                <div className="pt-6 pb-2 flex items-center gap-3">
+                    <Link href={`/os/${os.id}`} className="p-2 hover:bg-muted rounded-full transition-colors">
+                        <ArrowLeft className="h-5 w-5 text-foreground" />
                     </Link>
                     <div className="flex-1">
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Execução OS {os.protocolo}</h1>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm">{os.pop}</p>
+                        <h1 className="text-xl font-bold text-foreground uppercase tracking-tight">Execução OS {os.protocolo}</h1>
+                        <p className="text-muted-foreground text-sm">{os.pop}</p>
                     </div>
                 </div>
 

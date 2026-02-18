@@ -105,7 +105,7 @@ export function NotificationBell() {
             <Button
                 variant="ghost"
                 size="icon"
-                className="relative text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className="relative text-foreground/80 hover:text-foreground hover:bg-muted/50 transition-colors"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <Bell className="h-5 w-5" />
@@ -140,8 +140,7 @@ export function NotificationBell() {
                                 </div>
                             ) : notifications.length === 0 ? (
                                 <div className="p-12 text-center text-muted-foreground/50">
-                                    <Bell className="h-8 w-8 mx-auto mb-3 opacity-20" />
-                                    <p className="text-sm">Nenhuma notificação nova</p>
+                                    <p className="text-sm font-medium text-foreground/50">Nenhuma notificação nova</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-border/30">
@@ -190,10 +189,10 @@ export function NotificationBell() {
                                                     <p className={`text-sm leading-none ${notification.read ? 'font-medium text-foreground' : 'font-bold text-foreground'}`}>
                                                         {notification.title}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                                    <p className="text-xs text-foreground/70 line-clamp-2 leading-relaxed">
                                                         {notification.message}
                                                     </p>
-                                                    <p className="text-[10px] text-muted-foreground/70 font-medium">
+                                                    <p className="text-[10px] text-foreground/60 font-medium">
                                                         {timeAgo(notification.createdAt)}
                                                     </p>
                                                 </div>

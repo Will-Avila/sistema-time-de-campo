@@ -69,11 +69,11 @@ export default async function TodayOSPage({ searchParams }: PageProps) {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="min-h-screen bg-background">
             <HeaderServer />
-            <div className="container pt-24 pb-6">
+            <div className="container pt-6 pb-6">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Relatório de Produção</h1>
+                    <h1 className="text-3xl font-bold text-foreground mb-2">Relatório de Produção</h1>
                     <p className="text-sm text-muted-foreground">
                         Análise de produtividade e ordens de serviço finalizadas em <span className="font-bold text-primary">{selectedDate}</span>
                     </p>

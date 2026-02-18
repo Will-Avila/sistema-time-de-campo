@@ -47,12 +47,9 @@ export function Header({ username, isAdmin }: HeaderProps) {
                 </div>
 
                 {/* Center: User Info */}
-                <div className="flex items-center gap-3 text-foreground/90">
-                    <div className="text-right hidden md:block">
+                <div className="flex items-center gap-3 text-foreground/90 ml-2">
+                    <div className="text-right">
                         <p className="text-sm font-semibold leading-none">Olá, {firstName}</p>
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-                            {isAdmin ? 'Administrador' : 'Colaborador'}
-                        </p>
                     </div>
                     <div className="bg-primary/10 dark:bg-primary/20 p-2 rounded-full text-primary ring-2 ring-primary/5">
                         <User className="h-4 w-4" />
@@ -67,7 +64,7 @@ export function Header({ username, isAdmin }: HeaderProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        className="text-foreground/80 hover:text-primary hover:bg-primary/10"
                     >
                         <Menu className="h-6 w-6" />
                     </Button>

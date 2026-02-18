@@ -180,7 +180,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             await createNotification({
                 type: 'CHECKLIST' as any,
                 title: 'Caixa Concluída',
-                message: `${techName} concluiu CTO ${ctoName} na OS ${proto}${certified ? ' (Certificada)' : ''}${obs ? ` (Obs: ${obs})` : ''}`,
+                message: `${techName} concluiu CX ${ctoName} na OS ${proto}${certified ? ' (Certificada)' : ''}${obs ? ` (Obs: ${obs})` : ''}`,
                 equipeId: execution.equipeId || undefined,
                 technicianName: techName,
                 osId: osId
@@ -190,7 +190,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                 await createNotification({
                     type: 'CHECKLIST' as any,
                     title: 'Fotos Anexadas',
-                    message: `${techName} enviou ${uploadedCount} foto(s) da CTO ${ctoName} na OS ${proto}`,
+                    message: `${techName} enviou ${uploadedCount} foto(s) da CX ${ctoName} na OS ${proto}`,
                     equipeId: execution.equipeId || undefined,
                     technicianName: techName,
                     osId: osId
@@ -201,7 +201,7 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
             await createNotification({
                 type: 'CHECKLIST' as any,
                 title: 'Caixa NÃO Concluída',
-                message: `${techName} marcou CTO ${ctoName} como não concluída na OS ${proto}${obs ? ` (Alerta: ${obs})` : ''}`,
+                message: `${techName} marcou CX ${ctoName} como não concluída na OS ${proto}${obs ? ` (Alerta: ${obs})` : ''}`,
                 equipeId: execution.equipeId || undefined,
                 technicianName: techName,
                 osId: osId
@@ -310,7 +310,7 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         await createNotification({
             type: 'CHECKLIST' as any,
             title: 'Caixa Desmarcada',
-            message: `${resetTechName} desmarcou a CTO ${ctoName} na OS ${proto} (fotos removidas)`,
+            message: `${resetTechName} desmarcou a CX ${ctoName} na OS ${proto} (fotos removidas)`,
             equipeId: session.id,
             technicianName: resetTechName,
             osId: osId
@@ -423,7 +423,7 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
             await createNotification({
                 type: 'CHECKLIST' as any,
                 title: 'Novas Fotos Anexadas',
-                message: `${techName} enviou ${uploadedCount} novas foto(s) da CTO ${ctoName} na OS ${proto}`,
+                message: `${techName} enviou ${uploadedCount} novas foto(s) da CX ${ctoName} na OS ${proto}`,
                 equipeId: session.id,
                 technicianName: techName,
                 osId: osId

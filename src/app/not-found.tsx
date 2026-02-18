@@ -5,7 +5,7 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 
 export default function NotFound() {
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
             {/* Background Decorative Elements */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
@@ -19,17 +19,17 @@ export default function NotFound() {
                             <span className="text-[180px] font-black text-primary select-none">404</span>
                         </div>
                         <div className="relative flex justify-center">
-                            <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/50 p-8 rounded-3xl shadow-2xl">
+                            <div className="bg-card/40 backdrop-blur-md border border-border/50 p-8 rounded-3xl shadow-2xl">
                                 <MapPinOff className="h-16 w-16 text-primary animate-bounce" />
                             </div>
                         </div>
                     </div>
 
                     <div className="space-y-3">
-                        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                        <h1 className="text-4xl font-extrabold text-foreground tracking-tight">
                             Página não encontrada
                         </h1>
-                        <p className="text-slate-600 dark:text-slate-400 text-lg">
+                        <p className="text-muted-foreground text-lg">
                             Parece que você se perdeu em campo. O endereço que você procura não existe ou foi movido.
                         </p>
                     </div>
@@ -48,7 +48,7 @@ export default function NotFound() {
                 </div>
             </main>
 
-            <footer className="p-8 text-center text-sm text-slate-400/60 dark:text-slate-600">
+            <footer className="p-8 text-center text-sm text-muted-foreground/60">
                 &copy; {new Date().getFullYear()} XON Serviços - Sistema Time de Campo
             </footer>
         </div>

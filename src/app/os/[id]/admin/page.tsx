@@ -24,17 +24,17 @@ export default async function OSAdminEditPage({ params }: PageProps) {
     if (!os) return notFound();
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+        <div className="min-h-screen bg-background transition-colors">
             <HeaderServer />
 
-            <div className="container mx-auto max-w-2xl pt-24 px-4 pb-12">
+            <div className="container mx-auto max-w-2xl pt-6 px-4 pb-12">
                 <div className="mb-6 flex items-center gap-4">
-                    <Link href={`/os/${os.id}`} className="p-2 -ml-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
-                        <ArrowLeft className="h-6 w-6 text-slate-700 dark:text-slate-300" />
+                    <Link href={`/os/${os.id}`} className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors">
+                        <ArrowLeft className="h-6 w-6 text-foreground" />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editar Informações Administrativas</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">OS: {os.pop} | Protocolo: {os.protocolo}</p>
+                        <h1 className="text-2xl font-bold text-foreground">Editar Informações Administrativas</h1>
+                        <p className="text-sm text-muted-foreground">OS: {os.pop} | Protocolo: {os.protocolo}</p>
                     </div>
                 </div>
 

@@ -120,31 +120,35 @@ export default function OSExecutionClient({
                 triggerClassName="hidden"
             />
 
+            {!isClosed && (
+                <div className="flex justify-end">
+                    <Button
+                        size="lg"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 shadow-md transition-all active:scale-[0.98] animate-in slide-in-from-top-2"
+                        onClick={() => setIsClosureModalOpen(true)}
+                    >
+                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                        Encerrar Ordem de Serviço
+                    </Button>
+                </div>
+            )}
+
             {/* Progress Section */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <Box className="h-5 w-5 text-blue-500" />
-                        <h2 className="font-bold text-slate-800 dark:text-slate-100">Progresso da Execução</h2>
+                        <Box className="h-5 w-5 text-[#4da8bc]" />
+                        <h2 className="font-bold text-foreground">Progresso da Execução</h2>
                     </div>
                     <div className="flex items-center gap-4">
                         <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                            {totalMarked} / {stats.total} marcadas
+                            {totalMarked} / {stats.total}
                         </span>
-                        {!isClosed && (
-                            <Button
-                                size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 animate-in fade-in"
-                                onClick={() => setIsClosureModalOpen(true)}
-                            >
-                                Encerrar OS
-                            </Button>
-                        )}
                     </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                <div className="h-3 w-full bg-muted rounded-full overflow-hidden flex">
                     <div
                         className="h-full bg-emerald-500 transition-all duration-500 ease-out"
                         style={{ width: `${stats.donePct}%` }}
@@ -161,15 +165,15 @@ export default function OSExecutionClient({
                 <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium">
                     <div className="flex items-center gap-1.5">
                         <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                        <span className="text-slate-600 dark:text-slate-400">{stats.done} Concluídas</span>
+                        <span className="text-muted-foreground">{stats.done} Concluídas</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                        <span className="text-slate-600 dark:text-slate-400">{stats.pending} Pendentes</span>
+                        <span className="text-muted-foreground">{stats.pending} Pendentes</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <div className="h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700" />
-                        <span className="text-slate-600 dark:text-slate-400">{stats.untouched} A fazer</span>
+                        <div className="h-2.5 w-2.5 rounded-full bg-muted" />
+                        <span className="text-muted-foreground">{stats.untouched} A fazer</span>
                     </div>
                 </div>
             </div>
@@ -177,17 +181,17 @@ export default function OSExecutionClient({
             {/* Search Bar */}
             <div>
                 <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
                     <Input
                         placeholder="Buscar caixa (ex: FLA21-0123)..."
-                        className="pl-10 h-11 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-800 shadow-sm rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 focus-visible:ring-blue-500 focus-visible:border-blue-500"
+                        className="pl-10 h-11 bg-muted border-border shadow-sm rounded-xl ring-1 ring-border focus-visible:ring-blue-500 focus-visible:border-blue-500"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     {searchTerm && (
                         <button
                             onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground hover:text-foreground"
                         >
                             Limpar
                         </button>
@@ -198,12 +202,12 @@ export default function OSExecutionClient({
             {/* Caixa List */}
             <div className="pb-10 space-y-4">
                 {filteredItems.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-10 text-center">
-                        <div className="bg-slate-50 dark:bg-slate-800 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Search className="h-6 w-6 text-slate-400" />
+                    <div className="bg-card rounded-xl border border-dashed border-border p-10 text-center">
+                        <div className="bg-muted h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Search className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">Nenhuma caixa encontrada</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm">Tente ajustar sua busca ou limpar o filtro.</p>
+                        <h3 className="font-bold text-foreground mb-1">Nenhuma caixa encontrada</h3>
+                        <p className="text-muted-foreground text-sm">Tente ajustar sua busca ou limpar o filtro.</p>
                         {searchTerm && (
                             <button
                                 onClick={() => setSearchTerm('')}

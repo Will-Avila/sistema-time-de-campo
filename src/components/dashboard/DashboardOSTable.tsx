@@ -249,16 +249,16 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-border/50">
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">UF</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">OS</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Condomínio / POP</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Entrada</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Prazo</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Finalização</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Caixas</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Medição</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Observações</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">UF</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">OS</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Condomínio / POP</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Entrada</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Prazo</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Finalização</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Caixas</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Status</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Medição</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Observações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -276,7 +276,7 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                                 </Link>
                                             </td>
                                             <td className="py-3 px-4">
-                                                <Link href={`/os/${os.id}`} className="font-mono text-[11px] text-primary font-medium group-hover:underline decoration-primary/50 underline-offset-4">
+                                                <Link href={`/os/${os.id}`} className="font-mono text-[11px] text-primary font-bold hover:underline decoration-primary/80 underline-offset-4 bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
                                                     {os.protocolo || '-'}
                                                 </Link>
                                             </td>

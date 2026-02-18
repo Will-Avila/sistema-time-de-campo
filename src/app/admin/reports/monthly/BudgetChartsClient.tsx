@@ -59,7 +59,7 @@ export function BudgetChartsClient({ dailyEvolution, ufData, teamData }: ChartPr
             </Card>
 
             {/* 2. Budget by UF */}
-            <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+            <Card className="shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Orçamento por UF (Previsto vs Realizado)</CardTitle>
                 </CardHeader>
@@ -79,7 +79,7 @@ export function BudgetChartsClient({ dailyEvolution, ufData, teamData }: ChartPr
             </Card>
 
             {/* 3. Team Ranking */}
-            <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+            <Card className="shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Ranking de Equipes (Valor Concluído)</CardTitle>
                 </CardHeader>

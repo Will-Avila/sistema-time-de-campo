@@ -41,11 +41,11 @@ export default async function ExecutingOSPage() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="min-h-screen bg-background">
             <HeaderServer />
-            <div className="container pt-24 pb-6">
+            <div className="container pt-6 pb-6">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Ordens em Execução</h1>
+                    <h1 className="text-2xl font-bold text-foreground">Ordens em Execução</h1>
                     <p className="text-sm text-muted-foreground">Exibindo todas as ordens de serviço com status &quot;Em Execução&quot; no Excel</p>
                 </div>
 

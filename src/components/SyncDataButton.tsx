@@ -88,7 +88,7 @@ export function SyncDataButton() {
                 variant="outline"
                 disabled={isSyncing}
                 onClick={handleSync}
-                className="gap-2 border-border bg-background hover:bg-muted text-foreground h-11 px-6 transition-colors shadow-sm font-semibold"
+                className="gap-2 border-border bg-card dark:bg-muted hover:bg-muted text-foreground h-11 px-6 transition-colors shadow-sm font-semibold"
             >
                 {isSyncing ? (
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />

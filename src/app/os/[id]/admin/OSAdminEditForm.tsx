@@ -108,7 +108,7 @@ export function OSAdminEditForm({ osId, initialData }: OSAdminEditFormProps) {
                     Anexos
                 </label>
 
-                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors relative group">
+                <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-muted/50 transition-colors relative group">
                     <input
                         type="file"
                         multiple
@@ -116,14 +116,14 @@ export function OSAdminEditForm({ osId, initialData }: OSAdminEditFormProps) {
                         onChange={handleFileChange}
                     />
                     <div className="flex flex-col items-center gap-2">
-                        <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-full group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
-                            <Upload className="h-6 w-6 text-slate-500 dark:text-slate-400" />
+                        <div className="p-3 bg-muted rounded-full group-hover:bg-accent transition-colors">
+                            <Upload className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <div className="space-y-1">
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                            <p className="text-sm font-medium text-foreground">
                                 Clique para fazer upload
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                            <p className="text-xs text-muted-foreground">
                                 ou arraste e solte arquivos aqui
                             </p>
                         </div>
@@ -134,11 +134,11 @@ export function OSAdminEditForm({ osId, initialData }: OSAdminEditFormProps) {
                 {(existingFiles.length > 0 || files.length > 0) && (
                     <div className="space-y-2 mt-4">
                         {existingFiles.map(file => (
-                            <div key={file.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                            <div key={file.id} className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                                 <div className="flex items-center gap-3 overflow-hidden">
-                                    <Paperclip className="h-4 w-4 text-slate-400 shrink-0" />
+                                    <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
                                     <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{file.name}</span>
+                                        <span className="text-sm font-medium text-foreground truncate">{file.name}</span>
                                         <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
                                     </div>
                                 </div>
@@ -158,7 +158,7 @@ export function OSAdminEditForm({ osId, initialData }: OSAdminEditFormProps) {
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <Upload className="h-4 w-4 text-blue-500 shrink-0" />
                                     <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{file.name}</span>
+                                        <span className="text-sm font-medium text-foreground truncate">{file.name}</span>
                                         <span className="text-xs text-blue-600 dark:text-blue-400">Novo arquivo</span>
                                     </div>
                                 </div>
@@ -166,7 +166,7 @@ export function OSAdminEditForm({ osId, initialData }: OSAdminEditFormProps) {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                     onClick={() => removeNewFile(idx)}
                                 >
                                     <X className="h-4 w-4" />

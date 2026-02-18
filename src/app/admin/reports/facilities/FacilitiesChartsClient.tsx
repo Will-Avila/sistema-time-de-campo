@@ -19,7 +19,7 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* 1. Daily Evolution */}
-            <Card className="lg:col-span-2 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <Card className="lg:col-span-2 shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Evolução Diária de Facilidades (Entregas)</CardTitle>
                 </CardHeader>
@@ -56,7 +56,7 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
             </Card>
 
             {/* 2. Facilities by UF */}
-            <Card className="lg:col-span-2 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <Card className="lg:col-span-2 shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Distribuição por UF (Planejado vs Realizado)</CardTitle>
                 </CardHeader>

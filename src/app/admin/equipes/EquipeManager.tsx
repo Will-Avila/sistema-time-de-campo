@@ -167,7 +167,8 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                     <CardTitle>Usuários Cadastrados</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border">
+                    {/* Desktop View (Table) */}
+                    <div className="hidden md:block rounded-md border overflow-hidden">
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50 border-b">
                                 <tr className="text-left">
@@ -178,18 +179,15 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                     <th className="h-12 px-4 align-middle font-medium text-muted-foreground text-right">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y">
                                 {equipes.map((equipe) => (
-                                    <tr key={equipe.id} className="border-b transition-colors hover:bg-muted/50">
-                                        <td className="p-4 align-middle font-medium">
-                                            {equipe.name}
-                                            <div className="text-xs text-muted-foreground md:hidden">{equipe.fullName}</div>
-                                        </td>
-                                        <td className="p-4 align-middle hidden md:table-cell">{equipe.fullName || '-'}</td>
-                                        <td className="p-4 align-middle hidden md:table-cell">
+                                    <tr key={equipe.id} className="transition-colors hover:bg-muted/50">
+                                        <td className="p-4 align-middle font-medium">{equipe.name}</td>
+                                        <td className="p-4 align-middle">{equipe.fullName || '-'}</td>
+                                        <td className="p-4 align-middle">
                                             {equipe.phone ? (
                                                 <a
-                                                    href={`https://wa.me/${equipe.phone.replace(/\D/g, '')}`}
+                                                    href={`https://wa.me/55${equipe.phone.replace(/\D/g, '')}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="flex items-center gap-1.5 text-muted-foreground hover:text-green-600 transition-colors group"
@@ -197,7 +195,7 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                                     <svg
                                                         viewBox="0 0 24 24"
                                                         fill="currentColor"
-                                                        className="h-6 w-6 text-green-500/80 group-hover:text-green-600 group-hover:scale-110 transition-all"
+                                                        className="h-5 w-5 text-green-500/80 group-hover:text-green-600 transition-all"
                                                     >
                                                         <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.85.892 2.796.892 3.183 0 5.768-2.586 5.768-5.766-5e-4-3.18-2.585-5.779-5.768-5.779zm0 10c-.793 0-1.551-.237-2.181-.61l-.147-.091-1.492.391.398-1.455-.098-.168c-.461-.795-.71-1.579-.711-2.301.001-2.327 1.896-4.225 4.231-4.225 2.329 0 4.226 1.896 4.226 4.227 0 2.331-1.899 4.232-4.226 4.232zm2.149-3.297c-.113-.057-.667-.329-.771-.367-.103-.038-.179-.057-.254.057-.076.114-.291.368-.358.444-.067.076-.134.086-.247.029-.115-.057-.49-.181-.925-.568-.34-.303-.57-.677-.635-.792-.067-.114-.007-.176.05-.233.05-.05.113-.133.171-.199.057-.067.075-.114.113-.19.038-.076.019-.143-.01-.199-.029-.057-.254-.613-.349-.838-.093-.221-.188-.191-.257-.195l-.219-.005c-.076 0-.199.028-.303.143-.105.114-.403.394-.403.96 0 .567.412 1.115.47 1.191.058.077.81 1.238 1.965 1.737.954.412.954.275 1.309.256.354-.019 1.115-.456 1.229-.896.114-.44.114-.818.08-.875-.034-.057-.125-.091-.238-.148z" />
                                                     </svg>
@@ -209,7 +207,7 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                         </td>
                                         <td className="p-4 align-middle">
                                             {equipe.isAdmin ? (
-                                                <Badge className="bg-slate-900">Admin</Badge>
+                                                <Badge className="bg-primary">Admin</Badge>
                                             ) : (
                                                 <Badge variant="secondary">Equipe</Badge>
                                             )}
@@ -238,6 +236,66 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile View (Cards) */}
+                    <div className="md:hidden space-y-4">
+                        {equipes.map((equipe) => (
+                            <div key={equipe.id} className="p-4 border rounded-lg space-y-3 bg-card shadow-sm">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-bold text-foreground">{equipe.name}</p>
+                                        <p className="text-xs text-muted-foreground">{equipe.fullName || 'Sem nome completo'}</p>
+                                    </div>
+                                    {equipe.isAdmin ? (
+                                        <Badge className="bg-primary">Admin</Badge>
+                                    ) : (
+                                        <Badge variant="secondary">Equipe</Badge>
+                                    )}
+                                </div>
+
+                                {equipe.phone && (
+                                    <div className="pt-1">
+                                        <a
+                                            href={`https://wa.me/55${equipe.phone.replace(/\D/g, '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-green-600"
+                                        >
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                                className="h-5 w-5 text-green-500"
+                                            >
+                                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.85.892 2.796.892 3.183 0 5.768-2.586 5.768-5.766-5e-4-3.18-2.585-5.779-5.768-5.779zm0 10c-.793 0-1.551-.237-2.181-.61l-.147-.091-1.492.391.398-1.455-.098-.168c-.461-.795-.71-1.579-.711-2.301.001-2.327 1.896-4.225 4.231-4.225 2.329 0 4.226 1.896 4.226 4.227 0 2.331-1.899 4.232-4.226 4.232zm2.149-3.297c-.113-.057-.667-.329-.771-.367-.103-.038-.179-.057-.254.057-.076.114-.291.368-.358.444-.067.076-.134.086-.247.029-.115-.057-.49-.181-.925-.568-.34-.303-.57-.677-.635-.792-.067-.114-.007-.176.05-.233.05-.05.113-.133.171-.199.057-.067.075-.114.113-.19.038-.076.019-.143-.01-.199-.029-.057-.254-.613-.349-.838-.093-.221-.188-.191-.257-.195l-.219-.005c-.076 0-.199.028-.303.143-.105.114-.403.394-.403.96 0 .567.412 1.115.47 1.191.058.077.81 1.238 1.965 1.737.954.412.954.275 1.309.256.354-.019 1.115-.456 1.229-.896.114-.44.114-.818.08-.875-.034-.057-.125-.091-.238-.148z" />
+                                            </svg>
+                                            {equipe.phone}
+                                        </a>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 pt-2 border-t">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 h-9 gap-1.5 text-blue-600 border-blue-100 hover:bg-blue-50"
+                                        onClick={() => setEditTarget(equipe)}
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                        Editar
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 h-9 gap-1.5 text-destructive border-destructive/10 hover:bg-destructive/5"
+                                        onClick={() => setDeleteTarget({ id: equipe.id, name: equipe.name })}
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        Remover
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
