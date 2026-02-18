@@ -229,7 +229,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     <span className="block text-foreground/70 mb-1 text-[10px] uppercase font-bold tracking-wider">Total Caixas</span>
                                     <div className="flex items-center gap-1.5 font-medium text-foreground/80">
                                         <Wrench className="h-3.5 w-3.5 text-[#4da8bc]" />
-                                        {os.items.length} CTOs
+                                        {os.items.length} CXs
                                     </div>
                                 </div>
 

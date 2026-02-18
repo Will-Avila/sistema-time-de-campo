@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Filter, Wrench, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Wrench, ArrowRight, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,15 +19,15 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
     const [selectedUF, setSelectedUF] = useState('Todos');
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Todas']);
     const [isStatusOpen, setIsStatusOpen] = useState(false);
-    const [selectedMedicaoStatuses, setSelectedMedicaoStatuses] = useState<string[]>(['Todas']);
-    const [isMedicaoOpen, setIsMedicaoOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [sortField, setSortField] = useState<'dataEntrante' | 'dataPrevExec' | 'dataConclusao'>('dataEntrante');
+    const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
     const ITEMS_PER_PAGE = 50;
 
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedUF, selectedStatuses, selectedMedicaoStatuses]);
+    }, [searchTerm, selectedUF, selectedStatuses]);
 
     // Filter Logic
     const filteredList = initialOSList.filter(os => {
@@ -58,42 +58,38 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
             matchesStatus = matchesAny;
         }
 
-        let matchesMedicao = true;
-        if (!selectedMedicaoStatuses.includes('Todas')) {
-            matchesMedicao = selectedMedicaoStatuses.includes(os.statusMedicao || 'Vazio');
-        }
-
-        return matchesUF && matchesSearch && matchesStatus && matchesMedicao;
+        return matchesUF && matchesSearch && matchesStatus;
     });
     const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
 
     // Sort logic
     const sortedList = [...filteredList].sort((a, b) => {
-        const parseDate = (d: string) => {
-            if (!d || d === '-') return new Date(8640000000000000).getTime();
+        const parseDate = (d?: string) => {
+            if (!d || d === '-' || d === 'N/A' || d === '') {
+                // Return extreme values to keep empty dates at the bottom or top depending on direction
+                return sortDirection === 'asc' ? 8640000000000000 : 0;
+            }
             const [day, month, year] = d.split('/').map(Number);
             return new Date(year, month - 1, day).getTime();
         };
-        return parseDate(a.dataPrevExec) - parseDate(b.dataPrevExec);
+
+        const dateA = parseDate(a[sortField]);
+        const dateB = parseDate(b[sortField]);
+
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
     const paginatedList = sortedList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const ufs = ['Todos', ...Array.from(new Set(initialOSList.map(os => os.uf).filter(Boolean))).sort()];
     const statuses = ['Todas', 'Iniciar', 'Em execução', 'Concluída', 'Cancelada'];
-    const medicaoStatuses = ['Todas', ...Array.from(new Set(initialOSList.map(os => os.statusMedicao || 'Vazio'))).sort()];
 
     return (
         <div className="space-y-4">
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center bg-card p-4 rounded-xl border border-border shadow-sm">
-                <div className="flex items-center gap-3 flex-1">
-                    <div className="shrink-0">
-                        <Badge variant="secondary" className="px-2 py-1 h-7 font-mono text-xs">
-                            {filteredList.length}
-                        </Badge>
-                    </div>
-                    <div className="relative flex-1 group">
+                <div className="flex items-center gap-3 flex-1 group">
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         <Input
                             placeholder="Buscar por protocolo, POP ou condomínio..."
@@ -179,65 +175,43 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                             </>
                         )}
                     </div>
+                </div>
+            </div>
 
-                    <div className="relative flex-1 md:w-56">
-                        <button
-                            type="button"
-                            onClick={() => setIsMedicaoOpen(!isMedicaoOpen)}
-                            className="h-10 w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            {/* Advanced Sorting Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-muted/30 p-3 rounded-lg border border-border/50">
+                <div className="flex items-center gap-2">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground whitespace-nowrap">Ordenar por:</span>
+                    <div className="relative w-36 xs:w-44">
+                        <select
+                            value={sortField}
+                            onChange={(e) => setSortField(e.target.value as any)}
+                            className="h-8 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-7 py-0 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all cursor-pointer hover:bg-accent"
                         >
-                            <span className="truncate">
-                                {selectedMedicaoStatuses.includes('Todas') ? 'Todas Medições' : selectedMedicaoStatuses.join(', ')}
-                            </span>
-                            <Filter className="h-3 w-3 text-muted-foreground shrink-0 ml-2" />
-                        </button>
+                            <option value="dataEntrante">Data de Entrada</option>
+                            <option value="dataPrevExec">Prazo (Prev. Execução)</option>
+                            <option value="dataConclusao">Finalização (Concluída)</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                            <Filter className="h-2.5 w-2.5" />
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors"
+                        onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        title={sortDirection === 'asc' ? 'Ordem Crescente' : 'Ordem Decrescente'}
+                    >
+                        {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                    </Button>
+                </div>
 
-                        {isMedicaoOpen && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setIsMedicaoOpen(false)}
-                                />
-                                <div className="absolute top-12 left-0 right-0 z-20 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top p-1">
-                                    <div className="max-h-60 overflow-y-auto space-y-0.5">
-                                        {medicaoStatuses.map(s => {
-                                            const isChecked = selectedMedicaoStatuses.includes(s);
-                                            return (
-                                                <button
-                                                    key={s}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (s === 'Todas') {
-                                                            setSelectedMedicaoStatuses(['Todas']);
-                                                        } else {
-                                                            let newSelection = selectedMedicaoStatuses.filter(item => item !== 'Todas');
-                                                            if (isChecked) {
-                                                                newSelection = newSelection.filter(item => item !== s);
-                                                                if (newSelection.length === 0) newSelection = ['Todas'];
-                                                            } else {
-                                                                newSelection.push(s);
-                                                                if (newSelection.length === medicaoStatuses.length - 1) newSelection = ['Todas'];
-                                                            }
-                                                            setSelectedMedicaoStatuses(newSelection);
-                                                        }
-                                                    }}
-                                                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-colors ${isChecked ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
-                                                >
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                                                        {isChecked && (
-                                                            <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        )}
-                                                    </div>
-                                                    {s}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </>
-                        )}
+                <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground font-medium">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border border-border/50">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        {filteredList.length} registros encontrados
                     </div>
                 </div>
             </div>
@@ -257,7 +231,7 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Finalização</th>
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Caixas</th>
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Status</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Medição</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Cenário</th>
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Observações</th>
                                 </tr>
                             </thead>
@@ -333,8 +307,8 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                             </td>
                                             <td className="py-3 px-4">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded w-fit ${os.statusMedicao === 'Pago' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50' : os.statusMedicao === 'Medido' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50' : 'bg-muted text-muted-foreground border border-border'}`}>
-                                                        {os.statusMedicao || '-'}
+                                                    <div className="text-[10px] font-bold px-2 py-0.5 rounded w-fit bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
+                                                        {os.tipoOs || '-'}
                                                     </div>
                                                 </Link>
                                             </td>
@@ -363,7 +337,6 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                     setSearchTerm('');
                                     setSelectedUF('Todos');
                                     setSelectedStatuses(['Todas']);
-                                    setSelectedMedicaoStatuses(['Todas']);
                                 }}
                                 className="text-xs text-primary font-semibold hover:underline mt-1"
                             >

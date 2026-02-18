@@ -7,6 +7,7 @@ import { syncProgressStore } from '@/lib/sync-progress';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { getOSStatusInfo, getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
+import { getSession } from '@/lib/auth';
 
 export async function getSyncProgress() {
     await requireAdmin();
@@ -30,6 +31,7 @@ export async function refreshData() {
 export async function getDashboardData(targetDate?: string) {
     // 1. Get Base OS Data
     const todayDate = targetDate || getTodaySP();
+    const session = await getSession();
     const [osRecords, excelOSList, equipes, recentNotifications] = await Promise.all([
         prisma.orderOfService.findMany({
             include: {
@@ -48,6 +50,13 @@ export async function getDashboardData(targetDate?: string) {
             select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true },
         }),
         prisma.notification.findMany({
+            where: session?.isAdmin ? {
+                archived: false,
+                OR: [
+                    { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
+                    { type: 'NEW_OS', equipeId: session.id }
+                ]
+            } : (session ? { equipeId: session.id, archived: false } : { id: 'none' }),
             orderBy: { createdAt: 'desc' },
             take: 10,
             include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
