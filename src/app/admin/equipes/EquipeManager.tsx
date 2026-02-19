@@ -150,7 +150,7 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                     className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                     <option value="USER">Equipe / Técnico</option>
-                                    <option value="SUPERVISOR">Supervisor</option>
+                                    <option value="SUPERVISOR">Gestor</option>
                                     <option value="ADMIN">Administrador</option>
                                 </select>
                             </div>
@@ -341,7 +341,7 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                         className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     >
                                         <option value="USER">Equipe / Responsável</option>
-                                        <option value="SUPERVISOR">Supervisor</option>
+                                        <option value="SUPERVISOR">Gestor</option>
                                         <option value="ADMIN">Administrador</option>
                                     </select>
                                 </div>

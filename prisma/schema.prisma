@@ -30,11 +30,12 @@ model OrderOfService {
   condominio            String?
   descricao             String?
   observacoes           String?
-  attachments           OSAttachment[]
   caixas                CaixaAlare[]
   notifications         Notification[]
-  execution             ServiceExecution?
+  attachments           OSAttachment[]
   delegations           OSDelegation[]
+  materials             OsMaterial[]
+  execution             ServiceExecution?
 
   @@index([status])
 }
@@ -103,7 +104,7 @@ model Equipe {
   fullName      String?
   password      String             @default("")
   isAdmin       Boolean            @default(false)
-  role          String             @default("USER") // ADMIN, SUPERVISOR, USER
+  role          String             @default("USER")
   theme         String             @default("system")
   lastUf        String             @default("Todos")
   lastSearch    String             @default("")
@@ -117,9 +118,10 @@ model Equipe {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   notifications Notification[]     @relation("EquipeNotifications")
-  executions    ServiceExecution[] @relation("EquipeExecutions")
-  photos        Photo[]            @relation("EquipePhotos")
   delegations   OSDelegation[]
+  materials     OsMaterial[]
+  photos        Photo[]            @relation("EquipePhotos")
+  executions    ServiceExecution[] @relation("EquipeExecutions")
 }
 
 model ServiceExecution {
@@ -133,8 +135,8 @@ model ServiceExecution {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   photos         Photo[]
-  equipe         Equipe?        @relation("EquipeExecutions", fields: [equipeId], references: [id])
   os             OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
+  equipe         Equipe?        @relation("EquipeExecutions", fields: [equipeId], references: [id])
 
   @@index([osId])
 }
@@ -146,9 +148,9 @@ model Photo {
   equipeId    String?
   path        String
   createdAt   DateTime          @default(now())
-  execution   ServiceExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
-  equipe      Equipe?           @relation("EquipePhotos", fields: [equipeId], references: [id], onDelete: SetNull)
   caixa       CaixaAlare?       @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+  equipe      Equipe?           @relation("EquipePhotos", fields: [equipeId], references: [id])
+  execution   ServiceExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
 
   @@index([caixaId])
   @@index([executionId])
@@ -165,22 +167,22 @@ model Notification {
   equipeId       String?
   technicianName String?
   osId           String?
-  os             OrderOfService? @relation(fields: [osId], references: [id])
   equipe         Equipe?         @relation("EquipeNotifications", fields: [equipeId], references: [id])
+  os             OrderOfService? @relation(fields: [osId], references: [id])
 
   @@index([read, archived, createdAt])
   @@index([equipeId])
 }
 
 model OSAttachment {
-  id          String         @id @default(uuid())
-  osId        String
-  name        String
-  path        String
-  type        String
-  size        Int
-  createdAt   DateTime       @default(now())
-  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
+  id        String         @id @default(uuid())
+  osId      String
+  name      String
+  path      String
+  type      String
+  size      Int
+  createdAt DateTime       @default(now())
+  os        OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
 }
 
 model OSDelegation {
@@ -189,10 +191,23 @@ model OSDelegation {
   equipeId    String
   delegatedBy String
   createdAt   DateTime       @default(now())
-  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
   equipe      Equipe         @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
 
   @@unique([osId, equipeId])
   @@index([equipeId])
   @@index([osId])
+}
+
+model OsMaterial {
+  id        String         @id @default(uuid())
+  osId      String
+  equipeId  String
+  content   String
+  createdAt DateTime       @default(now())
+  equipe    Equipe         @relation(fields: [equipeId], references: [id])
+  os        OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
+
+  @@index([osId])
+  @@index([equipeId])
 }

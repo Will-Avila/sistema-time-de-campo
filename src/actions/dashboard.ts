@@ -6,7 +6,7 @@ import { syncExcelToDB } from '@/lib/sync';
 import { syncProgressStore } from '@/lib/sync-progress';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
-import { getOSStatusInfo, getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
+import { getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
 import { getSession } from '@/lib/auth';
 
 export async function getSyncProgress() {
@@ -32,10 +32,10 @@ export async function getDashboardData(targetDate?: string) {
     // 1. Get Base OS Data
     const todayDate = targetDate || getTodaySP();
     const session = await getSession();
-    const [osRecords, excelOSList, equipes, recentNotifications] = await Promise.all([
+    const [osRecords, excelOSList, equipes, recentNotifications, launchesToday] = await Promise.all([
         prisma.orderOfService.findMany({
             include: {
-                caixas: { select: { status: true, nomeEquipe: true, data: true } },
+                caixas: { select: { status: true, nomeEquipe: true, data: true, equipe: true } },
                 execution: {
                     include: {
                         equipe: { select: { name: true, fullName: true, nomeEquipe: true } }
@@ -47,7 +47,7 @@ export async function getDashboardData(targetDate?: string) {
         getAllOS(),
         prisma.equipe.findMany({
             where: { isAdmin: false },
-            select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true },
+            select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true, codEquipe: true, excelId: true },
         }),
         prisma.notification.findMany({
             where: session?.isAdmin ? {
@@ -59,8 +59,28 @@ export async function getDashboardData(targetDate?: string) {
             orderBy: { createdAt: 'desc' },
             take: 100,
             include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
+        }),
+        prisma.lancaAlare.findMany({
+            where: { data: todayDate }
         })
     ]);
+
+    const equipeMap = new Map<string, string>();
+    equipes.forEach(e => {
+        const displayName = e.fullName || e.nomeEquipe || e.name;
+        if (e.id) equipeMap.set(String(e.id).toLowerCase(), displayName);
+        if (e.excelId) equipeMap.set(String(e.excelId).toLowerCase(), displayName);
+        if (e.codEquipe) equipeMap.set(String(e.codEquipe).toLowerCase(), displayName);
+        if (e.name) equipeMap.set(e.name.toLowerCase(), displayName);
+        if (e.nomeEquipe) equipeMap.set(e.nomeEquipe.toLowerCase(), displayName);
+        if (e.fullName) equipeMap.set(e.fullName.toLowerCase(), displayName);
+    });
+
+    const resolveTeamName = (idOrName: string | null | undefined): string => {
+        if (!idOrName) return 'Sem Equipe';
+        const normalized = String(idOrName).trim().toLowerCase();
+        return equipeMap.get(normalized) || String(idOrName).trim();
+    };
 
     // 4. Merge Data for the List (Use Excel as base for metadata like dataConclusao)
     const executionMap = new Map(osRecords.map(r => [r.id, r]));
@@ -86,18 +106,15 @@ export async function getDashboardData(targetDate?: string) {
     });
 
     // 5. Calculate Stats
-    // Sync with OSListClient.tsx filters
     const OPEN_EXCEL_STATUSES = ['INICIAR', 'EM EXECUÇÃO', 'EM EXECUCAO', 'PEND. CLIENTE'];
     const FINISHED_EXCEL_STATUSES = ['CONCLUÍDO', 'CONCLUIDO', 'CONCLUÍDA', 'CANCELADO'];
 
-    // OS Abertas -> Match OSListClient logic EXACTLY (uses raw Excel status)
     const openOS = osList.filter(os => {
         const s = (os.rawStatus || '').toUpperCase().trim();
         return OPEN_EXCEL_STATUSES.includes(s);
     });
     const open = openOS.length;
 
-    // UF Breakdown for OPEN OS (requested by user)
     const openUfMap: Record<string, number> = {};
     openOS.forEach(os => {
         const uf = os.uf || 'N/A';
@@ -109,56 +126,35 @@ export async function getDashboardData(targetDate?: string) {
         .sort((a, b) => {
             const indexA = UF_ORDER.indexOf(a.uf);
             const indexB = UF_ORDER.indexOf(b.uf);
-
             if (indexA !== -1 && indexB !== -1) return indexA - indexB;
             if (indexA !== -1) return -1;
             if (indexB !== -1) return 1;
-
             return b.count - a.count;
         });
 
-
     const completedToday = osList.filter(os => {
-        // Condition 1: Explicit closure date in Excel for TODAY
         const isExcelToday = os.dataConclusao === todayDate;
-
-        // If Excel says it was closed on a different day, it CANNOT be today's work
         if (os.dataConclusao !== '-' && os.dataConclusao !== todayDate) return false;
-
-        // Condition 2: Technical work completed by the app TODAY
         const dbRecord = executionMap.get(os.id);
         const execUpdateToday = dbRecord?.execution?.updatedAt && isSameDaySP(dbRecord.execution.updatedAt, todayDate);
-
         const s = (os.executionStatus || '').toUpperCase().trim();
         const raw = (os.rawStatus || '').toUpperCase().trim();
-        const isFinished =
-            s.includes('CONCLUÍD') || s.includes('CONCLUID') ||
-            s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') ||
-            s.includes('EM ANÁLIS') || s.includes('EM ANALIS') ||
-            s.includes('CANCELAD') || raw === 'CANCELADO';
-
-        // Strict App Today check: Only count if it's finished AND (explicit tech work today OR explicit Excel date)
-        const isAppToday = os.lastUpdate && isSameDaySP(new Date(os.lastUpdate), todayDate) && isFinished &&
-            (execUpdateToday || isExcelToday);
-
+        const isFinished = s.includes('CONCLUÍD') || s.includes('CONCLUID') || s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') || s.includes('EM ANÁLIS') || s.includes('EM ANALIS') || s.includes('CANCELAD') || raw === 'CANCELADO';
+        const isAppToday = os.lastUpdate && isSameDaySP(new Date(os.lastUpdate), todayDate) && isFinished && (execUpdateToday || isExcelToday);
         return isExcelToday || isAppToday;
     });
 
     const completedTodayCount = completedToday.length;
-
     const todayCanceladas = completedToday.filter(os => {
         const s = (os.executionStatus || '').toUpperCase().trim();
         const raw = (os.rawStatus || '').toUpperCase().trim();
-        // It's Cancelada if execution status contains SEM EXECUÇÃO OR raw excel status is CANCELADO
-        const isCancellation = s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') || s.includes('CANCELAD') || raw === 'CANCELADO';
-        return isCancellation;
+        return s.includes('SEM EXECUÇ') || s.includes('SEM EXECUC') || s.includes('CANCELAD') || raw === 'CANCELADO';
     }).length;
 
     const todayConcluidas = completedTodayCount - todayCanceladas;
 
     const completedMonth = osList.filter(os => {
         const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-        // Get month in SP
         const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
         const nowSP = new Date(nowSPStr);
         const currentMonthName = months[nowSP.getMonth()];
@@ -178,8 +174,7 @@ export async function getDashboardData(targetDate?: string) {
 
     const inProgress = osList.filter(item => {
         const s = (item.rawStatus || '').toUpperCase().trim();
-        return (item.status === 'IN_PROGRESS' || (item.checklistDone > 0 && item.status !== 'DONE')) &&
-            OPEN_EXCEL_STATUSES.includes(s);
+        return (item.status === 'IN_PROGRESS' || (item.checklistDone > 0 && item.status !== 'DONE')) && OPEN_EXCEL_STATUSES.includes(s);
     }).length;
 
     const emExecucaoOS = osList.filter(item => {
@@ -198,21 +193,18 @@ export async function getDashboardData(targetDate?: string) {
         .sort((a, b) => {
             const indexA = UF_ORDER.indexOf(a.uf);
             const indexB = UF_ORDER.indexOf(b.uf);
-
             if (indexA !== -1 && indexB !== -1) return indexA - indexB;
             if (indexA !== -1) return -1;
             if (indexB !== -1) return 1;
-
             return b.count - a.count;
         });
 
-    const completionRate = (open + completedTotal) > 0
-        ? Math.round((completedTotal / (open + completedTotal)) * 100)
-        : 0;
+    const completionRate = (open + completedTotal) > 0 ? Math.round((completedTotal / (open + completedTotal)) * 100) : 0;
 
     // 6. Calculate Monthly Budget (MMM-YY format)
     const monthsShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-    const nowSP = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    const nowSP = new Date(nowSPStr);
     const currentBudgetMonth = `${monthsShort[nowSP.getMonth()]}-${nowSP.getFullYear().toString().slice(-2)}`;
 
     let budgetTotal = 0;
@@ -226,49 +218,34 @@ export async function getDashboardData(targetDate?: string) {
         if (os.mes === currentBudgetMonth) {
             const val = (os.valorServico || 0);
             budgetTotal += val;
-
             const boxesPlanned = (os.caixasPlanejadas || 0);
             boxesTotal += boxesPlanned;
             boxesDone += (os.checklistDone || 0);
-
             const s = (os.rawStatus || '').toUpperCase().trim();
             const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
-
-            if (isFinished) {
-                budgetDone += val;
-            }
-
+            if (isFinished) budgetDone += val;
             const facPlanned = (os.facilidadesPlanejadas || 0);
             facilitiesTotal += facPlanned;
-            if (isFinished) {
-                facilitiesDone += facPlanned;
-            }
+            if (isFinished) facilitiesDone += facPlanned;
         }
     });
 
-    // 7. UF Deadline Breakdown (for open OSs)
+    // 7. UF Deadline Breakdown
     const deadlineUfMap = new Map<string, { vencido: number; hoje: number; em5dias: number; acima5dias: number; total: number }>();
     osList.forEach(os => {
         const s = (os.rawStatus || '').toUpperCase().trim();
         const isOpen = OPEN_EXCEL_STATUSES.includes(s);
-
         if (isOpen) {
             const uf = os.uf || 'N/A';
-            if (!deadlineUfMap.has(uf)) {
-                deadlineUfMap.set(uf, { vencido: 0, hoje: 0, em5dias: 0, acima5dias: 0, total: 0 });
-            }
+            if (!deadlineUfMap.has(uf)) deadlineUfMap.set(uf, { vencido: 0, hoje: 0, em5dias: 0, acima5dias: 0, total: 0 });
             const entry = deadlineUfMap.get(uf)!;
             const days = getDaysRemaining(os.dataPrevExec);
-
             if (days !== null) {
                 if (days < 0) entry.vencido++;
                 else if (days === 0) entry.hoje++;
                 else if (days <= 5) entry.em5dias++;
                 else entry.acima5dias++;
             } else {
-                // If no deadline, count as > 5 or maybe a separate category? 
-                // Image doesn't show "No Deadline", so I'll count as > 5 or ignore total?
-                // Let's count in total anyway.
                 entry.acima5dias++;
             }
             entry.total++;
@@ -276,7 +253,7 @@ export async function getDashboardData(targetDate?: string) {
     });
 
     const deadlineUfBreakdown = Array.from(deadlineUfMap.entries())
-        .map(([uf, data]) => ({ uf, ...data }))
+        .map(([uf, d]) => ({ uf, ...d }))
         .sort((a, b) => b.total - a.total);
 
     const deadlineGrandTotal = deadlineUfBreakdown.reduce((acc, curr) => ({
@@ -287,7 +264,6 @@ export async function getDashboardData(targetDate?: string) {
         total: acc.total + curr.total
     }), { vencido: 0, hoje: 0, em5dias: 0, acima5dias: 0, total: 0 });
 
-    // Keep old ufBreakdown for other possible components or compatibility
     const ufMap = new Map<string, { total: number; done: number }>();
     osList.forEach(os => {
         const uf = os.uf || 'N/A';
@@ -298,12 +274,12 @@ export async function getDashboardData(targetDate?: string) {
         if (os.status === 'DONE' || FINISHED_EXCEL_STATUSES.includes(s)) entry.done++;
     });
     const ufBreakdown = Array.from(ufMap.entries())
-        .map(([uf, data]) => ({ uf, ...data }))
+        .map(([uf, d]) => ({ uf, ...d }))
         .sort((a, b) => b.total - a.total);
 
-    // 7. Technician Performance & Daily OS Execution
+    // 8. Technician Performance & Daily OS Execution
     const techMap = new Map<string, { name: string; phone: string | null; completed: number; pending: number; checklistItems: number }>();
-    const osPerformanceMap = new Map<string, { protocolo: string; pop: string; condominio: string | null; teams: Record<string, number> }>();
+    const osPerformanceMap = new Map<string, { protocolo: string; pop: string; condominio: string | null; teams: Record<string, { caixas: number; metrosLancados: number }> }>();
 
     equipes.forEach(t => {
         techMap.set(t.id, { name: t.fullName || t.nomeEquipe || t.name, phone: t.phone, completed: 0, pending: 0, checklistItems: 0 });
@@ -316,27 +292,44 @@ export async function getDashboardData(targetDate?: string) {
             if (entry) {
                 if (exec.status === 'DONE') entry.completed++;
                 else entry.pending++;
-
-                // General count
                 entry.checklistItems += os.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length;
             }
         }
+    });
 
-        // Aggregate Today's productivity by OS and Team
+    // Aggregate today's performance
+    launchesToday.forEach(l => {
+        if (!l.osId) return;
+        const teamName = resolveTeamName(l.equipe);
+        if (!osPerformanceMap.has(l.osId)) {
+            const osInfo = osList.find(o => o.id === l.osId);
+            osPerformanceMap.set(l.osId, {
+                protocolo: osInfo?.protocolo || l.osId,
+                pop: osInfo?.pop || '-',
+                condominio: (osInfo as any)?.condominio || null,
+                teams: {}
+            });
+        }
+        const osEntry = osPerformanceMap.get(l.osId)!;
+        if (!osEntry.teams[teamName]) osEntry.teams[teamName] = { caixas: 0, metrosLancados: 0 };
+        // Somar a metragem lançada (convertendo de string para número)
+        const metragem = parseFloat(l.lancado?.replace(',', '.') || '0');
+        if (!isNaN(metragem)) {
+            osEntry.teams[teamName].metrosLancados += metragem;
+        }
+    });
+
+    osRecords.forEach(os => {
         os.caixas.forEach(caixa => {
             const isDoneToday = (caixa.status === 'OK' || caixa.status === 'Concluído') && caixa.data === todayDate;
             if (isDoneToday) {
-                const teamName = caixa.nomeEquipe || 'Sem Equipe';
+                const teamName = resolveTeamName(caixa.nomeEquipe || caixa.equipe);
                 if (!osPerformanceMap.has(os.id)) {
-                    osPerformanceMap.set(os.id, {
-                        protocolo: os.protocolo,
-                        pop: os.pop,
-                        condominio: os.condominio,
-                        teams: {}
-                    });
+                    osPerformanceMap.set(os.id, { protocolo: os.protocolo, pop: os.pop, condominio: os.condominio, teams: {} });
                 }
                 const osEntry = osPerformanceMap.get(os.id)!;
-                osEntry.teams[teamName] = (osEntry.teams[teamName] || 0) + 1;
+                if (!osEntry.teams[teamName]) osEntry.teams[teamName] = { caixas: 0, metrosLancados: 0 };
+                osEntry.teams[teamName].caixas += 1;
             }
         });
     });
@@ -345,14 +338,17 @@ export async function getDashboardData(targetDate?: string) {
         .map(os => ({
             title: os.condominio ? `${os.condominio.toUpperCase()} - ${os.protocolo}` : os.protocolo,
             pop: os.pop,
-            teams: Object.entries(os.teams).map(([name, count]) => ({ name, count }))
+            teams: Object.entries(os.teams).map(([name, counts]) => ({
+                name,
+                caixas: counts.caixas || 0,
+                metrosLancados: counts.metrosLancados || 0
+            }))
         }));
 
     const techPerformance = Array.from(techMap.values())
         .filter(t => t.completed > 0 || t.pending > 0)
         .sort((a, b) => b.completed - a.completed);
 
-    // 8. Activity Feed from Notifications
     const activityFeed = recentNotifications.map(n => ({
         id: n.id,
         type: n.type,

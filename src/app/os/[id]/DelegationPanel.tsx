@@ -76,12 +76,8 @@ export default function DelegationPanel({ osId, canDelegate }: DelegationPanelPr
         });
     }
 
-    function selectAll() {
-        if (selectedIds.size === equipes.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(equipes.map(e => e.id)));
-        }
+    function deselectAll() {
+        setSelectedIds(new Set());
     }
 
     async function handleSave() {
@@ -164,14 +160,16 @@ export default function DelegationPanel({ osId, canDelegate }: DelegationPanelPr
                             </Button>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-4 overflow-hidden">
-                            {/* Select All */}
+                            {/* Deselect All */}
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">
                                     {selectedIds.size} de {equipes.length} selecionadas
                                 </span>
-                                <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs h-7">
-                                    {selectedIds.size === equipes.length ? 'Desmarcar Todas' : 'Selecionar Todas'}
-                                </Button>
+                                {selectedIds.size > 0 && (
+                                    <Button variant="ghost" size="sm" onClick={deselectAll} className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10">
+                                        Desmarcar Todas
+                                    </Button>
+                                )}
                             </div>
 
                             {/* Search */}

@@ -252,17 +252,48 @@ export async function resetChecklistItem(osId: string, itemId: string) {
     if (!session) return { success: false, message: 'Não autenticado.' };
 
     try {
-        // Ownership Check: Only owner or Admin can reset
+        // Ownership Check: Hierarquia de permissões
         const box = await prisma.caixaAlare.findUnique({
             where: { id: itemId },
-            select: { equipe: true, status: true }
+            select: {
+                equipe: true,
+                status: true,
+                // Buscar o autor original para validar role
+            }
         });
 
         if (!box) return { success: false, message: 'Caixa não encontrada.' };
 
-        // If it's not the owner and not an admin, block
-        if (box.equipe !== session.id && !session.isAdmin) {
-            return { success: false, message: 'Não autorizado. Apenas o técnico que realizou a caixa ou um administrador podem desmarcar.' };
+        // Buscar dados do autor do registro original
+        const originalAuthor = box.equipe ? await prisma.equipe.findUnique({
+            where: { id: box.equipe },
+            select: { role: true, id: true }
+        }) : null;
+
+        const originalRole = originalAuthor?.role || 'USER';
+
+        // Lógica de Permissão:
+        // 1. Admin pode tudo
+        // 2. Supervisor pode de técnicos (USER) ou dele mesmo
+        // 3. Técnico (USER) só dele mesmo
+
+        let canReset = false;
+        if (session.isAdmin) {
+            canReset = true;
+        } else if (session.role === 'SUPERVISOR') {
+            canReset = originalRole === 'USER' || box.equipe === session.id;
+        } else {
+            canReset = box.equipe === session.id;
+        }
+
+        if (!canReset) {
+            let errorMsg = 'Não autorizado.';
+            if (session.role === 'SUPERVISOR' && originalRole === 'ADMIN') {
+                errorMsg = 'Gestores não podem desmarcar registros feitos por Administradores.';
+            } else if (session.role === 'USER' && box.equipe !== session.id) {
+                errorMsg = 'Você só pode desmarcar registros que você mesmo realizou.';
+            }
+            return { success: false, message: errorMsg };
         }
 
         // Find all photos associated with this box (caixaId = itemId)
@@ -289,7 +320,8 @@ export async function resetChecklistItem(osId: string, itemId: string) {
                 nomeEquipe: '',
                 potencia: '',
                 certified: false,
-                obs: ''
+                obs: '',
+                data: ''
             }
         });
 

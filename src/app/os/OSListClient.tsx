@@ -184,8 +184,8 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                     </div>
                 )}
 
-                {/* Filters - Hide for Technician View */}
-                {!isTechnicianView && (
+                {/* Filters */}
+                {!isTodayPage && (
                     <Card className="bg-card border-border shadow-sm">
                         <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center">
                             <div className="relative flex-1 w-full">
@@ -205,32 +205,15 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                 <div className="flex items-center gap-3 w-full sm:w-auto">
                                     <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
                                     <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
-                                        <div className="relative w-full sm:w-auto">
-                                            <select
-                                                value={selectedUF}
-                                                onChange={(e) => handleUFChange(e.target.value)}
-                                                className="h-10 w-full sm:w-[150px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
-                                            >
-                                                {ufs.map(uf => (
-                                                    <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
-                                                ))}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                                                <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
-                                            </div>
-                                        </div>
-
-                                        {extraFilters}
-
-                                        {!isTodayPage && (
+                                        {!isTechnicianView && (
                                             <div className="relative w-full sm:w-auto">
                                                 <select
-                                                    value={statusFilter}
-                                                    onChange={(e) => handleStatusChange(e.target.value)}
-                                                    className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                    value={selectedUF}
+                                                    onChange={(e) => handleUFChange(e.target.value)}
+                                                    className="h-10 w-full sm:w-[150px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
                                                 >
-                                                    {Object.keys(STATUS_GROUPS).map(s => (
-                                                        <option key={s} value={s}>{s}</option>
+                                                    {ufs.map(uf => (
+                                                        <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
                                                     ))}
                                                 </select>
                                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
@@ -238,6 +221,23 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                                 </div>
                                             </div>
                                         )}
+
+                                        {extraFilters}
+
+                                        <div className="relative w-full sm:w-auto">
+                                            <select
+                                                value={statusFilter}
+                                                onChange={(e) => handleStatusChange(e.target.value)}
+                                                className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors sm:min-w-[130px]"
+                                            >
+                                                {Object.keys(STATUS_GROUPS).map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                                <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 

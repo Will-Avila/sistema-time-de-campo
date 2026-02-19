@@ -6,7 +6,7 @@ import { getSession, requireAdmin } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 import { getAllOS } from '@/lib/excel';
 
-type NotificationType = 'CHECKLIST' | 'OS_CLOSE' | 'NEW_OS';
+type NotificationType = 'CHECKLIST' | 'OS_CLOSE' | 'NEW_OS' | 'MATERIAL';
 
 // In-memory debounce to prevent spamming Excel reads on every notification check
 let lastSyncTime = 0;
@@ -176,8 +176,14 @@ export async function getUnreadNotifications() {
             // Management (Admin/Gestor) sees:
             // 1. All system events (CHECKLIST, OS_CLOSE)
             // 2. Their own 'NEW_OS' notifications
+            // 3. MATERIAL notifications (ONLY Admins)
+            const systemTypes = ['CHECKLIST', 'OS_CLOSE'];
+            if (session.isAdmin) {
+                systemTypes.push('MATERIAL');
+            }
+
             whereClause.OR = [
-                { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
+                { type: { in: systemTypes } },
                 { type: 'NEW_OS', equipeId: session.id }
             ];
         } else {
@@ -212,9 +218,16 @@ export async function markAsRead(id: string) {
         // 1. If it's targeted (NEW_OS), only recipient can read.
         // 2. If it's system (CHECKLIST/OS_CLOSE), any Admin can read.
         const isManagement = session.isAdmin || session.role === 'SUPERVISOR';
+        const isSystemNotif = ['CHECKLIST', 'OS_CLOSE', 'MATERIAL'].includes(notification.type);
+        const isRecipient = notification.equipeId === session.id;
 
         if (isSystemNotif) {
-            if (!isManagement) return { success: false, message: 'Não autorizado.' };
+            // Checklist/OS_Close generic management, but MATERIAL is ADMIN ONLY
+            if (notification.type === 'MATERIAL') {
+                if (!session.isAdmin) return { success: false, message: 'Não autorizado.' };
+            } else {
+                if (!isManagement) return { success: false, message: 'Não autorizado.' };
+            }
         } else {
             // Targeted (NEW_OS)
             if (!isRecipient) return { success: false, message: 'Não autorizado.' };
@@ -244,8 +257,13 @@ export async function archiveAllNotifications() {
         const isManagement = session.isAdmin || session.role === 'SUPERVISOR';
 
         if (isManagement) {
+            const systemTypes = ['CHECKLIST', 'OS_CLOSE'];
+            if (session.isAdmin) {
+                systemTypes.push('MATERIAL');
+            }
+
             whereClause.OR = [
-                { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
+                { type: { in: systemTypes } },
                 { type: 'NEW_OS', equipeId: session.id }
             ];
         } else {

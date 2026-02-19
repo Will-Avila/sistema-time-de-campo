@@ -2,7 +2,7 @@ import { getOSById } from '@/lib/excel';
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download, ClipboardList } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download, ClipboardList, ShoppingBasket, Plus } from 'lucide-react';
 import { getOSStatusInfo, formatDateSP, formatDateTimeSP, getDeadlineInfo, cn } from '@/lib/utils';
 import Image from 'next/image';
 import OSClosureForm from './OSClosureForm';
@@ -15,6 +15,8 @@ import { getSession } from '@/lib/auth';
 import { StatusBadge } from '@/components/os/StatusBadge';
 import { OSClosureDate } from '@/components/os/OSClosureDate';
 import DelegationPanel from './DelegationPanel';
+import MaterialManager from './MaterialManager';
+import { getOSMaterials } from '@/actions/material';
 
 interface PageProps {
     params: { id: string };
@@ -72,7 +74,11 @@ export default async function OSDetailPage({ params }: PageProps) {
         execution
     });
 
-    // Date color logic from OSListClient
+    const hasLanca = await prisma.lancaAlare.count({
+        where: { osId: os.id }
+    }) > 0;
+
+    const materials = await getOSMaterials(os.id);
 
     return (
         <div className="min-h-screen bg-muted/30 pb-20 transition-colors">
@@ -118,29 +124,57 @@ export default async function OSDetailPage({ params }: PageProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        {isAdmin && (
-                            <Link href={`/os/${os.id}/admin`} className="w-full sm:w-auto">
-                                <Button variant="outline" size="lg" className="w-full gap-2 border-border hover:bg-muted h-11 shadow-sm">
-                                    <FileText className="h-4 w-4" />
-                                    Add Detalhes
+                    <div className="flex flex-col gap-3 w-full md:w-auto">
+                        <div className="grid grid-cols-2 gap-3 w-full min-w-[280px]">
+                            <Link href={`/os/${os.id}/execution`} className="w-full">
+                                <Button size="lg" className="w-full gap-2 shadow-sm h-11">
+                                    <Wrench className="h-4 w-4" />
+                                    Caixas
                                 </Button>
                             </Link>
-                        )}
 
-                        <Link href={`/os/${os.id}/execution`} className="w-full sm:w-auto">
-                            <Button size="lg" className="w-full gap-2 shadow-sm h-11">
-                                <Wrench className="h-4 w-4" />
-                                Caixas
-                            </Button>
-                        </Link>
-                        {(!execution || execution.status !== 'DONE') && !statusInfo.label.includes('Concluída') && !statusInfo.label.includes('Encerrada') && !statusInfo.label.includes('Cancelada') && (
-                            <OSClosureForm
-                                osId={os.id}
-                                triggerClassName="w-full sm:w-auto h-11 px-8 gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-                                triggerSize="lg"
-                            />
-                        )}
+                            {hasLanca && (
+                                <Link href={`/os/${os.id}/lanca`} className="w-full">
+                                    <Button size="lg" className="w-full gap-2 bg-[#334155] hover:bg-[#1e293b] text-white h-11 shadow-md border-none font-bold transition-all active:scale-[0.98]">
+                                        <ClipboardList className="h-4 w-4" />
+                                        Lançamento
+                                    </Button>
+                                </Link>
+                            )}
+
+                            {(() => {
+                                const showClosure = (!execution || execution.status !== 'DONE') &&
+                                    !statusInfo.label.includes('Concluída') &&
+                                    !statusInfo.label.includes('Encerrada') &&
+                                    !statusInfo.label.includes('Cancelada');
+
+                                // Count active buttons to detect odd numbers
+                                // 1 (Caixas) + (1 if hasLanca) + 1 (Materials) + (1 if showClosure)
+                                const activeButtonsCount = 1 + (hasLanca ? 1 : 0) + 1 + (showClosure ? 1 : 0);
+                                const isOdd = activeButtonsCount % 2 !== 0;
+
+                                return (
+                                    <>
+                                        <MaterialManager
+                                            osId={os.id}
+                                            session={session}
+                                            triggerClassName={isOdd && !showClosure ? "col-span-2" : ""}
+                                        />
+
+                                        {showClosure && (
+                                            <OSClosureForm
+                                                osId={os.id}
+                                                triggerClassName={cn(
+                                                    "w-full h-11 px-4 gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center rounded-md text-[13px] font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                                                    isOdd ? "col-span-2" : ""
+                                                )}
+                                                triggerSize="lg"
+                                            />
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
                     </div>
                 </div>
 
@@ -152,11 +186,19 @@ export default async function OSDetailPage({ params }: PageProps) {
 
                     {/* Main Info Card */}
                     <Card className="shadow-sm border-border bg-card">
-                        <CardHeader className="pb-3 border-b border-border/50">
-                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
+                        <CardHeader className="pb-3 min-h-[56px] border-b border-border/50 flex flex-row items-center justify-between space-y-0">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground leading-none">
                                 <FileText className="h-4 w-4 text-[#4da8bc]" />
                                 Informações Principais
                             </CardTitle>
+                            {isAdmin && (
+                                <Link href={`/os/${os.id}/admin`} className="flex items-center">
+                                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-bold text-[#4da8bc] bg-[#4da8bc]/5 border-[#4da8bc]/20 hover:bg-[#4da8bc]/10 hover:border-[#4da8bc]/40 shadow-sm transition-all leading-none">
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Add Detalhes
+                                    </Button>
+                                </Link>
+                            )}
                         </CardHeader>
                         <CardContent className="pt-4 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -365,6 +407,39 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
                                     {os.observacoes}
                                 </p>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Materiais Utilizados */}
+                    {materials && materials.length > 0 && (
+                        <Card className="shadow-sm md:col-span-2 border-l-4 border-l-[#4da8bc] border-y border-r border-border bg-card">
+                            <CardHeader className="pb-3 border-b border-border/50">
+                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
+                                    <ShoppingBasket className="h-4 w-4 text-[#4da8bc]" />
+                                    Materiais Utilizados
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                <div className="space-y-3">
+                                    {materials.map((m: any) => (
+                                        <div key={m.id} className="p-3 bg-muted/20 rounded-lg border border-border/40 space-y-2">
+                                            <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-medium">
+                                                {m.content}
+                                            </p>
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                                                <div className="flex items-center gap-1.5">
+                                                    <User className="h-3 w-3 text-[#4da8bc]" />
+                                                    <span>{m.equipe?.fullName || m.equipe?.nomeEquipe || m.equipe?.name || 'Equipe'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="h-3 w-3 text-[#4da8bc]" />
+                                                    <span>{formatDateTimeSP(m.createdAt)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                     )}

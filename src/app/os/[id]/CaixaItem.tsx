@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { updateChecklistItem, deleteChecklistPhoto, resetChecklistItem, uploadChecklistPhotos } from '@/actions/checklist';
 import Image from 'next/image';
 import { Card, CardHeader } from '@/components/ui/card';
-import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2, Camera, Globe, ImagePlus, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Eye, MapPin, Trash2, Undo2, Camera, Globe, ImagePlus, Loader2, User, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageViewer } from '@/components/ui/image-viewer';
 import { Input } from '@/components/ui/input';
@@ -302,9 +302,16 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
                                 &quot;{item.obs}&quot;
                             </div>
                         )}
-                        {status === 'DONE' && (item.nomeEquipe || equipeName) && (
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs text-muted-foreground">Responsável: <span className="font-medium text-foreground">{item.nomeEquipe || equipeName}</span></p>
+                        {(item.nomeEquipe || equipeName) && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <User className="h-3 w-3 text-[#4da8bc]" />
+                                <span>Responsável: <span className="font-bold text-foreground">{item.nomeEquipe || equipeName}</span></span>
+                            </div>
+                        )}
+                        {item.data && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3 text-[#4da8bc]" />
+                                <span>Concluído em: <span className="font-bold text-foreground">{item.data}</span></span>
                             </div>
                         )}
                     </div>

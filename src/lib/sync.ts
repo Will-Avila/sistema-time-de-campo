@@ -303,6 +303,8 @@ export async function syncExcelToDB() {
                     updateLancaData.lancado = existingLanca.lancado || updateLancaData.lancado;
                     updateLancaData.cenarioReal = existingLanca.cenarioReal || updateLancaData.cenarioReal;
                     updateLancaData.valorReal = Number(existingLanca.valorReal) || updateLancaData.valorReal;
+                    updateLancaData.data = existingLanca.data || updateLancaData.data;
+                    updateLancaData.equipe = existingLanca.equipe || updateLancaData.equipe;
                 }
 
                 await prisma.lancaAlare.upsert({

@@ -408,9 +408,18 @@ export default async function DashboardPage({
                                                         <span className="text-muted-foreground font-medium truncate pr-2">
                                                             {team.name}
                                                         </span>
-                                                        <Badge variant="outline" className="text-[10px] h-5 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
-                                                            {team.count} {team.count === 1 ? 'cx' : 'cxs'}
-                                                        </Badge>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            {team.caixas > 0 && (
+                                                                <Badge variant="outline" className="text-[10px] h-5 border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                                                                    {team.caixas} cx
+                                                                </Badge>
+                                                            )}
+                                                            {team.metrosLancados > 0 && (
+                                                                <Badge variant="outline" className="text-[10px] h-5 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
+                                                                    {team.metrosLancados.toLocaleString('pt-BR')}m lanç
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
