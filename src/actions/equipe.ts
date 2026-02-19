@@ -58,7 +58,8 @@ export async function createEquipe(prevState: any, formData: FormData) {
     const fullName = formData.get('fullName') as string;
     const phone = formData.get('phone') as string;
     const password = formData.get('password') as string;
-    const isAdmin = formData.get('isAdmin') === 'true';
+    const role = formData.get('role') as string || 'USER';
+    const isAdmin = role === 'ADMIN';
 
     if (!name || !password || password.length < 6) {
         return { message: 'Nome de usuário e senha (min 6 caracteres) são obrigatórios.' };
@@ -82,13 +83,18 @@ export async function createEquipe(prevState: any, formData: FormData) {
                 fullName,
                 password: hashedPassword,
                 isAdmin,
+                role,
                 phone,
                 nomeEquipe: name, // Default to name if created manually
-            }
+            } as any
         });
 
         revalidatePath('/admin/equipes');
-        return { success: true, message: `${isAdmin ? 'Administrador' : 'Usuário/Equipe'} "${name}" criado com sucesso!` };
+        let roleLabel = 'Equipe';
+        if (role === 'ADMIN') roleLabel = 'Administrador';
+        if (role === 'SUPERVISOR') roleLabel = 'Gestor';
+
+        return { success: true, message: `${roleLabel} "${name}" criado com sucesso!` };
     } catch (error: any) {
         logger.error('Error creating equipe', { error: String(error) });
         if (error.code === 'P2002') {
@@ -124,7 +130,7 @@ export async function deleteEquipe(id: string) {
  * Updates an Equipe.
  * Terminology consolidated: formerly updateTechnician
  */
-export async function updateEquipe(id: string, data: { name?: string; fullName?: string; phone?: string; password?: string; isAdmin?: boolean }) {
+export async function updateEquipe(id: string, data: { name?: string; fullName?: string; phone?: string; password?: string; isAdmin?: boolean; role?: string }) {
     // Auth guard: only admins can update equipes
     try {
         await requireAdmin();
@@ -148,9 +154,16 @@ export async function updateEquipe(id: string, data: { name?: string; fullName?:
         if (data.password && data.password.length >= 6) {
             updateData.password = await bcrypt.hash(data.password, 10);
         }
-        if (data.isAdmin !== undefined) updateData.isAdmin = data.isAdmin;
 
-        await prisma.equipe.update({ where: { id }, data: updateData });
+        if (data.role !== undefined) {
+            updateData.role = data.role;
+            updateData.isAdmin = data.role === 'ADMIN';
+        } else if (data.isAdmin !== undefined) {
+            updateData.isAdmin = data.isAdmin;
+            updateData.role = data.isAdmin ? 'ADMIN' : 'USER';
+        }
+
+        await prisma.equipe.update({ where: { id }, data: updateData as any });
         revalidatePath('/admin/equipes');
         return { success: true, message: 'Usuário atualizado!' };
     } catch (error) {
@@ -172,9 +185,10 @@ export async function getEquipes() {
             nomeEquipe: true,
             phone: true,
             isAdmin: true,
+            role: true,
             createdAt: true,
             updatedAt: true,
-        },
+        } as any,
         orderBy: { createdAt: 'desc' },
     });
 }

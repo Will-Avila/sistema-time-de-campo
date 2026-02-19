@@ -193,6 +193,21 @@ export async function syncExcelToDB() {
             const existing = await prisma.caixaAlare.findUnique({ where: { id: caixaId } });
 
             if (existing) {
+                // BUG FIX: Don't let Excel overwrite field progress.
+                // If technician already marked the box (OK/NOK), preserve it unless Excel explicitly has a status.
+                const isMarkedByTech = ['OK', 'NOK'].includes(existing.status);
+                const excelHasStatus = row.Status && String(row.Status).trim() !== '' && String(row.Status).trim() !== 'Pendente';
+
+                // If marked by tech and Excel says 'Pendente', keep tech data.
+                if (isMarkedByTech && !excelHasStatus) {
+                    newData.status = existing.status;
+                    newData.equipe = existing.equipe || newData.equipe;
+                    newData.nomeEquipe = existing.nomeEquipe || newData.nomeEquipe;
+                    newData.obs = existing.obs || newData.obs;
+                    newData.potencia = existing.potencia || newData.potencia;
+                    newData.data = existing.data || newData.data;
+                }
+
                 const hasChanged =
                     existing.osId !== newData.osId ||
                     existing.cto !== newData.cto ||
@@ -262,44 +277,40 @@ export async function syncExcelToDB() {
                 const osId = String(row.Os || '');
                 const excelId = String(row.IdLancamento || '');
 
+                const existingLanca = await prisma.lancaAlare.findUnique({ where: { id: excelId || `lanca-${osId}-${currentIndex}` } });
+                const updateLancaData: any = {
+                    excelId: excelId || null,
+                    osId: osId || null,
+                    de: String(row.De || ''),
+                    para: String(row.Para || ''),
+                    previsao: String(row.Previsao || ''),
+                    cenario: String(row.Cenario || ''),
+                    valor: typeof row.Valor === 'number' ? row.Valor : 0,
+                    cabo: String(row.Cabo || ''),
+                    status: String(row.Status || ''),
+                    lancado: String(row.Lancado || ''),
+                    cenarioReal: String(row.CenarioReal || ''),
+                    valorReal: typeof row.ValorReal === 'number' ? row.ValorReal : 0,
+                    difLanc: typeof row.DifLanc === 'number' ? row.DifLanc : 0,
+                    orcadoAtual: typeof row.OrcadoAtual === 'number' ? row.OrcadoAtual : 0,
+                    data: formatExcelDate(row.Data),
+                    equipe: String(row.Equipe || ''),
+                };
+
+                // Preservar dados de execução se o Excel vier vazio/pendente
+                if (existingLanca && existingLanca.status !== '' && updateLancaData.status === '') {
+                    updateLancaData.status = existingLanca.status;
+                    updateLancaData.lancado = existingLanca.lancado || updateLancaData.lancado;
+                    updateLancaData.cenarioReal = existingLanca.cenarioReal || updateLancaData.cenarioReal;
+                    updateLancaData.valorReal = Number(existingLanca.valorReal) || updateLancaData.valorReal;
+                }
+
                 await prisma.lancaAlare.upsert({
                     where: { id: excelId || `lanca-${osId}-${currentIndex}` },
-                    update: {
-                        excelId: excelId || null,
-                        osId: osId || null,
-                        de: String(row.De || ''),
-                        para: String(row.Para || ''),
-                        previsao: String(row.Previsao || ''),
-                        cenario: String(row.Cenario || ''),
-                        valor: typeof row.Valor === 'number' ? row.Valor : 0,
-                        cabo: String(row.Cabo || ''),
-                        status: String(row.Status || ''),
-                        lancado: String(row.Lancado || ''),
-                        cenarioReal: String(row.CenarioReal || ''),
-                        valorReal: typeof row.ValorReal === 'number' ? row.ValorReal : 0,
-                        difLanc: typeof row.DifLanc === 'number' ? row.DifLanc : 0,
-                        orcadoAtual: typeof row.OrcadoAtual === 'number' ? row.OrcadoAtual : 0,
-                        data: formatExcelDate(row.Data),
-                        equipe: String(row.Equipe || ''),
-                    },
+                    update: updateLancaData,
                     create: {
                         id: excelId || `lanca-${osId}-${currentIndex}`,
-                        excelId: excelId || null,
-                        osId: osId || null,
-                        de: String(row.De || ''),
-                        para: String(row.Para || ''),
-                        previsao: String(row.Previsao || ''),
-                        cenario: String(row.Cenario || ''),
-                        valor: typeof row.Valor === 'number' ? row.Valor : 0,
-                        cabo: String(row.Cabo || ''),
-                        status: String(row.Status || ''),
-                        lancado: String(row.Lancado || ''),
-                        cenarioReal: String(row.CenarioReal || ''),
-                        valorReal: typeof row.ValorReal === 'number' ? row.ValorReal : 0,
-                        difLanc: typeof row.DifLanc === 'number' ? row.DifLanc : 0,
-                        orcadoAtual: typeof row.OrcadoAtual === 'number' ? row.OrcadoAtual : 0,
-                        data: formatExcelDate(row.Data),
-                        equipe: String(row.Equipe || ''),
+                        ...updateLancaData
                     }
                 });
                 lancaCount++;

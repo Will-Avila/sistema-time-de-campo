@@ -7,6 +7,7 @@ export interface Session {
     id: string;
     username: string;
     isAdmin: boolean;
+    role: string;
 }
 
 /**
@@ -22,7 +23,8 @@ export async function getSession(): Promise<Session | null> {
         return {
             id: payload.sub as string,
             username: payload.username as string,
-            isAdmin: !!payload.isAdmin,
+            isAdmin: !!payload.isAdmin || payload.role === 'ADMIN',
+            role: (payload.role as string) || (payload.isAdmin ? 'ADMIN' : 'USER'),
         };
     } catch {
         return null;
@@ -58,11 +60,13 @@ export async function createToken(data: {
     id: string;
     username: string;
     isAdmin: boolean;
+    role?: string;
 }): Promise<string> {
     return new SignJWT({
         sub: data.id,
         username: data.username,
         isAdmin: data.isAdmin,
+        role: data.role || (data.isAdmin ? 'ADMIN' : 'USER'),
     })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()

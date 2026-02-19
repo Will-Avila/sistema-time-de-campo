@@ -34,6 +34,7 @@ model OrderOfService {
   caixas                CaixaAlare[]
   notifications         Notification[]
   execution             ServiceExecution?
+  delegations           OSDelegation[]
 
   @@index([status])
 }
@@ -102,6 +103,7 @@ model Equipe {
   fullName      String?
   password      String             @default("")
   isAdmin       Boolean            @default(false)
+  role          String             @default("USER") // ADMIN, SUPERVISOR, USER
   theme         String             @default("system")
   lastUf        String             @default("Todos")
   lastSearch    String             @default("")
@@ -117,6 +119,7 @@ model Equipe {
   notifications Notification[]     @relation("EquipeNotifications")
   executions    ServiceExecution[] @relation("EquipeExecutions")
   photos        Photo[]            @relation("EquipePhotos")
+  delegations   OSDelegation[]
 }
 
 model ServiceExecution {
@@ -178,4 +181,18 @@ model OSAttachment {
   size        Int
   createdAt   DateTime       @default(now())
   os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
+}
+
+model OSDelegation {
+  id          String         @id @default(uuid())
+  osId        String
+  equipeId    String
+  delegatedBy String
+  createdAt   DateTime       @default(now())
+  os          OrderOfService @relation(fields: [osId], references: [id], onDelete: Cascade)
+  equipe      Equipe         @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+
+  @@unique([osId, equipeId])
+  @@index([equipeId])
+  @@index([osId])
 }

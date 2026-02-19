@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { getSession } from '@/lib/auth';
 import { StatusBadge } from '@/components/os/StatusBadge';
 import { OSClosureDate } from '@/components/os/OSClosureDate';
+import DelegationPanel from './DelegationPanel';
 
 interface PageProps {
     params: { id: string };
@@ -22,7 +23,25 @@ interface PageProps {
 export default async function OSDetailPage({ params }: PageProps) {
     const os = await getOSById(params.id);
     const session = await getSession();
-    const isAdmin = session?.isAdmin;
+
+    let canDelegate = false;
+    let isAdmin = false;
+
+    if (session) {
+        const userRecord = await prisma.equipe.findUnique({
+            where: { id: session.id },
+            select: { role: true, isAdmin: true }
+        });
+
+        // Determine effective role: DB > Session > Fallback
+        let effectiveRole = (userRecord as any)?.role || session.role || (session.isAdmin ? 'ADMIN' : 'USER');
+
+        // Handle legacy admins just in case
+        if (effectiveRole === 'USER' && userRecord?.isAdmin) effectiveRole = 'ADMIN';
+
+        canDelegate = effectiveRole === 'ADMIN' || effectiveRole === 'SUPERVISOR';
+        isAdmin = effectiveRole === 'ADMIN';
+    }
 
     if (!os) return notFound();
 
@@ -124,6 +143,9 @@ export default async function OSDetailPage({ params }: PageProps) {
                         )}
                     </div>
                 </div>
+
+                {/* Delegation Panel */}
+                <DelegationPanel osId={os.id} canDelegate={canDelegate} />
 
                 {/* Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

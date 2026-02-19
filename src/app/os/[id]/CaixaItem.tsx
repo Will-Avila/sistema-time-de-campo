@@ -48,7 +48,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
 
     const [power, setPower] = useState(item.potencia || '');
     const [obs, setObs] = useState(item.obs || '');
-    const [certified, setCertified] = useState(item.certified || false);
+    const [certified, setCertified] = useState(false);
 
     // Access Control logic
     const isOwner = session?.id === item.equipe;
@@ -148,6 +148,7 @@ export default function CaixaItem({ item, osId, equipeName, session }: CaixaItem
             setStatus('UNTOUCHED');
             setPower('');
             setObs('');
+            setCertified(false);
             setShowPhotos(false);
             setIsOpen(false);
             router.refresh();

@@ -170,9 +170,11 @@ export async function getUnreadNotifications() {
     try {
         let whereClause: any = { archived: false };
 
-        if (session.isAdmin) {
-            // Admin sees:
-            // 1. All system events (CHECKLIST, OS_CLOSE) - effectively a shared inbox for admins
+        const isManagement = session.isAdmin || session.role === 'SUPERVISOR';
+
+        if (isManagement) {
+            // Management (Admin/Gestor) sees:
+            // 1. All system events (CHECKLIST, OS_CLOSE)
             // 2. Their own 'NEW_OS' notifications
             whereClause.OR = [
                 { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
@@ -209,11 +211,10 @@ export async function markAsRead(id: string) {
         // Authorization Logic:
         // 1. If it's targeted (NEW_OS), only recipient can read.
         // 2. If it's system (CHECKLIST/OS_CLOSE), any Admin can read.
-        const isSystemNotif = ['CHECKLIST', 'OS_CLOSE'].includes(notification.type);
-        const isRecipient = notification.equipeId === session.id;
+        const isManagement = session.isAdmin || session.role === 'SUPERVISOR';
 
         if (isSystemNotif) {
-            if (!session.isAdmin) return { success: false, message: 'Não autorizado.' };
+            if (!isManagement) return { success: false, message: 'Não autorizado.' };
         } else {
             // Targeted (NEW_OS)
             if (!isRecipient) return { success: false, message: 'Não autorizado.' };
@@ -240,7 +241,9 @@ export async function archiveAllNotifications() {
     try {
         let whereClause: any = { archived: false };
 
-        if (session.isAdmin) {
+        const isManagement = session.isAdmin || session.role === 'SUPERVISOR';
+
+        if (isManagement) {
             whereClause.OR = [
                 { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
                 { type: 'NEW_OS', equipeId: session.id }

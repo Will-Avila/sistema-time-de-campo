@@ -71,7 +71,7 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
             name: formData.get('name') as string,
             fullName: formData.get('fullName') as string,
             phone: formData.get('phone') as string,
-            isAdmin: formData.get('isAdmin') === 'true'
+            role: formData.get('role') as string
         };
         const password = formData.get('password') as string;
         if (password) data.password = password;
@@ -144,13 +144,14 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                 <Input name="phone" type="text" placeholder="(DD) 99999-9999" />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none block">Permissão</label>
+                                <label className="text-sm font-medium leading-none block">Cargo / Permissão</label>
                                 <select
-                                    name="isAdmin"
+                                    name="role"
                                     className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
-                                    <option value="false">Equipe / Técnico</option>
-                                    <option value="true">Administrador</option>
+                                    <option value="USER">Equipe / Técnico</option>
+                                    <option value="SUPERVISOR">Supervisor</option>
+                                    <option value="ADMIN">Administrador</option>
                                 </select>
                             </div>
                         </div>
@@ -206,8 +207,10 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                             )}
                                         </td>
                                         <td className="p-4 align-middle">
-                                            {equipe.isAdmin ? (
+                                            {equipe.role === 'ADMIN' ? (
                                                 <Badge className="bg-primary">Admin</Badge>
+                                            ) : equipe.role === 'SUPERVISOR' ? (
+                                                <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Gestor</Badge>
                                             ) : (
                                                 <Badge variant="secondary">Equipe</Badge>
                                             )}
@@ -247,8 +250,10 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                         <p className="font-bold text-foreground">{equipe.name}</p>
                                         <p className="text-xs text-muted-foreground">{equipe.fullName || 'Sem nome completo'}</p>
                                     </div>
-                                    {equipe.isAdmin ? (
+                                    {equipe.role === 'ADMIN' ? (
                                         <Badge className="bg-primary">Admin</Badge>
+                                    ) : equipe.role === 'SUPERVISOR' ? (
+                                        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Gestor</Badge>
                                     ) : (
                                         <Badge variant="secondary">Equipe</Badge>
                                     )}
@@ -329,14 +334,15 @@ export default function EquipeManager({ equipes }: { equipes: any[] }) {
                                     <Input name="password" type="text" placeholder="Nova senha (deixe em branco para manter)" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Permissão</label>
+                                    <label className="text-sm font-medium leading-none">Cargo / Permissão</label>
                                     <select
-                                        name="isAdmin"
-                                        defaultValue={String(editTarget.isAdmin)}
+                                        name="role"
+                                        defaultValue={editTarget.role || (editTarget.isAdmin ? 'ADMIN' : 'USER')}
                                         className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     >
-                                        <option value="false">Equipe / Responsável</option>
-                                        <option value="true">Administrador</option>
+                                        <option value="USER">Equipe / Responsável</option>
+                                        <option value="SUPERVISOR">Supervisor</option>
+                                        <option value="ADMIN">Administrador</option>
                                     </select>
                                 </div>
                                 <div className="flex gap-3 pt-4">

@@ -19,9 +19,10 @@ interface OSListClientProps {
     initialStatus?: string;
     isTodayPage?: boolean;
     extraFilters?: React.ReactNode;
+    isTechnicianView?: boolean;
 }
 
-export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus, isTodayPage, extraFilters }: OSListClientProps) {
+export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus, isTodayPage, extraFilters, isTechnicianView }: OSListClientProps) {
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
     const [searchTerm, setSearchTerm] = useState(initialSearch || '');
     const [statusFilter, setStatusFilter] = useState<string>(initialStatus || (isTodayPage ? 'Todas' : 'Abertas'));
@@ -171,72 +172,94 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                 {!isTodayPage && (
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-foreground">Ordens de Serviço</h1>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                                {isTechnicianView ? 'Minhas Ordens de Serviço' : 'Ordens de Serviço'}
+                            </h1>
+                            {isTechnicianView && (
+                                <p className="text-muted-foreground mt-1">
+                                    Lista de OS designadas para sua equipe.
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
 
-                <Card className="bg-card border-border shadow-sm">
-                    <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center">
-                        <div className="relative flex-1 w-full">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Buscar por protocolo, POP ou condomínio..."
-                                className="pl-9 bg-background border-input focus:ring-primary/20 h-10"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                            />
-                        </div>
+                {/* Filters - Hide for Technician View */}
+                {!isTechnicianView && (
+                    <Card className="bg-card border-border shadow-sm">
+                        <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center">
+                            <div className="relative flex-1 w-full">
+                                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar por protocolo, POP ou condomínio..."
+                                    className="pl-9 bg-background border-input focus:ring-primary/20 h-10"
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                />
+                            </div>
 
-                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
-                            <div className="flex items-center gap-3 w-full sm:w-auto">
-                                <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
-                                <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
-                                    <div className="relative w-full sm:w-auto">
-                                        <select
-                                            value={selectedUF}
-                                            onChange={(e) => handleUFChange(e.target.value)}
-                                            className="h-10 w-full sm:w-[150px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
-                                        >
-                                            {ufs.map(uf => (
-                                                <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
-                                            ))}
-                                        </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                                            <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
-                                        </div>
-                                    </div>
-
-                                    {extraFilters}
-
-                                    {!isTodayPage && (
+                            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+                                    <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                                         <div className="relative w-full sm:w-auto">
                                             <select
-                                                value={statusFilter}
-                                                onChange={(e) => handleStatusChange(e.target.value)}
-                                                className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                value={selectedUF}
+                                                onChange={(e) => handleUFChange(e.target.value)}
+                                                className="h-10 w-full sm:w-[150px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
                                             >
-                                                {Object.keys(STATUS_GROUPS).map(s => (
-                                                    <option key={s} value={s}>{s}</option>
+                                                {ufs.map(uf => (
+                                                    <option key={uf} value={uf}>{uf === 'Todos' ? 'Todos os estados' : uf}</option>
                                                 ))}
                                             </select>
                                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
                                                 <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                                             </div>
                                         </div>
-                                    )}
+
+                                        {extraFilters}
+
+                                        {!isTodayPage && (
+                                            <div className="relative w-full sm:w-auto">
+                                                <select
+                                                    value={statusFilter}
+                                                    onChange={(e) => handleStatusChange(e.target.value)}
+                                                    className="h-10 w-full sm:w-[130px] appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus:ring-2 focus:ring-primary/20 pr-8 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                >
+                                                    {Object.keys(STATUS_GROUPS).map(s => (
+                                                        <option key={s} value={s}>{s}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                                    <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-2 rounded-md whitespace-nowrap w-full sm:w-auto text-center border border-border">
+                                    {filteredList.length} resultados
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
+                )}
 
-                            <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-2 rounded-md whitespace-nowrap w-full sm:w-auto text-center border border-border">
-                                {filteredList.length} resultados
-                            </div>
+                {isTechnicianView && filteredList.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                            <Box className="h-8 w-8 text-muted-foreground" />
                         </div>
-                    </CardContent>
-                </Card>
+                        <h3 className="text-lg font-semibold text-foreground">Nenhuma OS designada</h3>
+                        <p className="text-muted-foreground max-w-sm mt-2">
+                            Não há ordens de serviço designadas para sua equipe no momento. Aguarde a designação por um supervisor.
+                        </p>
+                    </div>
+                )}
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {paginatedList.map((os) => (

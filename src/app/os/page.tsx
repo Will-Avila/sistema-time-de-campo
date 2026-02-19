@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { EnrichedOS } from '@/lib/types';
 import { getOSStatusInfo } from '@/lib/utils';
+import { getDelegatedOSIds } from '@/actions/delegation';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,32 +33,69 @@ export default async function OSListPage() {
         return enrichOS(os, dbRecord as any);
     });
 
+
+
     // Get Session & Preferences (centralized)
     const session = await getSession();
+    let isTechnician = false;
+    let delegatedIds: string[] = [];
     let lastUf = 'Todos';
     let lastSearch = '';
     let lastStatus = 'Abertas';
 
     if (session) {
-        const tech = await prisma.equipe.findUnique({
+        // Fetch fresh role and preferences from DB
+        // This ensures that if a user's role is updated, they don't need to relogin immediately
+        const userRecord = await prisma.equipe.findUnique({
             where: { id: session.id },
-            select: { lastUf: true, lastStatus: true, lastSearch: true }
+            select: {
+                role: true,
+                isAdmin: true,
+                lastUf: true,
+                lastStatus: true,
+                lastSearch: true
+            }
         });
-        if (tech) {
-            lastUf = tech.lastUf || 'Todos';
-            lastSearch = tech.lastSearch || '';
-            lastStatus = tech.lastStatus || 'Abertas';
+
+        // Determine effective role: DB > Session > Fallback
+        // HANDLE MIGRATION: If role is 'USER' (default) but isAdmin is true, treat as ADMIN
+        let effectiveRole = (userRecord as any)?.role;
+        if (effectiveRole === 'USER' && userRecord?.isAdmin) effectiveRole = 'ADMIN';
+
+        if (!effectiveRole) {
+            effectiveRole = session.role || (session.isAdmin ? 'ADMIN' : 'USER');
+        }
+        isTechnician = effectiveRole === 'USER';
+
+        if (isTechnician) {
+            delegatedIds = await getDelegatedOSIds(session.id);
+        }
+
+        // Update user preferences vars
+        if (userRecord) {
+            lastUf = userRecord.lastUf || 'Todos';
+            lastSearch = userRecord.lastSearch || '';
+            lastStatus = userRecord.lastStatus || 'Abertas';
         }
     }
+
+    // Filter list for technicians
+    const finalOSList = isTechnician
+        ? enrichedList.filter(os => delegatedIds.includes(os.id))
+        : enrichedList;
+
+
+
 
     return (
         <>
             <HeaderServer />
             <OSListClient
-                initialOSList={enrichedList}
+                initialOSList={finalOSList}
                 initialUf={lastUf}
                 initialSearch={lastSearch}
                 initialStatus={lastStatus}
+                isTechnicianView={isTechnician}
             />
         </>
     );

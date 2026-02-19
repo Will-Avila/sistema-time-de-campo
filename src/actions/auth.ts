@@ -51,14 +51,16 @@ export async function login(prevState: any, formData: FormData) {
             id: equipe.id,
             username: equipe.name,
             isAdmin: equipe.isAdmin,
+            role: (equipe as any).role || (equipe.isAdmin ? 'ADMIN' : 'USER'),
         });
 
         setSessionCookie(token);
 
         logger.info(`Login successful`, { username, equipeId: equipe.id });
 
-        // Redirect based on role — reuse already-fetched data (no extra query)
-        redirect(equipe.isAdmin ? '/admin/dashboard' : '/os');
+        // Redirect based on role
+        const userRole = (equipe as any).role || (equipe.isAdmin ? 'ADMIN' : 'USER');
+        redirect(userRole === 'USER' ? '/os' : '/admin/dashboard');
 
     } catch (error) {
         // redirect() throws a special error in Next.js — rethrow it
