@@ -51,14 +51,13 @@ export async function getDashboardData(targetDate?: string) {
         }),
         prisma.notification.findMany({
             where: session?.isAdmin ? {
-                archived: false,
                 OR: [
                     { type: { in: ['CHECKLIST', 'OS_CLOSE'] } },
                     { type: 'NEW_OS', equipeId: session.id }
                 ]
-            } : (session ? { equipeId: session.id, archived: false } : { id: 'none' }),
+            } : (session ? { equipeId: session.id } : { id: 'none' }),
             orderBy: { createdAt: 'desc' },
-            take: 10,
+            take: 100,
             include: { equipe: { select: { name: true, fullName: true, nomeEquipe: true } } }
         })
     ]);

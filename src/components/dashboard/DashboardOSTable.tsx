@@ -179,38 +179,43 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
             </div>
 
             {/* Advanced Sorting Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-muted/30 p-3 rounded-lg border border-border/50">
-                <div className="flex items-center gap-2">
-                    <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground whitespace-nowrap">Ordenar por:</span>
-                    <div className="relative w-36 xs:w-44">
-                        <select
-                            value={sortField}
-                            onChange={(e) => setSortField(e.target.value as any)}
-                            className="h-8 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-7 py-0 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all cursor-pointer hover:bg-accent"
-                        >
-                            <option value="dataEntrante">Data de Entrada</option>
-                            <option value="dataPrevExec">Prazo (Prev. Execução)</option>
-                            <option value="dataConclusao">Finalização (Concluída)</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                            <Filter className="h-2.5 w-2.5" />
-                        </div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-muted/30 p-3 rounded-lg border border-border/50">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                    <div className="flex items-center gap-2">
+                        <ArrowUpDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground whitespace-nowrap">Ordenar por:</span>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                        title={sortDirection === 'asc' ? 'Ordem Crescente' : 'Ordem Decrescente'}
-                    >
-                        {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                    </Button>
+
+                    <div className="flex items-center gap-2">
+                        <div className="relative w-32 xs:w-44">
+                            <select
+                                value={sortField}
+                                onChange={(e) => setSortField(e.target.value as any)}
+                                className="h-8 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-7 py-0 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all cursor-pointer hover:bg-accent"
+                            >
+                                <option value="dataEntrante">Entrada</option>
+                                <option value="dataPrevExec">Prazo</option>
+                                <option value="dataConclusao">Finalização</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                <Filter className="h-2.5 w-2.5" />
+                            </div>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                            onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                            title={sortDirection === 'asc' ? 'Ordem Crescente' : 'Ordem Decrescente'}
+                        >
+                            {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground font-medium">
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border border-border/50">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium w-full sm:w-auto justify-end">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border border-border/50 shadow-sm transition-all hover:border-primary/30">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                         {filteredList.length} registros encontrados
                     </div>
                 </div>
