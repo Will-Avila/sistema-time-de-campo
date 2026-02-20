@@ -1,7 +1,7 @@
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { getMonthlyReportData, getAvailableMonths } from '@/actions/reports';
 import { BudgetChartsClient } from './BudgetChartsClient';
-import { MonthSelector } from './MonthSelector';
+import { MonthSelector } from '@/components/reports/MonthSelector';
 import { TrendingUp, TrendingDown, Target, Landmark, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -35,17 +35,16 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
 
             <div className="container pt-6 pb-8 space-y-8">
                 {/* Header */}
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <header>
                     <div>
                         <h1 className="text-3xl font-bold text-foreground">Relatório Mensal</h1>
                         <p className="text-muted-foreground mt-1">
                             Desempenho financeiro e análise de orçamento para <span className="font-bold text-primary">{currentMonth}</span>
                         </p>
                     </div>
-                    <MonthSelector availableMonths={availableMonths} currentMonth={currentMonth} />
                 </header>
 
-                <div>
+                <div className="flex items-center justify-between gap-4">
                     <Link
                         href="/admin/dashboard"
                         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors bg-card px-3 py-1.5 rounded-lg border border-border shadow-sm"
@@ -53,6 +52,7 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
                         <ArrowLeft className="h-4 w-4" />
                         Voltar para Dashboard
                     </Link>
+                    <MonthSelector availableMonths={availableMonths} currentMonth={currentMonth} basePath="/admin/reports/monthly" />
                 </div>
 
                 {/* Summary Cards */}

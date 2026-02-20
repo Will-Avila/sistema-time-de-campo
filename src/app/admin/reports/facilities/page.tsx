@@ -3,7 +3,7 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wrench, TrendingUp, Calendar, MapPin, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { FacilitiesChartsClient } from './FacilitiesChartsClient';
-import { MonthSelector } from './MonthSelector';
+import { MonthSelector } from '@/components/reports/MonthSelector';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -22,17 +22,16 @@ export default async function FacilitiesReportPage({ searchParams }: PageProps) 
 
             <div className="container pt-6 pb-8 space-y-8">
                 {/* Header */}
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <header>
                     <div>
                         <h1 className="text-3xl font-bold text-foreground">Produtividade de Facilidades</h1>
                         <p className="text-muted-foreground mt-1">
                             Análise de infraestrutura planejada vs concluída para <span className="font-bold text-amber-600">{currentMonth}</span>
                         </p>
                     </div>
-                    <MonthSelector availableMonths={availableMonths} currentMonth={currentMonth} />
                 </header>
 
-                <div>
+                <div className="flex items-center justify-between gap-4">
                     <Link
                         href="/admin/dashboard"
                         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors bg-card px-3 py-1.5 rounded-lg border border-border shadow-sm"
@@ -40,6 +39,7 @@ export default async function FacilitiesReportPage({ searchParams }: PageProps) 
                         <ArrowLeft className="h-4 w-4" />
                         Voltar para Dashboard
                     </Link>
+                    <MonthSelector availableMonths={availableMonths} currentMonth={currentMonth} basePath="/admin/reports/facilities" />
                 </div>
 
                 {/* Summary Cards */}
