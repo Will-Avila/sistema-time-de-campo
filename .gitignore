@@ -51,6 +51,5 @@ attachments/
 *.swo
 Thumbs.db
 
-# AI Agents Metadata (Optional but recommended for clean deploy)
-.agent/brain/
-.agent/scripts/cache/
+# AI Agents Metadata
+.agent/
