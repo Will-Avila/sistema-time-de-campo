@@ -216,17 +216,31 @@ export async function getDashboardData(targetDate?: string) {
 
     osList.forEach(os => {
         if (os.mes === currentBudgetMonth) {
+            const s = (os.rawStatus || '').toUpperCase().trim();
+            const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+            const isOpen = OPEN_EXCEL_STATUSES.includes(s);
+
+            // Ignorar OSs que não estão abertas nem concluídas (ex: canceladas)
+            if (!isFinished && !isOpen) return;
+
             const val = (os.valorServico || 0);
             budgetTotal += val;
             const boxesPlanned = (os.caixasPlanejadas || 0);
             boxesTotal += boxesPlanned;
             boxesDone += (os.checklistDone || 0);
-            const s = (os.rawStatus || '').toUpperCase().trim();
-            const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+
             if (isFinished) budgetDone += val;
             const facPlanned = (os.facilidadesPlanejadas || 0);
             facilitiesTotal += facPlanned;
-            if (isFinished) facilitiesDone += facPlanned;
+
+            if (isFinished) {
+                facilitiesDone += facPlanned;
+            } else if (boxesPlanned > 0) {
+                // Cálculo proporcional sugerido pelo usuário: 
+                // (Total de Facilidades / Total de Caixas) * Caixas Concluídas no App
+                const ratio = facPlanned / boxesPlanned;
+                facilitiesDone += (os.checklistDone || 0) * ratio;
+            }
         }
     });
 
@@ -381,7 +395,7 @@ export async function getDashboardData(targetDate?: string) {
             boxesTotal,
             boxesDone,
             facilitiesTotal,
-            facilitiesDone,
+            facilitiesDone: Math.round(facilitiesDone),
             equipeCount: equipes.length,
         },
         ufBreakdown,

@@ -16,40 +16,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
-    "/os/[id]/page": [
+    "/admin/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/os/[id]/page.js"
+      "static/chunks/app/admin/dashboard/page.js"
+    ],
+    "/admin/reports/facilities/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/reports/facilities/page.js"
     ],
     "/os/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/os/page.js"
     ],
-    "/admin/dashboard/page": [
+    "/os/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin/dashboard/page.js"
+      "static/chunks/app/os/[id]/page.js"
     ],
-    "/admin/reports/monthly/page": [
+    "/os/[id]/execution/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin/reports/monthly/page.js"
-    ],
-    "/os/[id]/admin/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/os/[id]/admin/page.js"
-    ],
-    "/os/[id]/lanca/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/os/[id]/lanca/page.js"
-    ],
-    "/admin/reports/facilities/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/admin/reports/facilities/page.js"
+      "static/chunks/app/os/[id]/execution/page.js"
     ]
   }
 }
