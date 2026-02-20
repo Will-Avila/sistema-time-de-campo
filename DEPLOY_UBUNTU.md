@@ -47,8 +47,12 @@ GRANT ALL PRIVILEGES ON DATABASE nome_do_banco TO usuario_db;
 No servidor, clone o repositório (na primeira vez) ou baixe as atualizações:
 
 ```bash
-# Se já tiver o projeto no servidor:
+# OPÇÃO A: Atualizar normalmente
 git pull origin master
+
+# OPÇÃO B: FORÇAR ATUALIZAÇÃO (Igualar ao local/GitHub, descartando tudo no servidor)
+git fetch --all
+git reset --hard origin/master
 
 # Instalar dependências
 npm install
@@ -63,6 +67,10 @@ nano .env
 DB_TYPE="postgres"
 DATABASE_URL="postgresql://usuario_db:sua_senha_forte@localhost:5432/nome_do_banco"
 JWT_SECRET="sua_chave_secreta_aqui"
+
+# Importante: Se não usar HTTPS (SSL), defina como false para não deslogar
+SESSION_SECURE="false"
+
 # ... demais configurações de path para fotos e excel
 ```
 
