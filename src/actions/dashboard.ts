@@ -32,6 +32,12 @@ export async function getDashboardData(targetDate?: string) {
     // 1. Get Base OS Data
     const todayDate = targetDate || getTodaySP();
     const session = await getSession();
+
+    // Calculate current budget month (formato JAN-26) early to avoid ReferenceError
+    const monthsShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+    const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    const nowSP = new Date(nowSPStr);
+    const currentBudgetMonth = `${monthsShort[nowSP.getMonth()]}-${nowSP.getFullYear().toString().slice(-2)}`;
     const [osRecords, excelOSList, equipes, recentNotifications, launchesToday] = await Promise.all([
         prisma.orderOfService.findMany({
             include: {
@@ -154,12 +160,8 @@ export async function getDashboardData(targetDate?: string) {
     const todayConcluidas = completedTodayCount - todayCanceladas;
 
     const completedMonth = osList.filter(os => {
-        const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-        const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-        const nowSP = new Date(nowSPStr);
-        const currentMonthName = months[nowSP.getMonth()];
         const s = (os.rawStatus || '').toUpperCase().trim();
-        return os.mes === currentMonthName && FINISHED_EXCEL_STATUSES.includes(s);
+        return os.mes === currentBudgetMonth && FINISHED_EXCEL_STATUSES.includes(s);
     }).length;
 
     const completedTotal = osList.filter(os => {
@@ -201,12 +203,7 @@ export async function getDashboardData(targetDate?: string) {
 
     const completionRate = (open + completedTotal) > 0 ? Math.round((completedTotal / (open + completedTotal)) * 100) : 0;
 
-    // 6. Calculate Monthly Budget (MMM-YY format)
-    const monthsShort = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-    const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-    const nowSP = new Date(nowSPStr);
-    const currentBudgetMonth = `${monthsShort[nowSP.getMonth()]}-${nowSP.getFullYear().toString().slice(-2)}`;
-
+    // 6. Calculate Monthly Totals
     let budgetTotal = 0;
     let budgetDone = 0;
     let boxesTotal = 0;
@@ -218,29 +215,34 @@ export async function getDashboardData(targetDate?: string) {
         if (os.mes === currentBudgetMonth) {
             const s = (os.rawStatus || '').toUpperCase().trim();
             const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+            const isCanceled = s === 'CANCELADO';
             const isOpen = OPEN_EXCEL_STATUSES.includes(s);
 
-            // Ignorar OSs que não estão abertas nem concluídas (ex: canceladas)
-            if (!isFinished && !isOpen) return;
+            // Agora incluímos CANCELADO nos totais para ter a ideia do bruto
+            if (!isFinished && !isOpen && !isCanceled) return;
 
             const val = (os.valorServico || 0);
             budgetTotal += val;
             const boxesPlanned = (os.caixasPlanejadas || 0);
             boxesTotal += boxesPlanned;
-            boxesDone += (os.checklistDone || 0);
-
-            if (isFinished) budgetDone += val;
             const facPlanned = (os.facilidadesPlanejadas || 0);
             facilitiesTotal += facPlanned;
 
+            // Se a OS está concluída no Excel, consideramos 100% da produção (Caixas e Facilidades)
             if (isFinished) {
+                budgetDone += val;
+                boxesDone += boxesPlanned;
                 facilitiesDone += facPlanned;
-            } else if (boxesPlanned > 0) {
-                // Cálculo proporcional sugerido pelo usuário: 
-                // (Total de Facilidades / Total de Caixas) * Caixas Concluídas no App
-                const ratio = facPlanned / boxesPlanned;
-                facilitiesDone += (os.checklistDone || 0) * ratio;
+            } else if (isOpen) {
+                // Se está em aberto, usamos o progresso real do APP
+                boxesDone += (os.checklistDone || 0);
+
+                if (boxesPlanned > 0) {
+                    const ratio = facPlanned / boxesPlanned;
+                    facilitiesDone += (os.checklistDone || 0) * ratio;
+                }
             }
+            // Se isCanceled, o valor entra no total mas não no realizado.
         }
     });
 

@@ -24,7 +24,7 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
                     <CardTitle className="text-lg font-bold">Evolução Diária de Facilidades (Entregas)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <AreaChart data={dailyEvolution}>
                             <defs>
                                 <linearGradient id="colorValueFacs" x1="0" y1="0" x2="0" y2="1">
@@ -61,7 +61,7 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
                     <CardTitle className="text-lg font-bold">Distribuição por UF (Planejado vs Realizado)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={ufData} layout="vertical" margin={{ left: 10 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                             <XAxis type="number" hide />

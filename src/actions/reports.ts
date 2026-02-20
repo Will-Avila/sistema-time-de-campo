@@ -58,8 +58,19 @@ export async function getMonthlyReportData(month: string) {
     // Map Excel data to DB records for full metadata
     const dbMap = new Map(dbFiltered.map(r => [r.id, r]));
 
+    // List of statuses that mean the OS is active (not canceled/rejected)
+    const OPEN_EXCEL_STATUSES = ['INICIAR', 'EM EXECUÇÃO', 'EM EXECUCAO', 'PEND. CLIENTE'];
+
     const reportItems = excelFiltered.map(os => {
         const db = dbMap.get(os.id);
+        const s = (os.status || '').toUpperCase().trim();
+        const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+        const isOpen = OPEN_EXCEL_STATUSES.includes(s);
+        const isCanceled = s === 'CANCELADO';
+
+        // Agora incluímos CANCELADO nos totais para ter a ideia do bruto
+        if (!isFinished && !isOpen && !isCanceled) return null;
+
         return {
             ...os,
             dbStatus: db?.status || 'PENDING',
@@ -67,7 +78,7 @@ export async function getMonthlyReportData(month: string) {
             dataConclusao: os.dataConclusao || '-',
             equipe: db?.execution?.technicianName || '-'
         };
-    });
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
 
     // 1. Daily Evolution (Realized)
     const dailyMap: Record<string, number> = {};
@@ -150,14 +161,14 @@ export async function getMonthlyReportData(month: string) {
     return {
         month: targetMonth,
         summary: {
-            totalPrevisto,
-            totalRealizado,
-            totalCancelado,
+            totalPrevisto: Math.round(totalPrevisto),
+            totalRealizado: Math.round(totalRealizado),
+            totalCancelado: Math.round(totalCancelado),
             performance: totalPrevisto > 0 ? Math.round((totalRealizado / totalPrevisto) * 100) : 0
         },
         dailyEvolution,
-        ufData,
-        teamData
+        ufData: ufData.map(u => ({ ...u, previsto: Math.round(u.previsto), realizado: Math.round(u.realizado) })),
+        teamData: teamData.map(t => ({ ...t, value: Math.round(t.value) }))
     };
 }
 
@@ -181,17 +192,31 @@ export async function getBoxesReportData(month: string) {
 
     const dbMap = new Map(dbFiltered.map(r => [r.id, r]));
 
+    // List of statuses that mean the OS is active (not canceled/rejected)
+    const OPEN_EXCEL_STATUSES = ['INICIAR', 'EM EXECUÇÃO', 'EM EXECUCAO', 'PEND. CLIENTE'];
+
     const reportItems = excelFiltered.map(os => {
         const db = dbMap.get(os.id);
-        const boxesDone = db?.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length || 0;
+        const s = (os.status || '').toUpperCase().trim();
+        const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+        const isOpen = OPEN_EXCEL_STATUSES.includes(s);
+        const isCanceled = s === 'CANCELADO';
+
+        // Agora incluímos CANCELADO nos totais para ter a ideia do bruto
+        if (!isFinished && !isOpen && !isCanceled) return null;
+
+        const boxesPlanned = os.caixasPlanejadas || 0;
+        // Se a OS está concluída no Excel, consideramos 100% (paridade com auditoria financeira)
+        const boxesDone = isFinished ? boxesPlanned : (db?.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length || 0);
+
         return {
             ...os,
-            caixasPlanejadas: os.caixasPlanejadas || 0,
+            caixasPlanejadas: boxesPlanned,
             caixasRealizadas: boxesDone,
             dataConclusao: os.dataConclusao || '-',
             equipe: db?.execution?.technicianName || '-'
         };
-    });
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
 
     // 1. Daily Evolution (Boxes Done)
     const dailyMap: Record<string, number> = {};
@@ -261,13 +286,13 @@ export async function getBoxesReportData(month: string) {
     return {
         month: targetMonth,
         summary: {
-            totalPlanejado,
-            totalRealizado,
+            totalPlanejado: Math.round(totalPlanejado),
+            totalRealizado: Math.round(totalRealizado),
             performance: totalPlanejado > 0 ? Math.round((totalRealizado / totalPlanejado) * 100) : 0
         },
         dailyEvolution,
-        ufData,
-        teamData
+        ufData: ufData.map(u => ({ ...u, previsto: Math.round(u.previsto), realizado: Math.round(u.realizado) })),
+        teamData: teamData.map(t => ({ ...t, value: Math.round(t.value) }))
     };
 }
 export async function getFacilitiesReportData(month: string) {
@@ -290,13 +315,32 @@ export async function getFacilitiesReportData(month: string) {
 
     const dbMap = new Map(dbFiltered.map(r => [r.id, r]));
 
+    // List of statuses that mean the OS is active (not canceled/rejected)
+    const OPEN_EXCEL_STATUSES = ['INICIAR', 'EM EXECUÇÃO', 'EM EXECUCAO', 'PEND. CLIENTE'];
+    const FINISHED_EXCEL_STATUSES = ['CONCLUÍDO', 'CONCLUIDO', 'CONCLUÍDA', 'CANCELADO']; // CANCELADO is "Finished" in terms of process but we filter it out for performance
+
     const reportItems = excelFiltered.map(os => {
         const db = dbMap.get(os.id);
         const s = (os.status || '').toUpperCase().trim();
         const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+        const isOpen = OPEN_EXCEL_STATUSES.includes(s);
+        const isCanceled = s === 'CANCELADO';
+
+        // Agora incluímos CANCELADO nos totais para ter a ideia do bruto
+        if (!isFinished && !isOpen && !isCanceled) return null;
 
         const facPlanned = os.facilidadesPlanejadas || 0;
-        const facDone = isFinished ? facPlanned : 0;
+        const boxesPlanned = os.caixasPlanejadas || 0;
+        const boxesDone = db?.caixas.filter(c => c.status === 'OK' || c.status === 'Concluído').length || 0;
+
+        let facDone = 0;
+        if (isFinished) {
+            // Se concluída, 100% das facilidades planejadas
+            facDone = facPlanned;
+        } else if (boxesPlanned > 0) {
+            const ratio = facPlanned / boxesPlanned;
+            facDone = boxesDone * ratio;
+        }
 
         return {
             ...os,
@@ -305,7 +349,7 @@ export async function getFacilitiesReportData(month: string) {
             dataConclusao: os.dataConclusao || '-',
             equipe: db?.execution?.technicianName || '-'
         };
-    });
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
 
     // 1. Daily Evolution (Facilities Done)
     const dailyMap: Record<string, number> = {};
@@ -360,8 +404,8 @@ export async function getFacilitiesReportData(month: string) {
         .sort((a, b) => b.value - a.value);
 
     // Summary
-    const totalPlanejado = reportItems.reduce((acc, curr) => acc + curr.facilidadesPlanejadas, 0);
-    const totalRealizado = reportItems.reduce((acc, curr) => acc + curr.facilidadesRealizadas, 0);
+    const totalPlanejado = Math.round(reportItems.reduce((acc, curr) => acc + curr.facilidadesPlanejadas, 0));
+    const totalRealizado = Math.round(reportItems.reduce((acc, curr) => acc + curr.facilidadesRealizadas, 0));
 
     return {
         month: targetMonth,
@@ -371,7 +415,7 @@ export async function getFacilitiesReportData(month: string) {
             performance: totalPlanejado > 0 ? Math.round((totalRealizado / totalPlanejado) * 100) : 0
         },
         dailyEvolution,
-        ufData,
-        teamData
+        ufData: ufData.map(u => ({ ...u, previsto: Math.round(u.previsto), realizado: Math.round(u.realizado) })),
+        teamData: teamData.map(t => ({ ...t, value: Math.round(t.value) }))
     };
 }

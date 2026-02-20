@@ -24,7 +24,7 @@ export function BoxesChartsClient({ dailyEvolution, ufData, teamData }: ChartPro
                     <CardTitle className="text-lg font-bold">Evolução Diária de Caixas Concluídas</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <AreaChart data={dailyEvolution}>
                             <defs>
                                 <linearGradient id="colorValueBoxes" x1="0" y1="0" x2="0" y2="1">
@@ -61,7 +61,7 @@ export function BoxesChartsClient({ dailyEvolution, ufData, teamData }: ChartPro
                     <CardTitle className="text-lg font-bold">Produtividade por UF (Planejado vs Realizado)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={ufData} layout="vertical" margin={{ left: 10 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                             <XAxis type="number" hide />
@@ -81,7 +81,7 @@ export function BoxesChartsClient({ dailyEvolution, ufData, teamData }: ChartPro
                     <CardTitle className="text-lg font-bold">Ranking de Equipes (Total de Caixas)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={teamData} layout="vertical" margin={{ left: 10 }}>
                             <XAxis type="number" hide />
                             <YAxis dataKey="name" type="category" fontSize={11} tickLine={false} axisLine={false} width={100} />
