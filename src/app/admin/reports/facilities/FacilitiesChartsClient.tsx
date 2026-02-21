@@ -2,7 +2,7 @@
 
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Legend, Cell
+    BarChart, Bar, Legend, Cell, PieChart, Pie
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -10,18 +10,22 @@ interface ChartProps {
     dailyEvolution: { date: string, value: number }[];
     ufData: { uf: string, previsto: number, realizado: number }[];
     teamData: { name: string, value: number }[];
+    funnelData?: { name: string, value: number, color: string }[];
+    isMonthly?: boolean;
 }
 
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899'];
 
-export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: ChartProps) {
+export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData, funnelData, isMonthly }: ChartProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* 1. Daily Evolution */}
+            {/* 1. Daily/Monthly Evolution */}
             <Card className="lg:col-span-2 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-lg font-bold">Evolução Diária de Facilidades (Entregas)</CardTitle>
+                    <CardTitle className="text-lg font-bold">
+                        {isMonthly ? 'Evolução Mensal de Facilidades (Entregas)' : 'Evolução Diária de Facilidades (Entregas)'}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -39,7 +43,7 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
                                 domain={['auto', 'auto']}
                             />
                             <Tooltip
-                                formatter={(value: number) => [value, 'Facilidades Realizadas']}
+                                formatter={(value: number) => [Math.round(value), 'Facilidades Realizadas']}
                                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
                             <Area
@@ -56,7 +60,7 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
             </Card>
 
             {/* 2. Facilities by UF */}
-            <Card className="lg:col-span-2 shadow-sm">
+            <Card className="shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-bold">Distribuição por UF (Planejado vs Realizado)</CardTitle>
                 </CardHeader>
@@ -72,6 +76,44 @@ export function FacilitiesChartsClient({ dailyEvolution, ufData, teamData }: Cha
                             <Bar dataKey="realizado" name="Realizado" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={12} />
                         </BarChart>
                     </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            {/* 3. Funnel Data */}
+            <Card className="shadow-sm">
+                <CardHeader>
+                    <CardTitle className="text-lg font-bold">Funil de Realização (Facilidades)</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[400px] flex flex-col items-center justify-center">
+                    <ResponsiveContainer width="100%" height="80%">
+                        <PieChart>
+                            <Pie
+                                data={funnelData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                paddingAngle={5}
+                                dataKey="value"
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            >
+                                {funnelData?.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip formatter={(value: number) => [value, 'Facilidades']} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap justify-center gap-4 mt-2">
+                        {funnelData?.map((item, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-xs font-semibold">
+                                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                                <span className="text-muted-foreground">{item.name}:</span>
+                                <span>{item.value}</span>
+                            </div>
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
 

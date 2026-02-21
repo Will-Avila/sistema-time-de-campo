@@ -35,49 +35,15 @@ export function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const lastShownIdRef = useRef<string | null>(null);
     const router = useRouter();
 
     const fetchNotifications = useCallback(async () => {
         const data = await getUnreadNotifications();
-
-        // Browser notification logic
-        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
-            const unreadNotifs = data.filter(n => !n.read);
-            if (unreadNotifs.length > 0) {
-                const newest = unreadNotifs[unreadNotifs.length - 1]; // Use last to be sure
-                if (newest.id !== lastShownIdRef.current) {
-                    const notification = new Notification(newest.title, {
-                        body: newest.message,
-                        icon: '/favicon.ico',
-                        badge: '/favicon.ico',
-                    });
-
-                    notification.onclick = () => {
-                        window.focus();
-                        if (newest.osId) {
-                            const targetPath = newest.type === 'CHECKLIST'
-                                ? `/os/${newest.osId}/execution`
-                                : `/os/${newest.osId}`;
-                            router.push(targetPath);
-                            setIsOpen(false);
-                        }
-                    };
-                    lastShownIdRef.current = newest.id;
-                }
-            }
-        }
-
         setNotifications(data);
         setIsLoading(false);
-    }, [router]);
+    }, []);
 
     useEffect(() => {
-        // Request permission on mount
-        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
         return () => clearInterval(interval);
@@ -153,9 +119,12 @@ export function NotificationBell() {
                                                         handleMarkAsReadLocal(notification.id);
                                                     }
 
-                                                    const targetPath = notification.type === 'CHECKLIST'
-                                                        ? `/os/${notification.osId}/execution`
-                                                        : `/os/${notification.osId}`;
+                                                    const isLanca = notification.title.toLowerCase().includes('lançamento') || notification.title.toLowerCase().includes('lancamento');
+                                                    const targetPath = isLanca
+                                                        ? `/os/${notification.osId}/lanca`
+                                                        : notification.type === 'CHECKLIST'
+                                                            ? `/os/${notification.osId}/execution`
+                                                            : `/os/${notification.osId}`;
                                                     router.push(targetPath);
                                                     setIsOpen(false);
                                                 }

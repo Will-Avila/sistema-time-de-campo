@@ -24,6 +24,10 @@ export interface EnrichedOS extends OS {
     checklistDone?: number;
     executionObs?: string | null;
     observacoes?: string | null;
+    hasLanca?: boolean;
+    lancaMetersTotal?: number;
+    lancaMetersDone?: number;
+    lancaTeams?: string;
 }
 
 // ─── Caixa Item Data (typed Excel item) ────────────────

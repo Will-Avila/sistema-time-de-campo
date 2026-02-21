@@ -71,7 +71,6 @@ export async function updateChecklistItem(prevState: ActionResult | null, formDa
                     equipeId,
                     technicianName: techName,
                     status: 'PENDING',
-                    obs: 'Trabalho de campo iniciado',
                 }
             });
         } else if (!execution.technicianName) {
@@ -267,10 +266,10 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         // Buscar dados do autor do registro original
         const originalAuthor = box.equipe ? await prisma.equipe.findUnique({
             where: { id: box.equipe },
-            select: { role: true, id: true }
+            select: { isAdmin: true, id: true }
         }) : null;
 
-        const originalRole = originalAuthor?.role || 'USER';
+        const isOriginalAdmin = originalAuthor?.isAdmin || false;
 
         // Lógica de Permissão:
         // 1. Admin pode tudo
@@ -281,14 +280,14 @@ export async function resetChecklistItem(osId: string, itemId: string) {
         if (session.isAdmin) {
             canReset = true;
         } else if (session.role === 'SUPERVISOR') {
-            canReset = originalRole === 'USER' || box.equipe === session.id;
+            canReset = !isOriginalAdmin || box.equipe === session.id;
         } else {
             canReset = box.equipe === session.id;
         }
 
         if (!canReset) {
             let errorMsg = 'Não autorizado.';
-            if (session.role === 'SUPERVISOR' && originalRole === 'ADMIN') {
+            if (session.role === 'SUPERVISOR' && isOriginalAdmin) {
                 errorMsg = 'Gestores não podem desmarcar registros feitos por Administradores.';
             } else if (session.role === 'USER' && box.equipe !== session.id) {
                 errorMsg = 'Você só pode desmarcar registros que você mesmo realizou.';
@@ -387,7 +386,6 @@ export async function uploadChecklistPhotos(formData: FormData): Promise<ActionR
                     equipeId: session.id,
                     technicianName: techName,
                     status: 'PENDING',
-                    obs: 'Trabalho de campo iniciado',
                 }
             });
         } else if (!execution.technicianName) {

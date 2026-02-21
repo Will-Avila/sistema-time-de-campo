@@ -2,7 +2,7 @@ import { getOSById } from '@/lib/excel';
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Map, Building, Paperclip, Download, ClipboardList, ShoppingBasket, Plus } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Wrench, FileText, CheckCircle, Clock, AlertTriangle, User, Building, Paperclip, Download, ClipboardList, ShoppingBasket, Plus, DollarSign } from 'lucide-react';
 import { getOSStatusInfo, formatDateSP, formatDateTimeSP, getDeadlineInfo, cn } from '@/lib/utils';
 import Image from 'next/image';
 import OSClosureForm from './OSClosureForm';
@@ -74,11 +74,41 @@ export default async function OSDetailPage({ params }: PageProps) {
         execution
     });
 
-    const hasLanca = await prisma.lancaAlare.count({
-        where: { osId: os.id }
-    }) > 0;
-
     const materials = await getOSMaterials(os.id);
+
+    const [lancaItems, equipes] = await Promise.all([
+        prisma.lancaAlare.findMany({
+            where: { osId: os.id },
+            select: { previsao: true, lancado: true, status: true, equipe: true }
+        }),
+        prisma.equipe.findMany({
+            select: { id: true, name: true, fullName: true, nomeEquipe: true }
+        })
+    ]);
+
+    const equipeMap = new Map(equipes.map(e => [e.id, e.fullName || e.nomeEquipe || e.name]));
+
+    const parseMeters = (val: string | null) => {
+        if (!val) return 0;
+        const matched = val.match(/[\d.]+/);
+        return matched ? parseFloat(matched[0]) : 0;
+    };
+
+    let lancaMetersTotal = 0;
+    let lancaMetersDone = 0;
+    const hasLanca = lancaItems.length > 0;
+    const lancaTeamSet = new Set<string>();
+
+    lancaItems.forEach(item => {
+        lancaMetersTotal += parseMeters(item.previsao);
+        lancaMetersDone += parseMeters(item.lancado);
+        if (item.status === 'OK' && item.equipe) {
+            const teamName = equipeMap.get(item.equipe);
+            if (teamName) lancaTeamSet.add(teamName);
+        }
+    });
+
+    const lancaTeams = Array.from(lancaTeamSet).sort().join(', ');
 
     return (
         <div className="min-h-screen bg-muted/30 pb-20 transition-colors">
@@ -89,7 +119,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-3">
-                        <Link href="/os" className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
+                        <Link href={isAdmin ? "/admin/dashboard" : "/os"} className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
                             <ArrowLeft className="h-6 w-6" />
                         </Link>
                         <div>
@@ -230,14 +260,81 @@ export default async function OSDetailPage({ params }: PageProps) {
                                 </div>
                             )}
 
-                            {(aggregatedTeams || execution?.equipe) && (
+                            {isAdmin && os.valorServico && os.valorServico > 0 && (
+                                <div className="pt-2 border-t border-border/50 mt-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
+                                            <DollarSign className="h-5 w-5 text-emerald-600" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">
+                                                {(os.status?.toUpperCase().includes('CONCLUÍD') || os.status?.toUpperCase().includes('CONCLUID')) ? 'Valor Finalizado' : 'Valor Orçado'}
+                                            </span>
+                                            <span className="text-lg font-black text-foreground">
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorServico)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {hasLanca && (
+                                <div className="pt-3 border-t border-border/50 mt-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="bg-sky-500/10 p-1.5 rounded-md">
+                                                <ClipboardList className="h-4 w-4 text-sky-600" />
+                                            </div>
+                                            <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Lançamento de Cabos</span>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] font-bold bg-sky-500/5 text-sky-600 border-sky-500/20">
+                                            {((lancaMetersDone / (lancaMetersTotal || 1)) * 100).toFixed(0)}%
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] uppercase font-bold text-muted-foreground leading-none mb-1">Metragem Lançada</span>
+                                            <span className="text-xl font-black text-sky-600">
+                                                {lancaMetersDone}<span className="text-xs ml-0.5 font-bold">m</span>
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col text-right">
+                                            <span className="text-[9px] uppercase font-bold text-muted-foreground leading-none mb-1">Previsão Total</span>
+                                            <span className="text-sm font-bold text-foreground/60">
+                                                {lancaMetersTotal}m
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {/* Small progress bar */}
+                                    <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
+                                        <div
+                                            className="bg-sky-500 h-full transition-all duration-500"
+                                            style={{ width: `${Math.min(100, (lancaMetersDone / (lancaMetersTotal || 1)) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {(aggregatedTeams || execution?.equipe || lancaTeams) && (
                                 <div className="pt-2 border-t border-border/50 mt-2">
                                     <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider text-[10px]">Equipe(s) em Campo</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <User className="h-4 w-4 text-[#4da8bc]" />
-                                        <p className="text-sm font-medium text-foreground">
-                                            {aggregatedTeams || (execution?.equipe ? (execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name) : '-')}
-                                        </p>
+                                    <div className="flex flex-col gap-1.5 mt-2">
+                                        {(aggregatedTeams || (execution?.equipe)) && (
+                                            <div className="flex items-center gap-2">
+                                                <User className="h-4 w-4 text-[#4da8bc] shrink-0" />
+                                                <span className="text-xs font-medium text-foreground/80 leading-tight">
+                                                    Caixas: {aggregatedTeams || (execution?.equipe ? (execution.equipe.fullName || execution.equipe.nomeEquipe || execution.equipe.name) : '-')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {lancaTeams && (
+                                            <div className="flex items-center gap-2">
+                                                <Wrench className="h-4 w-4 text-sky-600 shrink-0" />
+                                                <span className="text-xs font-medium text-foreground/80 leading-tight">
+                                                    Lançamento: {lancaTeams}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

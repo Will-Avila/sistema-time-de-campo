@@ -12,25 +12,31 @@ import { EnrichedOS } from '@/lib/types';
 
 interface DashboardOSTableProps {
     initialOSList: EnrichedOS[];
+    availableMonths?: string[];
+    activeMonth?: string;
 }
 
-export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
+export function DashboardOSTable({ initialOSList, availableMonths = [], activeMonth = '' }: DashboardOSTableProps) {
+    const [selectedMonth, setSelectedMonth] = useState(activeMonth);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUF, setSelectedUF] = useState('Todos');
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Todas']);
     const [isStatusOpen, setIsStatusOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [sortField, setSortField] = useState<'dataEntrante' | 'dataPrevExec' | 'dataConclusao'>('dataEntrante');
+    const [sortField, setSortField] = useState<'dataEntrante' | 'dataPrevExec' | 'dataConclusao' | 'valorServico'>('dataEntrante');
     const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
     const ITEMS_PER_PAGE = 50;
 
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedUF, selectedStatuses]);
+    }, [searchTerm, selectedUF, selectedStatuses, selectedMonth]);
 
     // Filter Logic
     const filteredList = initialOSList.filter(os => {
+        // Month filter
+        const matchesMonth = !selectedMonth || (os.mes || '').toUpperCase() === selectedMonth.toUpperCase();
+
         const matchesUF = selectedUF === 'Todos' || os.uf === selectedUF;
 
         const searchUpper = searchTerm.toUpperCase().trim();
@@ -58,15 +64,20 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
             matchesStatus = matchesAny;
         }
 
-        return matchesUF && matchesSearch && matchesStatus;
+        return matchesMonth && matchesUF && matchesSearch && matchesStatus;
     });
     const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
 
     // Sort logic
     const sortedList = [...filteredList].sort((a, b) => {
+        if (sortField === 'valorServico') {
+            const valA = a.valorServico || 0;
+            const valB = b.valorServico || 0;
+            return sortDirection === 'asc' ? valA - valB : valB - valA;
+        }
+
         const parseDate = (d?: string) => {
             if (!d || d === '-' || d === 'N/A' || d === '') {
-                // Return extreme values to keep empty dates at the bottom or top depending on direction
                 return sortDirection === 'asc' ? 8640000000000000 : 0;
             }
             const [day, month, year] = d.split('/').map(Number);
@@ -101,6 +112,23 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                 </div>
 
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:flex gap-3 items-center">
+                    {availableMonths.length > 0 && (
+                        <div className="relative w-full md:w-40">
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                            >
+                                {availableMonths.map(month => (
+                                    <option key={month} value={month}>{month}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                            </div>
+                        </div>
+                    )}
+
                     <div className="relative w-full md:w-36">
                         <select
                             value={selectedUF}
@@ -196,6 +224,7 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                 <option value="dataEntrante">Entrada</option>
                                 <option value="dataPrevExec">Prazo</option>
                                 <option value="dataConclusao">Finalização</option>
+                                <option value="valorServico">Valor Orçado</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
                                 <Filter className="h-2.5 w-2.5" />
@@ -228,15 +257,17 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-border/50">
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">UF</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">OS</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Condomínio / POP</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Entrada</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Prazo</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Finalização</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider w-[50px]">UF</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider w-[120px]">OS</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">POP</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider w-[80px]">Mês</th>
+                                    <th className="text-left py-2 px-3 font-semibold text-xs text-foreground/80 uppercase tracking-wider w-[80px]">Entrada</th>
+                                    <th className="text-left py-2 px-3 font-semibold text-xs text-foreground/80 uppercase tracking-wider w-[80px]">Prazo</th>
+                                    <th className="text-left py-2 px-3 font-semibold text-xs text-foreground/80 uppercase tracking-wider w-[80px]">Finaliz.</th>
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Caixas</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Lançam.</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">R$ Total</th>
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Status</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Cenário</th>
                                     <th className="text-left py-3 px-4 font-semibold text-xs text-foreground/80 uppercase tracking-wider">Observações</th>
                                 </tr>
                             </thead>
@@ -247,7 +278,7 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                     return (
                                         <tr
                                             key={os.id}
-                                            className="border-b border-border/40 hover:bg-muted/30 even:bg-muted/10 transition-colors cursor-pointer group"
+                                            className="border-b border-border/40 hover:bg-muted/30 even:bg-muted/40 transition-colors cursor-pointer group"
                                         >
                                             <td className="py-3 px-4">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
@@ -271,17 +302,22 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                                     </div>
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-4 text-[11px] text-muted-foreground">
+                                            <td className="py-3 px-4">
+                                                <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                    <span className="text-[10px] font-bold bg-muted px-2 py-0.5 rounded text-muted-foreground whitespace-nowrap">{os.mes || '-'}</span>
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-[10px] text-muted-foreground">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                     {os.dataEntrante}
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-4 text-[11px] text-muted-foreground">
+                                            <td className="py-3 px-3 text-[10px] text-muted-foreground">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
                                                     {os.dataPrevExec}
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-4 text-[11px]">
+                                            <td className="py-3 px-3 text-[10px]">
                                                 <Link href={`/os/${os.id}`} className={`block w-full h-full font-medium ${os.dataConclusao && os.dataConclusao !== '-' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
                                                     {os.dataConclusao || '-'}
                                                 </Link>
@@ -303,23 +339,38 @@ export function DashboardOSTable({ initialOSList }: DashboardOSTableProps) {
                                             </td>
                                             <td className="py-3 px-4">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                    <StatusBadge
-                                                        label={os.executionStatus}
-                                                        showIcon={true}
-                                                        className="scale-90 origin-left shadow-none"
-                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[40px]">
+                                                            <div
+                                                                className={`h-full rounded-full transition-all ${((os.lancaMetersDone || 0) >= (os.lancaMetersTotal || 1) && (os.lancaMetersTotal || 0) > 0) ? 'bg-emerald-500' : (os.lancaMetersDone || 0) > 0 ? 'bg-sky-500' : 'bg-muted-foreground/30'}`}
+                                                                style={{ width: `${Math.min(100, ((os.lancaMetersDone || 0) / (os.lancaMetersTotal || 1)) * 100)}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[9px] text-muted-foreground whitespace-nowrap font-mono">
+                                                            {os.lancaMetersDone}m
+                                                        </span>
+                                                    </div>
                                                 </Link>
                                             </td>
                                             <td className="py-3 px-4">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                    <div className="text-[10px] font-bold px-2 py-0.5 rounded w-fit bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
-                                                        {os.tipoOs || '-'}
-                                                    </div>
+                                                    <span className="text-[10px] font-bold text-foreground font-mono">
+                                                        {os.valorServico ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorServico) : '-'}
+                                                    </span>
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-4 max-w-[250px]">
+                                            <td className="py-3 px-4">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                    <p className="text-[10px] text-muted-foreground line-clamp-2" title={os.executionObs || os.observacoes || os.descricao || undefined}>
+                                                    <StatusBadge
+                                                        label={os.executionStatus}
+                                                        showIcon={true}
+                                                        className="scale-[0.85] origin-left shadow-none"
+                                                    />
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-4 max-w-[150px]">
+                                                <Link href={`/os/${os.id}`} className="block w-full h-full">
+                                                    <p className="text-[10px] text-muted-foreground line-clamp-1" title={os.executionObs || os.observacoes || os.descricao || undefined}>
                                                         {os.executionObs || os.observacoes || os.descricao || '-'}
                                                     </p>
                                                 </Link>

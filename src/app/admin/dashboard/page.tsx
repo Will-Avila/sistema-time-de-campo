@@ -442,7 +442,11 @@ export default async function DashboardPage({
                         </div>
                     </CardHeader>
                     <CardContent className="pt-4 text-xs">
-                        <DashboardOSTable initialOSList={data.osList} />
+                        <DashboardOSTable
+                            initialOSList={data.osList}
+                            availableMonths={data.availableMonths}
+                            activeMonth={data.activeMonth}
+                        />
                     </CardContent>
                 </Card>
             </div>

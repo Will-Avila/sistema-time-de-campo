@@ -33,6 +33,11 @@ export function StatusBadge({ label, osStatus, execution, className, showIcon = 
         Icon = statusInfo.icon;
     }
 
+    // Abbreviate long labels
+    if (displayLabel?.toLowerCase().includes('execução') || displayLabel?.toLowerCase().includes('execucao')) {
+        displayLabel = 'Em Exec.';
+    }
+
     return (
         <Badge variant={variant} className={className}>
             {showIcon && <Icon className="mr-1.5 h-3.5 w-3.5" />}

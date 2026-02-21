@@ -2,6 +2,7 @@ import { HeaderServer } from '@/components/layout/HeaderServer';
 import { getMonthlyReportData, getAvailableMonths } from '@/actions/reports';
 import { BudgetChartsClient } from './BudgetChartsClient';
 import { MonthSelector } from '@/components/reports/MonthSelector';
+import { PeriodSelector } from '@/components/reports/PeriodSelector';
 import { TrendingUp, TrendingDown, Target, Landmark, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-    searchParams: { month?: string };
+    searchParams: { month?: string; range?: string };
 }
 
 export default async function MonthlyReportPage({ searchParams }: PageProps) {
@@ -20,14 +21,21 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
     const defaultMonth = `${monthsShort[nowSP.getMonth()]}-${nowSP.getFullYear().toString().slice(-2)}`;
 
     const currentMonth = searchParams.month || defaultMonth;
+    const currentRange = parseInt(searchParams.range || '1');
 
     const [data, availableMonths] = await Promise.all([
-        getMonthlyReportData(currentMonth),
+        getMonthlyReportData(currentMonth, currentRange),
         getAvailableMonths()
     ]);
 
     const formatCurrency = (value: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+    const isAggregate = currentRange > 1;
+    const title = isAggregate ? 'Relatório de Período' : 'Relatório Mensal';
+    const periodLabel = isAggregate
+        ? `Últimos ${currentRange} meses até ${currentMonth}`
+        : `Mês de ${currentMonth}`;
 
     return (
         <div className="min-h-screen bg-background transition-colors">
@@ -36,24 +44,34 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
             <div className="container pt-6 pb-8 space-y-8">
                 {/* Header */}
                 <header>
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Relatório Mensal</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Desempenho financeiro e análise de orçamento para <span className="font-bold text-primary">{currentMonth}</span>
-                        </p>
-                    </div>
-                </header>
-
-                <div className="flex items-center justify-between gap-4">
                     <Link
                         href="/admin/dashboard"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors bg-card px-3 py-1.5 rounded-lg border border-border shadow-sm"
+                        className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors mb-3 group w-fit"
                     >
-                        <ArrowLeft className="h-4 w-4" />
-                        Voltar para Dashboard
+                        <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                        Voltar ao painel
                     </Link>
-                    <MonthSelector availableMonths={availableMonths} currentMonth={currentMonth} basePath="/admin/reports/monthly" />
-                </div>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+                            <p className="text-muted-foreground mt-1">
+                                Análise de orçamentos e faturamento para <span className="font-bold text-primary">{periodLabel}</span>
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 md:flex md:items-center gap-2 md:gap-3 w-full md:w-auto">
+                            <PeriodSelector
+                                currentPeriod={currentRange.toString()}
+                                basePath="/admin/reports/monthly"
+                                maxAvailableMonths={availableMonths.length}
+                            />
+                            <MonthSelector
+                                currentMonth={currentMonth}
+                                availableMonths={availableMonths}
+                                basePath="/admin/reports/monthly"
+                            />
+                        </div>
+                    </div>
+                </header>
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -103,6 +121,8 @@ export default async function MonthlyReportPage({ searchParams }: PageProps) {
                     dailyEvolution={data.dailyEvolution}
                     ufData={data.ufData}
                     teamData={data.teamData}
+                    funnelData={data.funnelData}
+                    isMonthly={currentRange > 1}
                 />
             </div>
         </div>

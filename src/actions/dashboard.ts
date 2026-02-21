@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
 import { getSession } from '@/lib/auth';
+import { getAvailableMonths } from './reports';
 
 export async function getSyncProgress() {
     await requireAdmin();
@@ -38,7 +39,10 @@ export async function getDashboardData(targetDate?: string) {
     const nowSPStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
     const nowSP = new Date(nowSPStr);
     const currentBudgetMonth = `${monthsShort[nowSP.getMonth()]}-${nowSP.getFullYear().toString().slice(-2)}`;
-    const [osRecords, excelOSList, equipes, recentNotifications, launchesToday] = await Promise.all([
+
+    const activeMonth = currentBudgetMonth;
+
+    const [osRecords, excelOSList, equipes, recentNotifications, launchesToday, lancaItemsRaw, availableMonths] = await Promise.all([
         prisma.orderOfService.findMany({
             include: {
                 caixas: { select: { status: true, nomeEquipe: true, data: true, equipe: true } },
@@ -52,7 +56,6 @@ export async function getDashboardData(targetDate?: string) {
         }),
         getAllOS(),
         prisma.equipe.findMany({
-            where: { isAdmin: false },
             select: { id: true, name: true, fullName: true, nomeEquipe: true, phone: true, codEquipe: true, excelId: true },
         }),
         prisma.notification.findMany({
@@ -68,8 +71,14 @@ export async function getDashboardData(targetDate?: string) {
         }),
         prisma.lancaAlare.findMany({
             where: { data: todayDate }
-        })
+        }),
+        prisma.lancaAlare.findMany({
+            select: { osId: true, previsao: true, lancado: true }
+        }),
+        getAvailableMonths()
     ]);
+
+    const lancaItems = lancaItemsRaw || [];
 
     const equipeMap = new Map<string, string>();
     equipes.forEach(e => {
@@ -88,21 +97,63 @@ export async function getDashboardData(targetDate?: string) {
         return equipeMap.get(normalized) || String(idOrName).trim();
     };
 
+    // Fallback for availableMonths if DB is empty
+    let finalAvailableMonths = (availableMonths || []) as string[];
+    if (finalAvailableMonths.length === 0 && excelOSList.length > 0) {
+        const monthsSet = new Set(excelOSList.map(os => os.mes.toUpperCase()).filter(m => !!m));
+        finalAvailableMonths = Array.from(monthsSet).sort((a, b) => {
+            const monthMap: Record<string, number> = {
+                'JAN': 0, 'FEV': 1, 'MAR': 2, 'ABR': 3, 'MAI': 4, 'JUN': 5,
+                'JUL': 6, 'AGO': 7, 'SET': 8, 'OUT': 9, 'NOV': 10, 'DEZ': 11
+            };
+            const [monthA, yearA] = a.split('-');
+            const [monthB, yearB] = b.split('-');
+            const dateA = new Date(2000 + parseInt(yearA), monthMap[monthA] || 0, 1);
+            const dateB = new Date(2000 + parseInt(yearB), monthMap[monthB] || 0, 1);
+            return dateB.getTime() - dateA.getTime();
+        });
+    }
+
+    // 3. Aggregate Launch Data
+    const parseMeters = (val: string | null) => {
+        if (!val) return 0;
+        const matched = val.match(/[\d.]+/);
+        return matched ? parseFloat(matched[0]) : 0;
+    };
+
+    const lancaDataMap = new Map<string, { total: number; done: number }>();
+    lancaItems.forEach(item => {
+        if (!item.osId) return;
+        const current = lancaDataMap.get(item.osId) || { total: 0, done: 0 };
+        current.total += parseMeters(item.previsao);
+        current.done += parseMeters(item.lancado);
+        lancaDataMap.set(item.osId, current);
+    });
+
     // 4. Merge Data for the List (Use Excel as base for metadata like dataConclusao)
     const executionMap = new Map(osRecords.map(r => [r.id, r]));
     const { enrichOS } = await import('@/lib/os-enrichment');
 
-    const osList = excelOSList.map(os => {
+    const osListAll = excelOSList.map(os => {
         const dbRecord = executionMap.get(os.id);
         const enriched = enrichOS(os, dbRecord as any);
+
+        const lanca = lancaDataMap.get(os.id);
 
         return {
             ...enriched,
             status: enriched.executionStatus === 'Concluída' ? 'DONE' :
                 enriched.executionStatus === 'Em execução' ? 'IN_PROGRESS' : 'PENDING',
             rawStatus: os.status,
+            valorServico: os.valorServico,
+            hasLanca: !!lanca,
+            lancaMetersTotal: lanca?.total || 0,
+            lancaMetersDone: lanca?.done || 0,
         };
-    }).sort((a, b) => {
+    });
+
+    // Filtramos pelo mês selecionado
+    const osList = osListAll.filter(os => os.mes === activeMonth).sort((a, b) => {
         const parseDate = (d?: string) => {
             if (!d || d === '-') return new Date(0);
             const [day, month, year] = d.split('/').map(Number);
@@ -138,7 +189,7 @@ export async function getDashboardData(targetDate?: string) {
             return b.count - a.count;
         });
 
-    const completedToday = osList.filter(os => {
+    const completedToday = osListAll.filter(os => {
         const isExcelToday = os.dataConclusao === todayDate;
         if (os.dataConclusao !== '-' && os.dataConclusao !== todayDate) return false;
         const dbRecord = executionMap.get(os.id);
@@ -161,7 +212,7 @@ export async function getDashboardData(targetDate?: string) {
 
     const completedMonth = osList.filter(os => {
         const s = (os.rawStatus || '').toUpperCase().trim();
-        return os.mes === currentBudgetMonth && FINISHED_EXCEL_STATUSES.includes(s);
+        return FINISHED_EXCEL_STATUSES.includes(s);
     }).length;
 
     const completedTotal = osList.filter(os => {
@@ -212,37 +263,30 @@ export async function getDashboardData(targetDate?: string) {
     let facilitiesDone = 0;
 
     osList.forEach(os => {
-        if (os.mes === currentBudgetMonth) {
-            const s = (os.rawStatus || '').toUpperCase().trim();
-            const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
-            const isCanceled = s === 'CANCELADO';
-            const isOpen = OPEN_EXCEL_STATUSES.includes(s);
+        const s = (os.rawStatus || '').toUpperCase().trim();
+        const isFinished = s === 'CONCLUÍDO' || s === 'CONCLUIDO';
+        const isCanceled = s === 'CANCELADO';
+        const isOpen = OPEN_EXCEL_STATUSES.includes(s);
 
-            // Agora incluímos CANCELADO nos totais para ter a ideia do bruto
-            if (!isFinished && !isOpen && !isCanceled) return;
+        if (!isFinished && !isOpen && !isCanceled) return;
 
-            const val = (os.valorServico || 0);
-            budgetTotal += val;
-            const boxesPlanned = (os.caixasPlanejadas || 0);
-            boxesTotal += boxesPlanned;
-            const facPlanned = (os.facilidadesPlanejadas || 0);
-            facilitiesTotal += facPlanned;
+        const val = (os.valorServico || 0);
+        budgetTotal += val;
+        const boxesPlanned = (os.caixasPlanejadas || 0);
+        boxesTotal += boxesPlanned;
+        const facPlanned = (os.facilidadesPlanejadas || 0);
+        facilitiesTotal += facPlanned;
 
-            // Se a OS está concluída no Excel, consideramos 100% da produção (Caixas e Facilidades)
-            if (isFinished) {
-                budgetDone += val;
-                boxesDone += boxesPlanned;
-                facilitiesDone += facPlanned;
-            } else if (isOpen) {
-                // Se está em aberto, usamos o progresso real do APP
-                boxesDone += (os.checklistDone || 0);
-
-                if (boxesPlanned > 0) {
-                    const ratio = facPlanned / boxesPlanned;
-                    facilitiesDone += (os.checklistDone || 0) * ratio;
-                }
+        if (isFinished) {
+            budgetDone += val;
+            boxesDone += boxesPlanned;
+            facilitiesDone += facPlanned;
+        } else if (isOpen) {
+            boxesDone += (os.checklistDone || 0);
+            if (boxesPlanned > 0) {
+                const ratio = facPlanned / boxesPlanned;
+                facilitiesDone += (os.checklistDone || 0) * ratio;
             }
-            // Se isCanceled, o valor entra no total mas não no realizado.
         }
     });
 
@@ -318,7 +362,7 @@ export async function getDashboardData(targetDate?: string) {
         if (!l.osId) return;
         const teamName = resolveTeamName(l.equipe);
         if (!osPerformanceMap.has(l.osId)) {
-            const osInfo = osList.find(o => o.id === l.osId);
+            const osInfo = osListAll.find(o => o.id === l.osId);
             osPerformanceMap.set(l.osId, {
                 protocolo: osInfo?.protocolo || l.osId,
                 pop: osInfo?.pop || '-',
@@ -328,7 +372,6 @@ export async function getDashboardData(targetDate?: string) {
         }
         const osEntry = osPerformanceMap.get(l.osId)!;
         if (!osEntry.teams[teamName]) osEntry.teams[teamName] = { caixas: 0, metrosLancados: 0 };
-        // Somar a metragem lançada (convertendo de string para número)
         const metragem = parseFloat(l.lancado?.replace(',', '.') || '0');
         if (!isNaN(metragem)) {
             osEntry.teams[teamName].metrosLancados += metragem;
@@ -385,7 +428,7 @@ export async function getDashboardData(targetDate?: string) {
             todayConcluidas,
             todayCanceladas,
             completedTotal,
-            completedMonth,
+            completedMonth: completedMonth,
             pending,
             inProgress,
             emExecucao: emExecucaoCount,
@@ -393,7 +436,7 @@ export async function getDashboardData(targetDate?: string) {
             completionRate,
             budgetTotal,
             budgetDone,
-            budgetMonth: currentBudgetMonth,
+            budgetMonth: activeMonth,
             boxesTotal,
             boxesDone,
             facilitiesTotal,
@@ -406,6 +449,8 @@ export async function getDashboardData(targetDate?: string) {
         techPerformance,
         performanceByOS,
         activityFeed,
-        osList
+        osList: osListAll,
+        availableMonths: finalAvailableMonths,
+        activeMonth
     };
 }

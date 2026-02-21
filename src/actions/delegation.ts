@@ -66,11 +66,18 @@ export async function delegateOS(osId: string, equipeIds: string[]) {
         }
 
         // Fetch names for notifications
-        const designatedEquipes = await prisma.equipe.findMany({
-            where: { id: { in: toAdd } },
-            select: { id: true, name: true, fullName: true }
-        });
+        const [designatedEquipes, delegatorEquipe] = await Promise.all([
+            prisma.equipe.findMany({
+                where: { id: { in: toAdd } },
+                select: { id: true, name: true, fullName: true }
+            }),
+            prisma.equipe.findUnique({
+                where: { id: session.id },
+                select: { name: true, fullName: true, nomeEquipe: true }
+            })
+        ]);
 
+        const delegatorName = delegatorEquipe?.fullName || delegatorEquipe?.nomeEquipe || delegatorEquipe?.name || session.username;
         const osLabel = os.protocolo || os.pop;
 
         // Notify each newly designated technician
@@ -80,7 +87,7 @@ export async function delegateOS(osId: string, equipeIds: string[]) {
                 title: 'OS Designada',
                 message: `Você foi designado para a OS ${osLabel}`,
                 equipeId: equipe.id,
-                technicianName: session.username,
+                technicianName: delegatorName,
                 osId,
             });
         }
@@ -95,7 +102,7 @@ export async function delegateOS(osId: string, equipeIds: string[]) {
                 title: 'Equipes Designadas',
                 message: `OS ${osLabel} designada para: ${names}`,
                 equipeId: session.id,
-                technicianName: session.username,
+                technicianName: delegatorName,
                 osId,
             });
 
@@ -116,9 +123,9 @@ export async function delegateOS(osId: string, equipeIds: string[]) {
                 await createNotification({
                     type: 'NEW_OS',
                     title: 'Equipes Designadas',
-                    message: `OS ${osLabel} designada por ${session.username} para: ${names}`,
+                    message: `OS ${osLabel} designada por ${delegatorName} para: ${names}`,
                     equipeId: manager.id,
-                    technicianName: session.username,
+                    technicianName: delegatorName,
                     osId,
                 });
             }

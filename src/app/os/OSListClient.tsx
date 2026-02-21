@@ -6,7 +6,7 @@ import { EnrichedOS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft, User } from 'lucide-react';
+import { Search, Filter, Calendar, MapPin, Box, Loader2, Building, Wrench, ArrowLeft, User, DollarSign, ClipboardList } from 'lucide-react';
 import { updatePreferences } from '@/actions/equipe';
 import { getStatusVariantFromLabel, formatDateSP, cn, getDeadlineInfo } from '@/lib/utils';
 import { StatusBadge } from '@/components/os/StatusBadge';
@@ -20,9 +20,10 @@ interface OSListClientProps {
     isTodayPage?: boolean;
     extraFilters?: React.ReactNode;
     isTechnicianView?: boolean;
+    isAdmin?: boolean;
 }
 
-export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus, isTodayPage, extraFilters, isTechnicianView }: OSListClientProps) {
+export default function OSListClient({ initialOSList, initialUf, initialSearch, initialStatus, isTodayPage, extraFilters, isTechnicianView, isAdmin }: OSListClientProps) {
     const [selectedUF, setSelectedUF] = useState<string>(initialUf || 'Todos');
     const [searchTerm, setSearchTerm] = useState(initialSearch || '');
     const [statusFilter, setStatusFilter] = useState<string>(initialStatus || (isTodayPage ? 'Todas' : 'Abertas'));
@@ -158,20 +159,18 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
     return (
         <div className={cn("min-h-screen bg-muted/30 pb-6 md:pb-8 space-y-6 transition-colors", isTodayPage && "min-h-0 bg-transparent")}>
             <div className={cn("container space-y-6", isTodayPage ? "pt-2" : "pt-6")}>
-                {isTodayPage && (
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => router.push('/admin/dashboard')}
-                            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors bg-background px-3 py-1.5 rounded-lg border border-border shadow-sm hover:bg-muted"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                            Voltar para Dashboard
-                        </button>
-                    </div>
-                )}
                 {!isTodayPage && (
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                         <div>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => router.push('/admin/dashboard')}
+                                    className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors mb-3 group w-fit"
+                                >
+                                    <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                                    Voltar ao painel
+                                </button>
+                            )}
                             <h1 className="text-3xl font-bold tracking-tight text-foreground">
                                 {isTechnicianView ? 'Minhas Ordens de Serviço' : 'Ordens de Serviço'}
                             </h1>
@@ -323,7 +322,53 @@ export default function OSListClient({ initialOSList, initialUf, initialSearch, 
                                         {os.equipeName && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
                                                 <User className="h-3.5 w-3.5 text-[#4da8bc]" />
-                                                <span className="text-xs">{os.equipeName}</span>
+                                                <span className="text-xs">Caixas: <span className="text-foreground">{os.equipeName}</span></span>
+                                            </div>
+                                        )}
+                                        {os.lancaTeams && (
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
+                                                <Wrench className="h-3.5 w-3.5 text-sky-600" />
+                                                <span className="text-xs">Lançamento: <span className="text-foreground">{os.lancaTeams}</span></span>
+                                            </div>
+                                        )}
+                                        {isAdmin && os.valorServico && os.valorServico > 0 && (
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-primary/5 p-2 rounded-md border border-primary/10 mt-1">
+                                                <DollarSign className="h-4 w-4 text-emerald-600" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground leading-none mb-0.5">
+                                                        {(os.status?.toUpperCase().includes('CONCLUÍD') || os.status?.toUpperCase().includes('CONCLUID')) ? 'Finalizado' : 'Orçado'}
+                                                    </span>
+                                                    <span className="font-bold text-foreground">
+                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorServico)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {os.hasLanca && (
+                                            <div className="flex flex-col gap-1.5 p-2 rounded-md bg-sky-500/5 border border-sky-500/10 mt-1">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <ClipboardList className="h-3.5 w-3.5 text-sky-600" />
+                                                        <span className="text-[10px] font-extrabold uppercase text-sky-700 tracking-wider">Lançamento</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-sky-600">
+                                                        {(((os.lancaMetersDone || 0) / (os.lancaMetersTotal || 1)) * 100).toFixed(0)}%
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-baseline justify-between">
+                                                    <span className="text-xl font-black text-sky-600 leading-none">
+                                                        {os.lancaMetersDone}<span className="text-[10px] ml-0.5 opacity-70">m</span>
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground">
+                                                        de {os.lancaMetersTotal}m
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-sky-500/10 h-1 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="bg-sky-500 h-full transition-all duration-700"
+                                                        style={{ width: `${Math.min(100, ((os.lancaMetersDone || 0) / (os.lancaMetersTotal || 1)) * 100)}%` }}
+                                                    />
+                                                </div>
                                             </div>
                                         )}
                                     </div>

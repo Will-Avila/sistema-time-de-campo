@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { getOSStatusInfo, getTodaySP, isSameDaySP } from '@/lib/utils';
 import { EnrichedOS } from '@/lib/types';
 import { requireAdmin } from '@/lib/auth';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 import { DateSelector } from './DateSelector';
 
@@ -73,6 +75,13 @@ export default async function TodayOSPage({ searchParams }: PageProps) {
             <HeaderServer />
             <div className="container pt-6 pb-6">
                 <div className="mb-6">
+                    <Link
+                        href="/admin/dashboard"
+                        className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors mb-3 group w-fit"
+                    >
+                        <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                        Voltar ao painel
+                    </Link>
                     <h1 className="text-3xl font-bold text-foreground mb-2">Relatório de Produção</h1>
                     <p className="text-sm text-muted-foreground">
                         Análise de produtividade e ordens de serviço finalizadas em <span className="font-bold text-primary">{selectedDate}</span>
@@ -85,6 +94,7 @@ export default async function TodayOSPage({ searchParams }: PageProps) {
                     initialSearch=""
                     initialStatus="Todas"
                     isTodayPage={true}
+                    isAdmin={true}
                     extraFilters={<DateSelector currentDate={selectedDate} />}
                 />
             </div>

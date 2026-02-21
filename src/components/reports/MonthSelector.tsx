@@ -21,7 +21,7 @@ export function MonthSelector({ availableMonths, currentMonth, basePath }: Month
     };
 
     return (
-        <div className="w-1/2 md:w-auto">
+        <div className="w-full md:w-auto">
             <div className="group relative flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm hover:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all cursor-pointer">
                 <Calendar className="h-4 w-4 text-primary shrink-0" />
 
