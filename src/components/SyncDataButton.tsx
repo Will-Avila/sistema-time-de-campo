@@ -83,19 +83,21 @@ export function SyncDataButton() {
     const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="w-full sm:w-auto flex-1">
             <Button
                 variant="outline"
                 disabled={isSyncing}
                 onClick={handleSync}
-                className="gap-2 border-border bg-card dark:bg-muted hover:bg-muted text-foreground h-11 px-6 transition-colors shadow-sm font-semibold"
+                className="w-full h-[72px] flex flex-col items-center justify-center gap-1.5 shadow-sm border-border bg-white dark:bg-secondary hover:bg-muted/50 transition-all font-semibold active:scale-[0.98] px-1"
             >
                 {isSyncing ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
                 ) : (
-                    <RefreshCw className="h-4 w-4 text-primary" />
+                    <RefreshCw className="h-5 w-5 text-emerald-500" />
                 )}
-                {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+                <span className="text-[10px] leading-tight text-center">
+                    {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+                </span>
             </Button>
         </div>
     );

@@ -14,7 +14,7 @@ interface OSActionMenuProps {
 
 export function OSActionMenu({ osId, hasLanca, showClosure, session, activeTab }: OSActionMenuProps) {
     return (
-        <div className="grid grid-cols-5 gap-1.5 w-full min-w-[280px]">
+        <div className="grid grid-cols-5 gap-1.5 w-full min-w-[300px] md:min-w-[500px]">
             <Link href={`/os/${osId}`} className="w-full">
                 <Button variant="outline" className={`w-full h-[72px] flex flex-col items-center justify-center gap-1.5 shadow-sm transition-all font-semibold active:scale-[0.98] px-0.5 ${activeTab === 'detalhes' ? 'bg-primary/5 dark:bg-primary/10 border-primary/30 ring-1 ring-primary/20' : 'bg-white dark:bg-secondary border-border hover:bg-muted/50'}`}>
                     <FileText className={`h-5 w-5 ${activeTab === 'detalhes' ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`} />

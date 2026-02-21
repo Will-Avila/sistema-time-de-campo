@@ -3,6 +3,7 @@ import { getDashboardData } from '@/actions/dashboard';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     LayoutDashboard, CheckCircle, Clock, Users, TrendingUp,
     Activity, ArrowRight, AlertTriangle, Bell, Wrench, MapPin,
@@ -56,18 +57,21 @@ export default async function DashboardPage({
                             Visão geral das operações e indicadores em tempo real.
                         </p>
                     </div>
-                    <div className="flex flex-col items-end gap-1 w-full md:w-auto">
-                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <div className="flex flex-col items-end gap-1 w-full xl:w-auto mt-4 md:mt-0">
+                        <div className="grid grid-cols-4 gap-1.5 w-full min-w-[280px] md:min-w-[400px]">
                             <SyncDataButton />
                             <ExcelUploadButton />
-                            <div className="h-8 w-px bg-border mx-1 hidden md:block" />
-                            <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-card dark:bg-muted hover:bg-accent hover:text-accent-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
-                                <Wrench className="h-4 w-4 text-muted-foreground" />
-                                Ordens de Serviço
+                            <Link href="/os" className="w-full">
+                                <Button variant="outline" className="w-full h-[72px] flex flex-col items-center justify-center gap-1.5 shadow-sm border-border bg-white dark:bg-secondary hover:bg-muted/50 transition-all font-semibold active:scale-[0.98] px-1">
+                                    <Wrench className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                                    <span className="text-[9px] sm:text-[10px] leading-tight text-center">OS</span>
+                                </Button>
                             </Link>
-                            <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
-                                <Users className="h-4 w-4" />
-                                Equipes
+                            <Link href="/admin/equipes" className="w-full">
+                                <Button variant="outline" className="w-full h-[72px] flex flex-col items-center justify-center gap-1.5 shadow-sm border-border bg-white dark:bg-secondary hover:bg-muted/50 transition-all font-semibold active:scale-[0.98] px-1">
+                                    <Users className="h-5 w-5 text-purple-500" />
+                                    <span className="text-[9px] sm:text-[10px] leading-tight text-center">Equipes</span>
+                                </Button>
                             </Link>
                         </div>
                         {data.lastSyncAt && (

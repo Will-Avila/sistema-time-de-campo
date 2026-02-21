@@ -100,7 +100,7 @@ export function ExcelUploadButton() {
     const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
 
     return (
-        <>
+        <div className="w-full sm:w-auto flex-1">
             <input
                 type="file"
                 accept=".xlsx"
@@ -112,15 +112,17 @@ export function ExcelUploadButton() {
                 variant="outline"
                 disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="gap-2 border-border bg-card dark:bg-muted hover:bg-muted text-foreground h-11 px-6 transition-colors shadow-sm font-semibold"
+                className="w-full h-[72px] flex flex-col items-center justify-center gap-1.5 shadow-sm border-border bg-white dark:bg-secondary hover:bg-muted/50 transition-all font-semibold active:scale-[0.98] px-1"
             >
                 {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <Loader2 className="h-5 w-5 animate-spin text-sky-500" />
                 ) : (
-                    <UploadCloud className="h-4 w-4 text-primary" />
+                    <UploadCloud className="h-5 w-5 text-sky-500" />
                 )}
-                {isUploading ? 'Enviando...' : 'Atualizar Base'}
+                <span className="text-[10px] leading-tight text-center">
+                    {isUploading ? 'Enviando...' : 'Atualizar Base'}
+                </span>
             </Button>
-        </>
+        </div>
     );
 }

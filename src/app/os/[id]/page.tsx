@@ -114,10 +114,10 @@ export default async function OSDetailPage({ params }: PageProps) {
         <div className="min-h-screen bg-muted/30 pb-20 transition-colors">
             <HeaderServer />
 
-            <div className="container pt-6 max-w-4xl space-y-6">
+            <div className="container mx-auto p-4 md:p-8 space-y-8 pt-6">
 
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div className="flex items-center gap-3">
                         <Link href={isAdmin ? "/admin/dashboard" : "/os"} className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
                             <ArrowLeft className="h-6 w-6" />
@@ -154,7 +154,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 w-full md:w-auto mt-4 md:mt-0">
+                    <div className="flex flex-col items-end gap-1 w-full md:w-auto mt-4 md:mt-0">
                         {(() => {
                             const statusInfo = getOSStatusInfo({ osStatus: os.status, execution });
                             const showClosure = (!execution || execution.status !== 'DONE') &&
