@@ -39,7 +39,7 @@ export function StatusBadge({ label, osStatus, execution, className, showIcon = 
     }
 
     return (
-        <Badge variant={variant} className={className}>
+        <Badge variant={variant} className={`whitespace-nowrap ${className || ''}`}>
             {showIcon && <Icon className="mr-1.5 h-3.5 w-3.5" />}
             {displayLabel}
         </Badge>

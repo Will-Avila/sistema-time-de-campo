@@ -11,9 +11,8 @@ import {
 import { HeaderServer } from '@/components/layout/HeaderServer';
 import { ExcelUploadButton } from '@/components/ExcelUploadButton';
 import { SyncDataButton } from '@/components/SyncDataButton';
-import { StatusBadge } from '@/components/os/StatusBadge';
 import { DateSelector } from '@/components/dashboard/DateSelector';
-import { getOSStatusInfo, getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
+import { getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
 import { EnrichedOS } from '@/lib/types';
 import { DashboardOSTable } from '@/components/dashboard/DashboardOSTable';
 
@@ -57,18 +56,25 @@ export default async function DashboardPage({
                             Visão geral das operações e indicadores em tempo real.
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                        <SyncDataButton />
-                        <ExcelUploadButton />
-                        <div className="h-8 w-px bg-border mx-1 hidden md:block" />
-                        <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-card dark:bg-muted hover:bg-accent hover:text-accent-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
-                            <Wrench className="h-4 w-4 text-muted-foreground" />
-                            Ordens de Serviço
-                        </Link>
-                        <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
-                            <Users className="h-4 w-4" />
-                            Equipes
-                        </Link>
+                    <div className="flex flex-col items-end gap-1 w-full md:w-auto">
+                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                            <SyncDataButton />
+                            <ExcelUploadButton />
+                            <div className="h-8 w-px bg-border mx-1 hidden md:block" />
+                            <Link href="/os" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-card dark:bg-muted hover:bg-accent hover:text-accent-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
+                                <Wrench className="h-4 w-4 text-muted-foreground" />
+                                Ordens de Serviço
+                            </Link>
+                            <Link href="/admin/equipes" className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-4 transition-colors shadow-sm whitespace-nowrap">
+                                <Users className="h-4 w-4" />
+                                Equipes
+                            </Link>
+                        </div>
+                        {data.lastSyncAt && (
+                            <span className="text-[10px] text-muted-foreground/70">
+                                Base {data.excelBaseName} atualizada em {new Date(data.lastSyncAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        )}
                     </div>
                 </header>
 

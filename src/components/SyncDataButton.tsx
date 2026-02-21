@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
-import { refreshData, getSyncProgress, resetSyncProgress } from '@/actions/dashboard';
+import { refreshData, resetSyncProgress } from '@/actions/dashboard';
 
 export function SyncDataButton() {
     const [isSyncing, setIsSyncing] = useState(false);

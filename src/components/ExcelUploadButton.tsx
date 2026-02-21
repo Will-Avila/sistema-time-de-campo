@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UploadCloud, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
 import { uploadExcel } from '@/actions/excel';
-import { getSyncProgress, resetSyncProgress } from '@/actions/dashboard';
+import { resetSyncProgress } from '@/actions/dashboard';
 
 export function ExcelUploadButton() {
     const [isUploading, setIsUploading] = useState(false);

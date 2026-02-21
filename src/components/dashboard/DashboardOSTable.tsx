@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Filter, Wrench, ArrowRight, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
-import { CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/os/StatusBadge';
@@ -312,9 +310,21 @@ export function DashboardOSTable({ initialOSList, availableMonths = [], activeMo
                                                     {os.dataEntrante}
                                                 </Link>
                                             </td>
-                                            <td className="py-3 px-3 text-[10px] text-muted-foreground">
+                                            <td className="py-3 px-3 text-[10px]">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                    {os.dataPrevExec}
+                                                    {(() => {
+                                                        const d = os.dataPrevExec;
+                                                        if (!d || d === '-' || d === 'N/A') return <span className="text-muted-foreground">{d || '-'}</span>;
+                                                        const [day, month, year] = d.split('/').map(Number);
+                                                        const prazo = new Date(year, month - 1, day);
+                                                        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+                                                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                                        const prazoDay = new Date(prazo.getFullYear(), prazo.getMonth(), prazo.getDate());
+                                                        const isOverdue = prazoDay < today;
+                                                        const isToday = prazoDay.getTime() === today.getTime();
+                                                        const colorClass = isOverdue ? 'text-red-500 font-bold' : isToday ? 'text-amber-500 font-bold' : 'text-muted-foreground';
+                                                        return <span className={colorClass}>{d}</span>;
+                                                    })()}
                                                 </Link>
                                             </td>
                                             <td className="py-3 px-3 text-[10px]">

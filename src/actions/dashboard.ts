@@ -9,6 +9,8 @@ import { requireAdmin } from '@/lib/auth';
 import { getTodaySP, isSameDaySP, getDaysRemaining } from '@/lib/utils';
 import { getSession } from '@/lib/auth';
 import { getAvailableMonths } from './reports';
+import { stat } from 'fs/promises';
+import path from 'path';
 
 export async function getSyncProgress() {
     await requireAdmin();
@@ -77,6 +79,16 @@ export async function getDashboardData(targetDate?: string) {
         }),
         getAvailableMonths()
     ]);
+
+    // Get Excel file modification time
+    let lastSyncAt: string | null = null;
+    let excelBaseName = '';
+    try {
+        const excelPath = process.env.EXCEL_PATH || '';
+        excelBaseName = path.basename(excelPath, path.extname(excelPath));
+        const fileStat = await stat(excelPath);
+        lastSyncAt = fileStat.mtime.toISOString();
+    } catch { }
 
     const lancaItems = lancaItemsRaw || [];
 
@@ -451,6 +463,8 @@ export async function getDashboardData(targetDate?: string) {
         activityFeed,
         osList: osListAll,
         availableMonths: finalAvailableMonths,
-        activeMonth
+        activeMonth,
+        lastSyncAt,
+        excelBaseName
     };
 }

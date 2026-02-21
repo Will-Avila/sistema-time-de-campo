@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import path from 'path';
 import { logger } from '@/lib/logger';
-import { PHOTOS_BASE_PATH, getUploadDir, resolvePhotoPath } from '@/lib/constants';
+import { getUploadDir, resolvePhotoPath } from '@/lib/constants';
 
 export async function saveOSAdminInfo(formData: FormData) {
     try {

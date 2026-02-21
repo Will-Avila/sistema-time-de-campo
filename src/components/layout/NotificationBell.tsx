@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, Camera, AlertTriangle, Trash2 } from 'lucide-react';
 import { getUnreadNotifications, markAsRead, archiveAllNotifications } from '@/actions/notification';

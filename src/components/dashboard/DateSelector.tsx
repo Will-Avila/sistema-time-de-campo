@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar as CalendarIcon, X, CalendarDays } from 'lucide-react';
+import { X, CalendarDays } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRef } from 'react';
 
