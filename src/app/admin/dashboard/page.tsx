@@ -381,7 +381,7 @@ export default async function DashboardPage({
                             <CardTitle className="text-base font-semibold flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-emerald-500" />
-                                    Execução {displayDate}
+                                    Execução
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <DateSelector initialDate={displayDate} />

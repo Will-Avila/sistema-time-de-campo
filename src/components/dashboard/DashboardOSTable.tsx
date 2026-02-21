@@ -18,11 +18,11 @@ export function DashboardOSTable({ initialOSList, availableMonths = [], activeMo
     const [selectedMonth, setSelectedMonth] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUF, setSelectedUF] = useState('Todos');
-    const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Todas']);
+    const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Iniciar', 'Em execução']);
     const [isStatusOpen, setIsStatusOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [sortField, setSortField] = useState<'dataEntrante' | 'dataPrevExec' | 'dataConclusao' | 'valorServico'>('dataEntrante');
-    const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
+    const [sortField, setSortField] = useState<'dataEntrante' | 'dataPrevExec' | 'dataConclusao' | 'valorServico'>('dataPrevExec');
+    const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('asc');
     const ITEMS_PER_PAGE = 50;
 
     // Reset to page 1 when filters change

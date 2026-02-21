@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateLancaItem, resetLancaItem } from '@/actions/lanca';
 import { Card } from '@/components/ui/card';
-import { CheckCircle2, Circle, Undo2, Loader2, User, Calendar } from 'lucide-react';
+import { CheckCircle2, Circle, Undo2, Loader2, User, Calendar, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
@@ -96,10 +96,12 @@ export default function LancaItem({ item, osId, session }: LancaItemProps) {
         )}>
             <div className="flex items-center justify-between mb-3">
                 <div className="flex-1">
-                    <h3 className="font-bold text-foreground text-base flex items-center gap-2 truncate">
-                        {item.de} <span className="text-muted-foreground font-normal">→</span> {item.para}
+                    <h3 className="font-bold text-foreground text-base flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="break-all sm:break-normal">{item.de}</span>
+                        <ArrowRight className="h-4 w-4 text-[#4da8bc] stroke-[3.5] mx-0.5 shrink-0" />
+                        <span className="break-all sm:break-normal">{item.para}</span>
                     </h3>
-                    <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-0.5 opacity-80">{item.cabo}</p>
+                    <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1 opacity-80">{item.cabo}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
