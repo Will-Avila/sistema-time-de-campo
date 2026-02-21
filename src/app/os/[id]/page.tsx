@@ -237,7 +237,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     <p className="text-sm font-medium text-foreground mt-0.5">{os.pop}</p>
                                 </div>
                                 <div>
-                                    <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider text-[10px]">Protocolo</span>
+                                    <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider text-[10px]">OS</span>
                                     <p className="text-sm font-medium text-foreground mt-0.5 font-mono">{os.protocolo}</p>
                                 </div>
                             </div>
@@ -259,6 +259,23 @@ export default async function OSDetailPage({ params }: PageProps) {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider text-[10px]">Total Caixas</span>
+                                    <div className="flex items-center gap-2 mt-1 font-medium text-foreground/80">
+                                        <Wrench className="h-4 w-4 text-[#4da8bc] shrink-0" />
+                                        <span className="text-sm font-medium text-foreground mt-0.5">{os.items.length} CXs</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider text-[10px]">UF</span>
+                                    <div className="flex items-start gap-2 mt-1 font-medium text-foreground/80">
+                                        <MapPin className="h-4 w-4 text-[#4da8bc] shrink-0" />
+                                        <span className="text-sm font-medium text-foreground mt-0.5">{os.uf || '-'}</span>
+                                    </div>
+                                </div>
+                            </div>
 
                             {isAdmin && os.valorServico && os.valorServico > 0 && (
                                 <div className="pt-2 border-t border-border/50 mt-2">
@@ -384,24 +401,7 @@ export default async function OSDetailPage({ params }: PageProps) {
                                             )}
                                         </div>
                                     </div>
-                                )}
-
-                                <div>
-                                    <span className="block text-foreground/70 mb-1 text-[10px] uppercase font-bold tracking-wider">Total Caixas</span>
-                                    <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                                        <Wrench className="h-3.5 w-3.5 text-[#4da8bc]" />
-                                        {os.items.length} CXs
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <span className="block text-foreground/70 mb-1 text-[10px] uppercase font-bold tracking-wider">UF</span>
-                                    <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                                        <MapPin className="h-3.5 w-3.5 text-[#4da8bc]" />
-                                        {os.uf || '-'}
-                                    </div>
-                                </div>
-                            </div>
+                                )}                            </div>
                         </CardContent>
                     </Card>
 

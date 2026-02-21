@@ -15,7 +15,7 @@ interface DashboardOSTableProps {
 }
 
 export function DashboardOSTable({ initialOSList, availableMonths = [], activeMonth = '' }: DashboardOSTableProps) {
-    const [selectedMonth, setSelectedMonth] = useState(activeMonth);
+    const [selectedMonth, setSelectedMonth] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUF, setSelectedUF] = useState('Todos');
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Todas']);
@@ -97,7 +97,8 @@ export function DashboardOSTable({ initialOSList, availableMonths = [], activeMo
         <div className="space-y-4">
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center bg-card p-4 rounded-xl border border-border shadow-sm">
-                <div className="flex items-center gap-3 flex-1 group">
+                <div className="flex flex-col gap-1 flex-1 group">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Buscar</label>
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         <Input
@@ -109,97 +110,107 @@ export function DashboardOSTable({ initialOSList, availableMonths = [], activeMo
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:flex gap-3 items-center">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:flex gap-3 items-end">
                     {availableMonths.length > 0 && (
-                        <div className="relative w-full md:w-40">
-                            <select
-                                value={selectedMonth}
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                            >
-                                {availableMonths.map(month => (
-                                    <option key={month} value={month}>{month}</option>
-                                ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                                <Calendar className="h-3 w-3" />
+                        <div className="w-full md:w-40">
+                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Mês</label>
+                            <div className="relative">
+                                <select
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                    className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                                >
+                                    <option value="">Todos</option>
+                                    {availableMonths.map(month => (
+                                        <option key={month} value={month}>{month}</option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="relative w-full md:w-36">
-                        <select
-                            value={selectedUF}
-                            onChange={(e) => setSelectedUF(e.target.value)}
-                            className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                        >
-                            {ufs.map(uf => (
-                                <option key={uf} value={uf}>{uf === 'Todos' ? 'Todas UFs' : uf}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                            <Filter className="h-3 w-3" />
+                    <div className="w-full md:w-36">
+                        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">UF</label>
+                        <div className="relative">
+                            <select
+                                value={selectedUF}
+                                onChange={(e) => setSelectedUF(e.target.value)}
+                                className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                            >
+                                {ufs.map(uf => (
+                                    <option key={uf} value={uf}>{uf === 'Todos' ? 'Todas UFs' : uf}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                                <Filter className="h-3 w-3" />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="relative w-full md:w-48">
-                        <button
-                            type="button"
-                            onClick={() => setIsStatusOpen(!isStatusOpen)}
-                            className="h-10 w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                        >
-                            <span className="truncate">
-                                {selectedStatuses.includes('Todas') ? 'Todos Status' : selectedStatuses.join(', ')}
-                            </span>
-                            <Filter className="h-3 w-3 text-muted-foreground shrink-0 ml-2" />
-                        </button>
+                    <div className="w-full md:w-48">
+                        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Status</label>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsStatusOpen(!isStatusOpen)}
+                                className="h-10 w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                            >
+                                <span className="truncate">
+                                    {selectedStatuses.includes('Todas') ? 'Todos Status' : selectedStatuses.join(', ')}
+                                </span>
+                                <Filter className="h-3 w-3 text-muted-foreground shrink-0 ml-2" />
+                            </button>
 
-                        {isStatusOpen && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setIsStatusOpen(false)}
-                                />
-                                <div className="absolute top-12 left-0 right-0 z-20 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top p-1">
-                                    <div className="max-h-60 overflow-y-auto space-y-0.5">
-                                        {statuses.map(s => {
-                                            const isChecked = selectedStatuses.includes(s);
-                                            return (
-                                                <button
-                                                    key={s}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (s === 'Todas') {
-                                                            setSelectedStatuses(['Todas']);
-                                                        } else {
-                                                            let newSelection = selectedStatuses.filter(item => item !== 'Todas');
-                                                            if (isChecked) {
-                                                                newSelection = newSelection.filter(item => item !== s);
-                                                                if (newSelection.length === 0) newSelection = ['Todas'];
+                            {isStatusOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-10"
+                                        onClick={() => setIsStatusOpen(false)}
+                                    />
+                                    <div className="absolute top-12 left-0 right-0 z-20 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top p-1">
+                                        <div className="max-h-60 overflow-y-auto space-y-0.5">
+                                            {statuses.map(s => {
+                                                const isChecked = selectedStatuses.includes(s);
+                                                return (
+                                                    <button
+                                                        key={s}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (s === 'Todas') {
+                                                                setSelectedStatuses(['Todas']);
                                                             } else {
-                                                                newSelection.push(s);
-                                                                if (newSelection.length === statuses.length - 1) newSelection = ['Todas'];
+                                                                let newSelection = selectedStatuses.filter(item => item !== 'Todas');
+                                                                if (isChecked) {
+                                                                    newSelection = newSelection.filter(item => item !== s);
+                                                                    if (newSelection.length === 0) newSelection = ['Todas'];
+                                                                } else {
+                                                                    newSelection.push(s);
+                                                                    if (newSelection.length === statuses.length - 1) newSelection = ['Todas'];
+                                                                }
+                                                                setSelectedStatuses(newSelection);
                                                             }
-                                                            setSelectedStatuses(newSelection);
-                                                        }
-                                                    }}
-                                                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-colors ${isChecked ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
-                                                >
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                                                        {isChecked && (
-                                                            <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        )}
-                                                    </div>
-                                                    {s}
-                                                </button>
-                                            );
-                                        })}
+                                                        }}
+                                                        className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-colors ${isChecked ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
+                                                    >
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                                                            {isChecked && (
+                                                                <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                        {s}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                            </>
-                        )}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

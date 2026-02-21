@@ -56,16 +56,22 @@ export default async function FacilitiesReportPage({ searchParams }: PageProps) 
                             </p>
                         </div>
                         <div className="grid grid-cols-2 md:flex md:items-center gap-2 md:gap-3 w-full md:w-auto">
-                            <PeriodSelector
-                                currentPeriod={currentRange.toString()}
-                                basePath="/admin/reports/facilities"
-                                maxAvailableMonths={availableMonths.length}
-                            />
-                            <MonthSelector
-                                currentMonth={currentMonth}
-                                availableMonths={availableMonths}
-                                basePath="/admin/reports/facilities"
-                            />
+                            <div className="w-full">
+                                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Período</label>
+                                <PeriodSelector
+                                    currentPeriod={currentRange.toString()}
+                                    basePath="/admin/reports/facilities"
+                                    maxAvailableMonths={availableMonths.length}
+                                />
+                            </div>
+                            <div className="w-full">
+                                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Mês</label>
+                                <MonthSelector
+                                    currentMonth={currentMonth}
+                                    availableMonths={availableMonths}
+                                    basePath="/admin/reports/facilities"
+                                />
+                            </div>
                         </div>
                     </div>
                 </header>

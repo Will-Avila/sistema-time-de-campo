@@ -34,7 +34,7 @@ export default async function OSAdminEditPage({ params }: PageProps) {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Editar Informações Administrativas</h1>
-                        <p className="text-sm text-muted-foreground">OS: {os.pop} | Protocolo: {os.protocolo}</p>
+                        <p className="text-sm text-muted-foreground">POP: {os.pop} | OS: {os.protocolo}</p>
                     </div>
                 </div>
 
