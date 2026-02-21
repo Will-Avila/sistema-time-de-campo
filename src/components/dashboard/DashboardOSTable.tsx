@@ -360,15 +360,20 @@ export function DashboardOSTable({ initialOSList, availableMonths = [], activeMo
                                             </td>
                                             <td className="py-3 px-4">
                                                 <Link href={`/os/${os.id}`} className="block w-full h-full">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[40px]">
-                                                            <div
-                                                                className={`h-full rounded-full transition-all ${((os.lancaMetersDone || 0) >= (os.lancaMetersTotal || 1) && (os.lancaMetersTotal || 0) > 0) ? 'bg-emerald-500' : (os.lancaMetersDone || 0) > 0 ? 'bg-sky-500' : 'bg-muted-foreground/30'}`}
-                                                                style={{ width: `${Math.min(100, ((os.lancaMetersDone || 0) / (os.lancaMetersTotal || 1)) * 100)}%` }}
-                                                            />
+                                                    <div className="flex flex-col gap-1 max-w-[65px]">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={`h-full rounded-full transition-all ${((os.lancaMetersDone || 0) >= (os.lancaMetersTotal || 1) && (os.lancaMetersTotal || 0) > 0) ? 'bg-emerald-500' : (os.lancaMetersDone || 0) > 0 ? 'bg-sky-500' : 'bg-muted-foreground/30'}`}
+                                                                    style={{ width: `${Math.min(100, ((os.lancaMetersDone || 0) / (os.lancaMetersTotal || 1)) * 100)}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-[9px] text-muted-foreground whitespace-nowrap font-mono" title="Total Previsto">
+                                                                {os.lancaMetersTotal || 0}m
+                                                            </span>
                                                         </div>
-                                                        <span className="text-[9px] text-muted-foreground whitespace-nowrap font-mono">
-                                                            {os.lancaMetersDone}m
+                                                        <span className="text-[8.5px] text-sky-600/80 font-medium font-mono leading-none">
+                                                            {os.lancaMetersDone || 0}m <span className="text-muted-foreground/60">lançado</span>
                                                         </span>
                                                     </div>
                                                 </Link>
