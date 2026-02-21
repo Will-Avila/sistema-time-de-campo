@@ -21,9 +21,10 @@ interface MaterialManagerProps {
     osId: string;
     session: Session | null;
     triggerClassName?: string;
+    customTrigger?: React.ReactNode;
 }
 
-export default function MaterialManager({ osId, session, triggerClassName }: MaterialManagerProps) {
+export default function MaterialManager({ osId, session, triggerClassName, customTrigger }: MaterialManagerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [materials, setMaterials] = useState<any[]>([]);
     const [newMaterial, setNewMaterial] = useState('');
@@ -83,10 +84,12 @@ export default function MaterialManager({ osId, session, triggerClassName }: Mat
         <>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                    <Button size="lg" className={cn("w-full gap-2 bg-[#334155] hover:bg-[#1e293b] text-white h-11 shadow-sm border-none font-bold transition-all active:scale-[0.98]", triggerClassName)}>
-                        <ShoppingBasket className="h-4 w-4" />
-                        + Add Material
-                    </Button>
+                    {customTrigger || (
+                        <Button variant="outline" size="lg" className={cn("w-full gap-2 shadow-sm border-border bg-white dark:bg-secondary hover:bg-muted/50 transition-all font-bold active:scale-[0.98] h-11", triggerClassName)}>
+                            <ShoppingBasket className="h-4 w-4 text-amber-500" />
+                            + Add Material
+                        </Button>
+                    )}
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                     <DialogHeader className="p-6 border-b border-border bg-muted/30">

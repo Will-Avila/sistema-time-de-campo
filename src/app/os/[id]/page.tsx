@@ -15,7 +15,7 @@ import { getSession } from '@/lib/auth';
 import { StatusBadge } from '@/components/os/StatusBadge';
 import { OSClosureDate } from '@/components/os/OSClosureDate';
 import DelegationPanel from './DelegationPanel';
-import MaterialManager from './MaterialManager';
+import { OSActionMenu } from './OSActionMenu';
 import { getOSMaterials } from '@/actions/material';
 
 interface PageProps {
@@ -154,57 +154,24 @@ export default async function OSDetailPage({ params }: PageProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 w-full md:w-auto">
-                        <div className="grid grid-cols-2 gap-3 w-full min-w-[280px]">
-                            <Link href={`/os/${os.id}/execution`} className="w-full">
-                                <Button size="lg" className="w-full gap-2 shadow-sm h-11">
-                                    <Wrench className="h-4 w-4" />
-                                    Caixas
-                                </Button>
-                            </Link>
+                    <div className="flex flex-col gap-3 w-full md:w-auto mt-4 md:mt-0">
+                        {(() => {
+                            const statusInfo = getOSStatusInfo({ osStatus: os.status, execution });
+                            const showClosure = (!execution || execution.status !== 'DONE') &&
+                                !statusInfo.label.includes('Concluída') &&
+                                !statusInfo.label.includes('Encerrada') &&
+                                !statusInfo.label.includes('Cancelada');
 
-                            {hasLanca && (
-                                <Link href={`/os/${os.id}/lanca`} className="w-full">
-                                    <Button size="lg" className="w-full gap-2 bg-[#334155] hover:bg-[#1e293b] text-white h-11 shadow-md border-none font-bold transition-all active:scale-[0.98]">
-                                        <ClipboardList className="h-4 w-4" />
-                                        Lançamento
-                                    </Button>
-                                </Link>
-                            )}
-
-                            {(() => {
-                                const showClosure = (!execution || execution.status !== 'DONE') &&
-                                    !statusInfo.label.includes('Concluída') &&
-                                    !statusInfo.label.includes('Encerrada') &&
-                                    !statusInfo.label.includes('Cancelada');
-
-                                // Count active buttons to detect odd numbers
-                                // 1 (Caixas) + (1 if hasLanca) + 1 (Materials) + (1 if showClosure)
-                                const activeButtonsCount = 1 + (hasLanca ? 1 : 0) + 1 + (showClosure ? 1 : 0);
-                                const isOdd = activeButtonsCount % 2 !== 0;
-
-                                return (
-                                    <>
-                                        <MaterialManager
-                                            osId={os.id}
-                                            session={session}
-                                            triggerClassName={isOdd && !showClosure ? "col-span-2" : ""}
-                                        />
-
-                                        {showClosure && (
-                                            <OSClosureForm
-                                                osId={os.id}
-                                                triggerClassName={cn(
-                                                    "w-full h-11 px-4 gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center rounded-md text-[13px] font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                                                    isOdd ? "col-span-2" : ""
-                                                )}
-                                                triggerSize="lg"
-                                            />
-                                        )}
-                                    </>
-                                );
-                            })()}
-                        </div>
+                            return (
+                                <OSActionMenu
+                                    osId={os.id}
+                                    hasLanca={hasLanca}
+                                    showClosure={showClosure}
+                                    session={session}
+                                    activeTab="detalhes"
+                                />
+                            );
+                        })()}
                     </div>
                 </div>
 

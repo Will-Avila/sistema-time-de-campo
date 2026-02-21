@@ -8,7 +8,6 @@ import { CaixaItemData } from '@/lib/types';
 import { Session } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import MaterialManager from '../MaterialManager';
 import { getOSStatusInfo } from '@/lib/utils';
 
 interface OSExecutionClientProps {
@@ -112,13 +111,6 @@ export default function OSExecutionClient({
                 }}
                 onCancel={() => setIsPromptOpen(false)}
             />
-
-            {!isClosed && (
-                <MaterialManager
-                    osId={osId}
-                    session={session}
-                />
-            )}
 
             {/* Progress Section */}
             <div className="bg-card rounded-xl border border-border p-5 shadow-sm">

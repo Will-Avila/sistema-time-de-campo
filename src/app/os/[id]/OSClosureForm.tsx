@@ -35,6 +35,8 @@ interface OSClosureFormProps {
     triggerSize?: "default" | "sm" | "lg" | "icon" | null | undefined;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    disabled?: boolean;
+    customTrigger?: React.ReactNode;
 }
 
 export default function OSClosureForm({
@@ -42,7 +44,9 @@ export default function OSClosureForm({
     triggerClassName,
     triggerSize = "sm",
     open: controlledOpen,
-    onOpenChange
+    onOpenChange,
+    disabled,
+    customTrigger
 }: OSClosureFormProps) {
     const [internalOpen, setInternalOpen] = useState(false);
 
@@ -67,14 +71,21 @@ export default function OSClosureForm({
     return (
         <>
             {/* Compact trigger button */}
-            <Button
-                onClick={() => setIsOpen(true)}
-                size={triggerSize}
-                className={triggerClassName || "shrink-0 text-sm font-semibold shadow-sm gap-2 h-11"}
-            >
-                <CheckCircle2 className="h-4 w-4" />
-                Encerrar OS
-            </Button>
+            {customTrigger ? (
+                <div onClick={() => !disabled && setIsOpen(true)} className={cn("w-full cursor-pointer", disabled && "opacity-50 cursor-not-allowed pointer-events-none")}>
+                    {customTrigger}
+                </div>
+            ) : (
+                <Button
+                    onClick={() => setIsOpen(true)}
+                    size={triggerSize}
+                    className={triggerClassName || "shrink-0 text-sm font-semibold shadow-sm gap-2 h-11"}
+                    disabled={disabled}
+                >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Encerrar OS
+                </Button>
+            )}
 
             {/* Modal */}
             {isOpen && (
