@@ -8,7 +8,7 @@ import { CaixaItemData } from '@/lib/types';
 import { Session } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import OSClosureForm from '../OSClosureForm';
+import MaterialManager from '../MaterialManager';
 import { getOSStatusInfo } from '@/lib/utils';
 
 interface OSExecutionClientProps {
@@ -113,24 +113,11 @@ export default function OSExecutionClient({
                 onCancel={() => setIsPromptOpen(false)}
             />
 
-            <OSClosureForm
-                osId={osId}
-                open={isClosureModalOpen}
-                onOpenChange={setIsClosureModalOpen}
-                triggerClassName="hidden"
-            />
-
             {!isClosed && (
-                <div className="flex justify-end">
-                    <Button
-                        size="lg"
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 shadow-md transition-all active:scale-[0.98] animate-in slide-in-from-top-2"
-                        onClick={() => setIsClosureModalOpen(true)}
-                    >
-                        <CheckCircle2 className="mr-2 h-5 w-5" />
-                        Encerrar Ordem de Serviço
-                    </Button>
-                </div>
+                <MaterialManager
+                    osId={osId}
+                    session={session}
+                />
             )}
 
             {/* Progress Section */}

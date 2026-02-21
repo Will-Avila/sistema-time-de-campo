@@ -85,7 +85,7 @@ export default function MaterialManager({ osId, session, triggerClassName }: Mat
                 <DialogTrigger asChild>
                     <Button size="lg" className={cn("w-full gap-2 bg-[#334155] hover:bg-[#1e293b] text-white h-11 shadow-sm border-none font-bold transition-all active:scale-[0.98]", triggerClassName)}>
                         <ShoppingBasket className="h-4 w-4" />
-                        Materiais
+                        + Add Material
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">

@@ -2,10 +2,11 @@ import { prisma } from '@/lib/db';
 import { getOSById } from '@/lib/excel';
 import { notFound } from 'next/navigation';
 import { HeaderServer } from '@/components/layout/HeaderServer';
-import { ArrowLeft, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Box } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import LancaItem from './LancaItem';
+import MaterialManager from '../MaterialManager';
 import { getSession } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 
@@ -50,6 +51,15 @@ export default async function LancaPage({ params }: PageProps) {
         );
     }
 
+    const totalLanca = lancamentos.length;
+    const doneLanca = lancamentos.filter(l => l.status === 'OK').length;
+    const pendingLanca = totalLanca - doneLanca;
+    const donePct = totalLanca > 0 ? (doneLanca / totalLanca) * 100 : 0;
+    const pendingPct = totalLanca > 0 ? (pendingLanca / totalLanca) * 100 : 0;
+
+    const lancaMetersTotal = lancamentos.reduce((acc, l) => acc + (Number(l.previsao) || 0), 0);
+    const lancaMetersDone = lancamentos.reduce((acc, l) => acc + (l.status === 'OK' ? (Number(l.lancado) || Number(l.previsao) || 0) : 0), 0);
+
     return (
         <div className="min-h-screen bg-muted/30 pb-20">
             <HeaderServer />
@@ -68,6 +78,62 @@ export default async function LancaPage({ params }: PageProps) {
                         </div>
                         <h1 className="text-2xl font-bold text-foreground">Lançamentos: {os.pop}</h1>
                         <p className="text-sm text-muted-foreground">Gerencie o lançamento de cabos e metragens</p>
+                    </div>
+                </div>
+
+                <MaterialManager
+                    osId={os.id}
+                    session={session}
+                />
+
+                {/* Progress Section */}
+                <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <Box className="h-5 w-5 text-[#4da8bc]" />
+                            <h2 className="font-bold text-foreground">Progresso de Lançamento</h2>
+                        </div>
+                        <div className="flex items-center gap-4 text-right">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">Rotas</span>
+                                <span className="text-sm font-bold text-foreground">
+                                    {doneLanca} / {totalLanca}
+                                </span>
+                            </div>
+                            <div className="w-px h-8 bg-border"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">Metragem</span>
+                                <span className="text-sm font-bold text-sky-600 dark:text-sky-400">
+                                    {lancaMetersDone} / {lancaMetersTotal}<span className="text-[10px] ml-0.5">m</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="h-3 w-full bg-muted rounded-full overflow-hidden flex">
+                        <div
+                            className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                            style={{ width: `${donePct}%` }}
+                            title={`Concluídas: ${doneLanca}`}
+                        />
+                        <div
+                            className="h-full bg-muted transition-all duration-500 ease-out"
+                            style={{ width: `${pendingPct}%` }}
+                            title={`A fazer: ${pendingLanca}`}
+                        />
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium">
+                        <div className="flex items-center gap-1.5">
+                            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                            <span className="text-muted-foreground">{doneLanca} Concluídas</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className="h-2.5 w-2.5 rounded-full bg-muted" />
+                            <span className="text-muted-foreground">{pendingLanca} A fazer</span>
+                        </div>
                     </div>
                 </div>
 
